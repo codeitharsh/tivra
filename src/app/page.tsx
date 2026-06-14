@@ -718,7 +718,7 @@ const PROGRAMMES = [
     name:'Full Stack Dev',
     tag:'Web Development',
     duration:'4 months', modules:14,
-    price:'Coming 2025',
+    price:'Coming 2026',
     color:'#f59e0b', colorRgb:'245,158,11',
     status:'planned',
     desc:'Modern full-stack web development — React, Node.js, databases, deployment — from building your first component to shipping real products.',
@@ -729,7 +729,7 @@ const PROGRAMMES = [
     name:'DevOps & CI/CD',
     tag:'Infrastructure & Automation',
     duration:'3 months', modules:10,
-    price:'Coming 2025',
+    price:'Coming 2026',
     color:'#22c55e', colorRgb:'34,197,94',
     status:'planned',
     desc:'Containers, pipelines, and deployment automation — Docker, Kubernetes, GitHub Actions, and production-grade infrastructure practices.',
@@ -957,14 +957,9 @@ export default function HomePage() {
             RISE<br/>
             <span style={{
               fontFamily:'DM Sans,sans-serif',fontStyle:'italic',fontWeight:300,
-              fontSize:'0.65em',color:'rgba(255,255,255,0.2)',textTransform:'none',
+              fontSize:'0.85em',color:'rgba(255,255,255,0.2)',textTransform:'none',
               letterSpacing:'-0.01em',
-            }}>beyond </span>
-            <span style={{
-              background:'linear-gradient(135deg,#00d4ff 0%,#3b5bdb 45%,#7c3aed 100%)',
-              WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
-            }}>FURTHER</span>
-            <span style={{color:'rgba(255,255,255,0.25)'}}>.</span>
+            }}>beyond</span><span style={{color:'rgba(255,255,255,0.15)'}}>.</span>
           </h1>
 
           <p style={{
@@ -1210,7 +1205,7 @@ export default function HomePage() {
                          : 'rgba(255,255,255,0.4)',
                     border:`1px solid ${p.status==='enrolling'?`rgba(${p.colorRgb},0.4)`:p.status==='soon'?'rgba(245,158,11,0.3)':'rgba(255,255,255,0.15)'}`,
                   }}>
-                    {p.status==='enrolling'?'● Enrolling':p.status==='soon'?'Coming Soon':'Planned 2025'}
+                    {p.status==='enrolling'?'● Enrolling':p.status==='soon'?'Coming Soon':'Planned 2026'}
                   </div>
                   {/* Hover button */}
                   <div className="card-hover-btn" style={{
@@ -1376,7 +1371,7 @@ export default function HomePage() {
             sub="One-time payment. Full access for the programme duration. No subscriptions, no hidden fees."
           />
           <div style={{
-            display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'16px',
+            display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'16px',
           }} className="price-grid">
 
             {/* Cloud LaunchPad */}
@@ -1407,11 +1402,44 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* Cloud Architect */}
+            <div style={{
+              background:'rgba(124,58,237,0.06)',border:'1px solid rgba(124,58,237,0.25)',
+              borderRadius:'20px',padding:'28px',position:'relative',overflow:'hidden',
+            }}>
+              <div style={{position:'absolute',top:0,left:0,right:0,height:'2px',background:'linear-gradient(90deg,#7c3aed,#3b5bdb)'}}/>
+              <div style={{
+                position:'absolute',top:'16px',right:'16px',
+                padding:'3px 10px',borderRadius:'100px',fontSize:'9px',fontWeight:800,
+                letterSpacing:'0.08em',textTransform:'uppercase',
+                background:'rgba(245,158,11,0.15)',color:'#f59e0b',
+              }}>Coming Soon</div>
+              <div style={{fontSize:'11px',color:'#a78bfa',fontFamily:'Space Mono,monospace',
+                letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:'10px'}}>Cloud Architect</div>
+              <div style={{
+                fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'36px',lineHeight:1,
+                background:'linear-gradient(135deg,#a78bfa,#7c3aed)',
+                WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
+                marginBottom:'4px',
+              }}>₹9,999</div>
+              <div style={{fontSize:'12px',color:'rgba(255,255,255,0.35)',marginBottom:'20px'}}>
+                One-time · 4 months access
+              </div>
+              {['AWS Solutions Architect prep','12 modules + live classes','Advanced architecture labs',
+                'Doubt Corner access','Verified certificate'].map(t=>(
+                <div key={t} style={{display:'flex',gap:'8px',fontSize:'13px',color:'rgba(255,255,255,0.6)',marginBottom:'8px'}}>
+                  <span style={{color:'#a78bfa',flexShrink:0}}>✓</span>{t}
+                </div>
+              ))}
+              <div style={{marginTop:'24px'}}>
+                <Btn text="Coming Soon" href="#programs" variant="ghost" size="sm"/>
+              </div>
+            </div>
+
             {/* Bundle — featured */}
             <div style={{
               background:'rgba(59,91,219,0.12)',border:'1px solid rgba(59,91,219,0.4)',
               borderRadius:'20px',padding:'28px',position:'relative',overflow:'hidden',
-              transform:'scale(1.03)',
               boxShadow:'0 20px 60px rgba(59,91,219,0.2)',
             }}>
               <div style={{position:'absolute',top:0,left:0,right:0,height:'2px',background:'linear-gradient(90deg,#00d4ff,#3b5bdb,#7c3aed)'}}/>
@@ -1420,7 +1448,7 @@ export default function HomePage() {
                 padding:'3px 10px',borderRadius:'100px',fontSize:'9px',fontWeight:800,
                 letterSpacing:'0.08em',textTransform:'uppercase',
                 background:'rgba(59,91,219,0.3)',color:'#93c5fd',
-              }}>Most Popular</div>
+              }}>Best Value</div>
               <div style={{fontSize:'11px',color:'#93c5fd',fontFamily:'Space Mono,monospace',
                 letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:'10px'}}>Full Bundle</div>
               <div style={{
@@ -1441,41 +1469,6 @@ export default function HomePage() {
               ))}
               <div style={{marginTop:'24px'}}>
                 <Btn text="Enrol in Bundle" href="/register" size="sm"/>
-              </div>
-            </div>
-
-            {/* Group / Institution */}
-            <div style={{
-              background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',
-              borderRadius:'20px',padding:'28px',position:'relative',overflow:'hidden',
-            }}>
-              <div style={{position:'absolute',top:0,left:0,right:0,height:'2px',background:'linear-gradient(90deg,#7c3aed,rgba(255,255,255,0.2))'}}/>
-              <div style={{fontSize:'11px',color:'rgba(255,255,255,0.4)',fontFamily:'Space Mono,monospace',
-                letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:'10px'}}>Group / Institution</div>
-              <div style={{
-                fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'28px',lineHeight:1,
-                color:'rgba(255,255,255,0.7)',marginBottom:'4px',
-              }}>Contact Us</div>
-              <div style={{fontSize:'12px',color:'rgba(255,255,255,0.35)',marginBottom:'20px'}}>
-                Custom pricing for institutions
-              </div>
-              {['Dedicated private batch','Admin-managed enrolment',
-                'Full curriculum access','Progress tracking for coordinators',
-                'Custom scheduling available'].map(t=>(
-                <div key={t} style={{display:'flex',gap:'8px',fontSize:'13px',color:'rgba(255,255,255,0.5)',marginBottom:'8px'}}>
-                  <span style={{color:'#22c55e',flexShrink:0}}>✓</span>{t}
-                </div>
-              ))}
-              <div style={{marginTop:'24px'}}>
-                <a href="mailto:contact@tivra.in" style={{
-                  display:'inline-flex',alignItems:'center',gap:'8px',
-                  padding:'9px 16px 9px 20px',borderRadius:'100px',
-                  background:'rgba(0,212,255,0.1)',border:'1px solid rgba(0,212,255,0.25)',
-                  color:'#00d4ff',fontSize:'13px',fontWeight:700,textDecoration:'none',
-                  transition:'all 0.2s',
-                }}>
-                  contact@tivra.in <ArrowRight size={13}/>
-                </a>
               </div>
             </div>
           </div>
@@ -1631,7 +1624,7 @@ export default function HomePage() {
           display:'flex',justifyContent:'space-between',alignItems:'center',
           fontSize:'11px',color:'rgba(255,255,255,0.2)',flexWrap:'wrap',gap:'8px',
         }}>
-          <span>© 2025 Tivra EdTech · All rights reserved</span>
+          <span>© 2026 Tivra EdTech · All rights reserved</span>
           <span>Made in India 🇮🇳</span>
         </div>
       </footer>

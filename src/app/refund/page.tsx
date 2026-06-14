@@ -63,7 +63,7 @@ export default function RefundPage() {
             Refund Policy
           </h1>
           <p style={{ fontSize: '14px', color: 'var(--muted)' }}>
-            Last updated: January 2025 · Effective for all enrolments from January 2025
+            Last updated: January 2026 · Effective for all enrolments from January 2026
           </p>
         </div>
 

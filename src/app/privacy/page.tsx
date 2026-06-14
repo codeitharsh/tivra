@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '40px' }}>
-          Last updated: January 2025
+          Last updated: January 2026
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
           {sections.map(([title, content]) => (
