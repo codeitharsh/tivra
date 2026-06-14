@@ -3,10 +3,12 @@ export const runtime = 'edge'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createSB } from '@supabase/supabase-js'
 
-const admin = createSB(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function adminSB() {
+  return createSB(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function GET(
   _req: NextRequest,
@@ -14,6 +16,7 @@ export async function GET(
 ) {
   const { certId } = await params
 
+  const sb = adminSB()
   const { data: cert, error } = await admin
     .from('certificates')
     .select(`

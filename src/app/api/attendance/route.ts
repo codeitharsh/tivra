@@ -5,10 +5,12 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
-const admin = createSB(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function adminSB() {
+  return createSB(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function POST(req: NextRequest) {
   // ── Verify caller is authenticated ──────────────────────────
@@ -24,6 +26,7 @@ export async function POST(req: NextRequest) {
     }
   )
 
+  const sb = adminSB()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -90,7 +93,7 @@ export async function POST(req: NextRequest) {
       if (mins < dur * 0.5) status = 'partial'
     }
 
-    const { error } = await admin.from('attendance_records')
+    const { error } = await sb.from('attendance_records')
       .update({ left_at: new Date().toISOString(), status } as Record<string, unknown>)
       .eq('session_id', sessionId)
       .eq('student_id', studentId)
