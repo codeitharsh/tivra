@@ -1,4 +1,4 @@
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 
 export async function POST(req: Request): Promise<Response> {
   try {
@@ -21,14 +21,14 @@ export async function POST(req: Request): Promise<Response> {
     const keySecret = process.env.RAZORPAY_KEY_SECRET
 
     if (!keyId || !keySecret) {
-      console.error('[Razorpay] Missing RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET in .env.local')
       return Response.json(
-        { error: 'Payment not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to .env.local' },
+        { error: 'Payment not configured — add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to environment variables' },
         { status: 500 }
       )
     }
 
-    const auth    = Buffer.from(`${keyId}:${keySecret}`).toString('base64')
+    // btoa works on edge runtime (Cloudflare) — Buffer is Node.js only
+    const auth    = btoa(`${keyId}:${keySecret}`)
     const receipt = `tivra_${Date.now()}`
 
     const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
@@ -53,7 +53,6 @@ export async function POST(req: Request): Promise<Response> {
 
     if (!rzpRes.ok || !data.id) {
       const msg = data.error?.description ?? `Razorpay error (HTTP ${rzpRes.status})`
-      console.error('[Razorpay] order creation failed:', msg)
       return Response.json({ error: msg }, { status: 502 })
     }
 
@@ -66,8 +65,6 @@ export async function POST(req: Request): Promise<Response> {
     })
 
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error('[Razorpay] create-order exception:', msg)
-    return Response.json({ error: msg }, { status: 500 })
+    return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
   }
 }

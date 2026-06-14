@@ -1,6 +1,5 @@
 import type { NextConfig } from 'next'
 
-// @cloudflare/next-on-pages requires this
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -10,9 +9,9 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-XSS-Protection',       value: '1; mode=block' },
           { key: 'Referrer-Policy',         value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy',
-            value: 'camera=(self "https://tivra.daily.co"), microphone=(self "https://tivra.daily.co"), display-capture=(self "https://tivra.daily.co")' },
           { key: 'X-Frame-Options',         value: 'SAMEORIGIN' },
+          { key: 'Permissions-Policy',
+            value: 'camera=(self "https://tivra.daily.co"), microphone=(self "https://tivra.daily.co")' },
         ],
       },
       {
@@ -21,7 +20,11 @@ const nextConfig: NextConfig = {
       },
     ]
   },
-  images: { formats: ['image/avif', 'image/webp'] },
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    // Cloudflare requires unoptimized or remote patterns
+    unoptimized: true,
+  },
 }
 
 export default nextConfig

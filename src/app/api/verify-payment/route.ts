@@ -1,6 +1,5 @@
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 
-import { createHmac } from 'crypto'
 import { createClient as createSB } from '@supabase/supabase-js'
 
 function adminSB() {
@@ -10,7 +9,7 @@ function adminSB() {
   )
 }
 
-const PLAN_AMOUNTS: Record<string, number>   = {
+const PLAN_AMOUNTS: Record<string, number> = {
   cloud_launchpad: 6999,
   cloud_architect: 9999,
   bundle:          14999,
@@ -19,6 +18,19 @@ const PLAN_SLUGS: Record<string, string[]> = {
   cloud_launchpad: ['cloud-launchpad'],
   cloud_architect: ['cloud-architect'],
   bundle:          ['cloud-launchpad', 'cloud-architect'],
+}
+
+// Web Crypto HMAC-SHA256 — works on Cloudflare edge (no Node.js needed)
+async function hmacSHA256(secret: string, message: string): Promise<string> {
+  const enc     = new TextEncoder()
+  const key     = await crypto.subtle.importKey(
+    'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' },
+    false, ['sign']
+  )
+  const sig     = await crypto.subtle.sign('HMAC', key, enc.encode(message))
+  return Array.from(new Uint8Array(sig))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
 }
 
 export async function POST(req: Request): Promise<Response> {
@@ -42,27 +54,24 @@ export async function POST(req: Request): Promise<Response> {
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return Response.json({ error: 'Missing payment fields' }, { status: 400 })
     }
-
     if (!student_id) {
       return Response.json({ error: 'Missing student_id' }, { status: 400 })
     }
 
-    // ── Verify HMAC ──────────────────────────────────────────
     const secret = process.env.RAZORPAY_KEY_SECRET
     if (!secret) {
       return Response.json({ error: 'Payment gateway not configured' }, { status: 500 })
     }
 
-    const expected = createHmac('sha256', secret)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest('hex')
+    // Verify HMAC using Web Crypto API
+    const expected = await hmacSHA256(secret, `${razorpay_order_id}|${razorpay_payment_id}`)
 
     if (expected !== razorpay_signature) {
       console.error('[Razorpay] Signature mismatch')
       return Response.json({ error: 'Payment verification failed' }, { status: 400 })
     }
 
-    // ── Activate account ─────────────────────────────────────
+    // Activate account
     const sb     = adminSB()
     const amount = PLAN_AMOUNTS[plan]  ?? 6999
     const slugs  = PLAN_SLUGS[plan]    ?? ['cloud-launchpad']
@@ -96,27 +105,25 @@ export async function POST(req: Request): Promise<Response> {
       }
     }
 
-    // 3. Activate
+    // 3. Activate account
     await sb.from('profiles').update({
       access_status:       'active',
       payment_verified_at: new Date().toISOString(),
       payment_verified_by: 'razorpay_auto',
     }).eq('id', student_id)
 
-    // 4. Notification
+    // 4. Welcome notification
     await sb.from('notifications').insert({
       user_id: student_id,
       title:   '🎉 Payment confirmed — you\'re in!',
       body:    `₹${amount.toLocaleString('en-IN')} verified. Full access granted.`,
       type:    'success',
       link:    '/dashboard',
-    }).select()
+    })
 
     return Response.json({ success: true, activated: true })
 
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error('[Razorpay] verify-payment error:', msg)
-    return Response.json({ error: msg }, { status: 500 })
+    return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
   }
 }

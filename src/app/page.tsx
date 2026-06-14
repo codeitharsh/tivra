@@ -158,6 +158,523 @@ function Particles() {
   return <canvas ref={ref} style={{position:'absolute',inset:0,zIndex:1,pointerEvents:'none',opacity:.55}}/>
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// ANIMATED CARD BACKGROUNDS
+// ─────────────────────────────────────────────────────────────
+
+// Cloud LaunchPad — floating cloud nodes with connection lines
+function CloudLaunchpadAnim() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return
+    const ctx = canvas.getContext('2d'); if (!ctx) return
+    let W = 600, H = 340
+    canvas.width = W * 2; canvas.height = H * 2
+    ctx.scale(2, 2)
+    let raf = 0; let t = 0
+
+    const nodes = Array.from({ length: 18 }, (_, i) => ({
+      x: (i % 6) * 100 + 50 + Math.random() * 40 - 20,
+      y: Math.floor(i / 6) * 100 + 60 + Math.random() * 40 - 20,
+      r: Math.random() * 8 + 4,
+      phase: Math.random() * Math.PI * 2,
+      speed: Math.random() * 0.3 + 0.15,
+      type: ['server', 'storage', 'network', 'cloud'][Math.floor(Math.random() * 4)] as string,
+    }))
+
+    // Cloud icons as simple shapes
+    const drawCloud = (x: number, y: number, s: number, alpha: number) => {
+      ctx.save()
+      ctx.globalAlpha = alpha
+      ctx.beginPath()
+      ctx.arc(x, y - s * 0.15, s * 0.6, 0, Math.PI * 2)
+      ctx.arc(x - s * 0.45, y + s * 0.15, s * 0.4, 0, Math.PI * 2)
+      ctx.arc(x + s * 0.45, y + s * 0.15, s * 0.45, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(0, 212, 255, 0.15)'
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)'
+      ctx.lineWidth = 0.8
+      ctx.stroke()
+      ctx.restore()
+    }
+
+    const drawServer = (x: number, y: number, s: number, alpha: number) => {
+      ctx.save(); ctx.globalAlpha = alpha
+      // Server rack
+      const w = s * 1.2, h = s * 0.5
+      for (let i = 0; i < 3; i++) {
+        const ry = y - h * 1.5 + i * (h + 2)
+        ctx.fillStyle = `rgba(0, 212, 255, ${0.08 + i * 0.03})`
+        ctx.strokeStyle = 'rgba(0, 212, 255, 0.25)'
+        ctx.lineWidth = 0.6
+        ctx.beginPath()
+        ctx.roundRect(x - w / 2, ry, w, h, 2)
+        ctx.fill(); ctx.stroke()
+        // LED dots
+        ctx.fillStyle = i === 0 ? 'rgba(0, 255, 180, 0.6)' : 'rgba(0, 212, 255, 0.3)'
+        ctx.beginPath()
+        ctx.arc(x - w / 2 + 4, ry + h / 2, 1.5, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.restore()
+    }
+
+    const draw = () => {
+      t += 0.008
+      ctx.clearRect(0, 0, W, H)
+
+      // Background gradient
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.7)
+      bg.addColorStop(0, 'rgba(0, 30, 50, 0.6)')
+      bg.addColorStop(1, 'rgba(7, 8, 12, 0.95)')
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
+
+      // Connection lines
+      ctx.strokeStyle = 'rgba(0, 212, 255, 0.08)'
+      ctx.lineWidth = 0.6
+      nodes.forEach((n, i) => {
+        nodes.forEach((m, j) => {
+          if (j <= i) return
+          const dx = n.x - m.x, dy = n.y - m.y
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          if (dist < 160) {
+            const pulse = Math.sin(t * 2 + i * 0.5) * 0.5 + 0.5
+            ctx.globalAlpha = (1 - dist / 160) * 0.4 * pulse
+            ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(m.x, m.y); ctx.stroke()
+            // Data packet moving along line
+            if (dist < 120 && Math.sin(t * 3 + i) > 0.6) {
+              const progress = (Math.sin(t * 2 + j) * 0.5 + 0.5)
+              const px = n.x + (m.x - n.x) * progress
+              const py = n.y + (m.y - n.y) * progress
+              ctx.fillStyle = 'rgba(0, 212, 255, 0.6)'
+              ctx.beginPath(); ctx.arc(px, py, 1.5, 0, Math.PI * 2); ctx.fill()
+            }
+          }
+        })
+      })
+      ctx.globalAlpha = 1
+
+      // Draw nodes
+      nodes.forEach((n, i) => {
+        const yOff = Math.sin(t * n.speed + n.phase) * 6
+        const nx = n.x, ny = n.y + yOff
+        const alpha = 0.6 + Math.sin(t + i) * 0.2
+
+        if (n.type === 'cloud') drawCloud(nx, ny, n.r * 1.8, alpha)
+        else if (n.type === 'server') drawServer(nx, ny, n.r * 1.2, alpha)
+        else {
+          // Generic node
+          ctx.save()
+          ctx.globalAlpha = alpha * 0.3
+          ctx.fillStyle = 'rgba(0, 212, 255, 0.15)'
+          ctx.beginPath(); ctx.arc(nx, ny, n.r * 1.8, 0, Math.PI * 2); ctx.fill()
+          ctx.globalAlpha = alpha
+          const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, n.r)
+          grad.addColorStop(0, 'rgba(0, 212, 255, 0.7)')
+          grad.addColorStop(1, 'rgba(0, 212, 255, 0.1)')
+          ctx.fillStyle = grad
+          ctx.beginPath(); ctx.arc(nx, ny, n.r, 0, Math.PI * 2); ctx.fill()
+          ctx.restore()
+        }
+      })
+
+      // Floating text labels
+      ctx.font = '600 8px "DM Sans", sans-serif'
+      ctx.fillStyle = 'rgba(0, 212, 255, 0.2)';
+      ['S3', 'EC2', 'VPC', 'IAM', 'RDS', 'Lambda'].forEach((label, i) => {
+        const x = 80 + i * 88
+        const y = 28 + Math.sin(t + i * 1.2) * 5
+        ctx.fillText(label, x, y)
+      })
+
+      raf = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }}/>
+}
+
+// Cloud Architect — architectural blueprint with animated layers
+function CloudArchitectAnim() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return
+    const ctx = canvas.getContext('2d'); if (!ctx) return
+    let W = 600, H = 340
+    canvas.width = W * 2; canvas.height = H * 2
+    ctx.scale(2, 2)
+    let raf = 0; let t = 0
+
+    // Architecture layers
+    const layers = [
+      { y: 260, h: 40, label: 'Infrastructure', color: '124, 58, 237', items: ['VPC', 'Subnets', 'NAT', 'IGW'] },
+      { y: 200, h: 40, label: 'Compute & Storage', color: '59, 91, 219', items: ['EC2', 'ASG', 'S3', 'EBS'] },
+      { y: 140, h: 40, label: 'Services', color: '0, 180, 240', items: ['Lambda', 'API GW', 'SQS', 'SNS'] },
+      { y: 80, h: 40, label: 'Application', color: '0, 212, 255', items: ['Route53', 'CloudFront', 'WAF'] },
+    ]
+
+    const draw = () => {
+      t += 0.006
+      ctx.clearRect(0, 0, W, H)
+
+      // Background
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.7)
+      bg.addColorStop(0, 'rgba(20, 10, 40, 0.7)')
+      bg.addColorStop(1, 'rgba(7, 8, 12, 0.95)')
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
+
+      // Blueprint grid
+      ctx.strokeStyle = 'rgba(124, 58, 237, 0.06)'
+      ctx.lineWidth = 0.5
+      for (let x = 0; x < W; x += 30) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke()
+      }
+      for (let y = 0; y < H; y += 30) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
+      }
+
+      // Draw layers with animation
+      layers.forEach((layer, li) => {
+        const slideIn = Math.min(1, Math.max(0, (t * 1.5 - li * 0.3)))
+        const xOffset = (1 - slideIn) * 100
+        const alpha = slideIn * 0.8
+
+        const lx = 60 + xOffset, ly = layer.y, lw = W - 120, lh = layer.h
+
+        // Layer background
+        ctx.save()
+        ctx.globalAlpha = alpha * 0.4
+        ctx.fillStyle = `rgba(${layer.color}, 0.08)`
+        ctx.strokeStyle = `rgba(${layer.color}, 0.25)`
+        ctx.lineWidth = 0.8
+        ctx.beginPath()
+        ctx.roundRect(lx, ly, lw, lh, 6)
+        ctx.fill(); ctx.stroke()
+
+        // Layer label
+        ctx.globalAlpha = alpha * 0.5
+        ctx.font = '700 9px "DM Sans", sans-serif'
+        ctx.fillStyle = `rgba(${layer.color}, 0.6)`
+        ctx.fillText(layer.label, lx + 10, ly + 15)
+
+        // Service boxes inside layer
+        const boxW = 52, boxH = 18, gap = 8
+        const startX = lx + 10
+        layer.items.forEach((item, i) => {
+          const bx = startX + i * (boxW + gap)
+          const by = ly + lh / 2 + 2
+          const pulse = Math.sin(t * 2 + li * 1.5 + i * 0.8) * 0.5 + 0.5
+
+          ctx.globalAlpha = alpha * (0.5 + pulse * 0.3)
+          ctx.fillStyle = `rgba(${layer.color}, ${0.1 + pulse * 0.1})`
+          ctx.strokeStyle = `rgba(${layer.color}, ${0.2 + pulse * 0.15})`
+          ctx.lineWidth = 0.6
+          ctx.beginPath()
+          ctx.roundRect(bx, by, boxW, boxH, 3)
+          ctx.fill(); ctx.stroke()
+
+          ctx.globalAlpha = alpha * (0.5 + pulse * 0.3)
+          ctx.font = '600 7.5px "DM Sans", sans-serif'
+          ctx.fillStyle = `rgba(${layer.color}, 0.8)`
+          ctx.fillText(item, bx + 5, by + 12)
+        })
+
+        ctx.restore()
+
+        // Connection arrows between layers
+        if (li < layers.length - 1) {
+          const nextLayer = layers[li + 1]
+          const arrowPulse = Math.sin(t * 3 + li * 2) * 0.5 + 0.5
+          ctx.save()
+          ctx.globalAlpha = alpha * arrowPulse * 0.5
+          ctx.strokeStyle = `rgba(${layer.color}, 0.3)`
+          ctx.lineWidth = 1
+          ctx.setLineDash([4, 4])
+
+          // Multiple connection lines
+          for (let ai = 0; ai < 3; ai++) {
+            const ax = lx + lw * (0.25 + ai * 0.25)
+            ctx.beginPath()
+            ctx.moveTo(ax, ly)
+            ctx.lineTo(ax, nextLayer.y + nextLayer.h)
+            ctx.stroke()
+
+            // Arrow packet
+            const progress = (t * 0.8 + ai * 0.33 + li * 0.5) % 1
+            const py = nextLayer.y + nextLayer.h + (ly - nextLayer.y - nextLayer.h) * progress
+            ctx.fillStyle = `rgba(${layer.color}, 0.7)`
+            ctx.beginPath()
+            ctx.arc(ax, py, 2, 0, Math.PI * 2)
+            ctx.fill()
+          }
+          ctx.setLineDash([])
+          ctx.restore()
+        }
+      })
+
+      // Floating architecture label
+      ctx.save()
+      ctx.globalAlpha = 0.15
+      ctx.font = '800 42px "Syne", sans-serif'
+      ctx.fillStyle = 'rgba(124, 58, 237, 0.3)'
+      ctx.fillText('SAA', W - 140, 55)
+      ctx.restore()
+
+      raf = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }}/>
+}
+
+
+
+// Full Stack Dev — code editor with typing animation
+function FullStackAnim() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return
+    const ctx = canvas.getContext('2d'); if (!ctx) return
+    canvas.width = 1200; canvas.height = 680
+    ctx.scale(2, 2)
+    const W = 600, H = 340
+    let raf = 0, t = 0
+
+    const lines = [
+      { indent: 0, text: 'import React from "react"',         color: '#f59e0b' },
+      { indent: 0, text: 'import { useState } from "react"',  color: '#f59e0b' },
+      { indent: 0, text: '',                                    color: '#fff' },
+      { indent: 0, text: 'function App() {',                   color: '#22c55e' },
+      { indent: 1, text: 'const [count, setCount] = useState(0)', color: '#60a5fa' },
+      { indent: 1, text: '',                                    color: '#fff' },
+      { indent: 1, text: 'return (',                            color: '#c084fc' },
+      { indent: 2, text: '<div className="app">',              color: '#f97316' },
+      { indent: 3, text: '<h1>Hello Tivra</h1>',               color: '#fbbf24' },
+      { indent: 3, text: '<button onClick={() =>',             color: '#60a5fa' },
+      { indent: 4, text: 'setCount(c => c + 1)}',              color: '#60a5fa' },
+      { indent: 3, text: '>',                                   color: '#f97316' },
+      { indent: 4, text: 'Count: {count}',                     color: '#34d399' },
+      { indent: 3, text: '</button>',                           color: '#f97316' },
+      { indent: 2, text: '</div>',                              color: '#f97316' },
+      { indent: 1, text: ')',                                    color: '#c084fc' },
+      { indent: 0, text: '}',                                   color: '#22c55e' },
+    ]
+
+    const draw = () => {
+      t += 0.012
+      ctx.clearRect(0, 0, W, H)
+
+      // BG
+      const bg = ctx.createLinearGradient(0, 0, W, H)
+      bg.addColorStop(0, 'rgba(30, 20, 10, 0.8)')
+      bg.addColorStop(1, 'rgba(7, 8, 12, 0.95)')
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
+
+      // Editor chrome
+      ctx.fillStyle = 'rgba(255,255,255,0.04)'
+      ctx.fillRect(0, 0, W, 22)
+      ctx.fillStyle = 'rgba(255,255,255,0.07)'
+      ctx.beginPath(); ctx.arc(14, 11, 4, 0, Math.PI * 2); ctx.fill()
+      ctx.fillStyle = 'rgba(255,255,255,0.05)'
+      ctx.beginPath(); ctx.arc(28, 11, 4, 0, Math.PI * 2); ctx.fill()
+      ctx.beginPath(); ctx.arc(42, 11, 4, 0, Math.PI * 2); ctx.fill()
+
+      // Line numbers gutter
+      ctx.fillStyle = 'rgba(255,255,255,0.025)'
+      ctx.fillRect(0, 22, 36, H)
+
+      // Code lines with typing animation
+      const charSpeed = 80
+      const totalChars = t * charSpeed
+      let charCount = 0
+
+      lines.forEach((line, i) => {
+        const y = 40 + i * 17
+        if (y > H) return
+
+        // Line number
+        ctx.font = '500 9px "Space Mono", monospace'
+        ctx.fillStyle = 'rgba(255,255,255,0.15)'
+        ctx.fillText(String(i + 1).padStart(2, ' '), 8, y)
+
+        // Code text with progressive reveal
+        const x = 44 + line.indent * 16
+        const charsToShow = Math.max(0, Math.min(line.text.length, totalChars - charCount))
+        charCount += line.text.length
+
+        if (charsToShow > 0) {
+          const visibleText = line.text.slice(0, charsToShow)
+          ctx.font = '500 9.5px "Space Mono", monospace'
+          ctx.fillStyle = line.color + '90'
+          ctx.fillText(visibleText, x, y)
+
+          // Cursor at end of current typing line
+          if (charsToShow < line.text.length && charsToShow === Math.floor(totalChars - (charCount - line.text.length))) {
+            const cursorX = x + ctx.measureText(visibleText).width
+            const blink = Math.sin(t * 8) > 0
+            if (blink) {
+              ctx.fillStyle = '#f59e0b'
+              ctx.fillRect(cursorX, y - 9, 1.5, 12)
+            }
+          }
+        }
+      })
+
+      // Reset typing loop
+      if (totalChars > lines.reduce((s, l) => s + l.text.length, 0) + 100) {
+        t = 0
+      }
+
+      raf = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }}/>
+}
+
+// DevOps — CI/CD pipeline with flowing nodes
+function DevOpsAnim() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return
+    const ctx = canvas.getContext('2d'); if (!ctx) return
+    canvas.width = 1200; canvas.height = 680
+    ctx.scale(2, 2)
+    const W = 600, H = 340
+    let raf = 0, t = 0
+
+    const stages = [
+      { x: 60,  label: 'Code',    icon: '{ }',   color: '34,197,94' },
+      { x: 160, label: 'Build',   icon: '⚙',     color: '59,91,219' },
+      { x: 260, label: 'Test',    icon: '✓',      color: '0,212,255' },
+      { x: 360, label: 'Deploy',  icon: '▶',      color: '124,58,237' },
+      { x: 460, label: 'Monitor', icon: '📊',     color: '34,197,94' },
+    ]
+
+    const draw = () => {
+      t += 0.008
+      ctx.clearRect(0, 0, W, H)
+
+      // BG
+      const bg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.7)
+      bg.addColorStop(0, 'rgba(10, 20, 15, 0.7)')
+      bg.addColorStop(1, 'rgba(7, 8, 12, 0.95)')
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
+
+      // Pipeline track
+      const trackY = H / 2
+      ctx.strokeStyle = 'rgba(34, 197, 94, 0.1)'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(40, trackY); ctx.lineTo(W - 40, trackY)
+      ctx.stroke()
+
+      // Dashed secondary tracks
+      ctx.setLineDash([4, 6])
+      ctx.strokeStyle = 'rgba(34, 197, 94, 0.05)'
+      ctx.beginPath(); ctx.moveTo(40, trackY - 50); ctx.lineTo(W - 40, trackY - 50); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(40, trackY + 50); ctx.lineTo(W - 40, trackY + 50); ctx.stroke()
+      ctx.setLineDash([])
+
+      // Draw stages
+      stages.forEach((stage, i) => {
+        const progress = (t * 0.5 + i * 0.4) % (stages.length * 0.4)
+        const active = progress >= i * 0.4 && progress < (i + 1) * 0.4
+        const pulse = Math.sin(t * 3 + i * 1.2) * 0.5 + 0.5
+        const baseAlpha = active ? 0.8 : 0.4 + pulse * 0.2
+
+        // Glow
+        ctx.save()
+        ctx.globalAlpha = baseAlpha * 0.15
+        ctx.fillStyle = `rgba(${stage.color}, 1)`
+        ctx.beginPath()
+        ctx.arc(stage.x, trackY, 28, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
+
+        // Node circle
+        ctx.save()
+        ctx.globalAlpha = baseAlpha
+        ctx.fillStyle = `rgba(${stage.color}, 0.12)`
+        ctx.strokeStyle = `rgba(${stage.color}, 0.4)`
+        ctx.lineWidth = 1.2
+        ctx.beginPath()
+        ctx.arc(stage.x, trackY, 20, 0, Math.PI * 2)
+        ctx.fill(); ctx.stroke()
+
+        // Icon
+        ctx.font = '600 11px "DM Sans", sans-serif'
+        ctx.fillStyle = `rgba(${stage.color}, 0.8)`
+        ctx.textAlign = 'center'
+        ctx.fillText(stage.icon, stage.x, trackY + 4)
+
+        // Label below
+        ctx.font = '600 8px "DM Sans", sans-serif'
+        ctx.fillStyle = `rgba(${stage.color}, 0.5)`
+        ctx.fillText(stage.label, stage.x, trackY + 38)
+        ctx.textAlign = 'start'
+        ctx.restore()
+
+        // Connection arrows between stages
+        if (i < stages.length - 1) {
+          const next = stages[i + 1]
+          ctx.save()
+          ctx.globalAlpha = 0.3
+          ctx.strokeStyle = `rgba(${stage.color}, 0.3)`
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.moveTo(stage.x + 22, trackY)
+          ctx.lineTo(next.x - 22, trackY)
+          ctx.stroke()
+
+          // Flowing packet
+          const packetT = (t * 1.5 + i * 0.5) % 1
+          const px = stage.x + 22 + (next.x - 22 - stage.x - 22) * packetT
+          ctx.fillStyle = `rgba(${stage.color}, 0.7)`
+          ctx.beginPath(); ctx.arc(px, trackY, 2.5, 0, Math.PI * 2); ctx.fill()
+          ctx.restore()
+        }
+      })
+
+      // Container icons floating
+      const containers = [
+        { x: 100, y: trackY - 60, label: '🐳', speed: 0.7 },
+        { x: 250, y: trackY + 65, label: 'K8s', speed: 0.5 },
+        { x: 420, y: trackY - 55, label: 'Git', speed: 0.9 },
+        { x: 520, y: trackY + 60, label: 'AWS', speed: 0.6 },
+      ]
+      containers.forEach((c2, i) => {
+        const yOff = Math.sin(t + i * 1.5) * 5
+        ctx.save()
+        ctx.globalAlpha = 0.25
+        ctx.font = '600 10px "DM Sans", sans-serif'
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.5)'
+        ctx.fillText(c2.label, c2.x, c2.y + yOff)
+        ctx.restore()
+      })
+
+      // "CI/CD" watermark
+      ctx.save()
+      ctx.globalAlpha = 0.08
+      ctx.font = '800 60px "Syne", sans-serif'
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.4)'
+      ctx.fillText('CI/CD', W - 200, 60)
+      ctx.restore()
+
+      raf = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }}/>
+}
+
 // ─────────────────────────────────────────────────────────────
 // DATA
 // ─────────────────────────────────────────────────────────────
@@ -668,25 +1185,12 @@ export default function HomePage() {
                   position:'relative',overflow:'hidden',
                 }}>
                   {(p.id==='cloud-launchpad'||p.id==='cloud-architect') ? (
-                    <video
-                      src={p.id==='cloud-launchpad'
-                        ? 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260516_122702_390f5305-8719-41d5-ae80-d23ab3796c28.mp4'
-                        : 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260516_123323_f909c2b8-ff6c-4edf-882b-8ebcdbe389b5.mp4'
-                      }
-                      autoPlay muted loop playsInline
-                      style={{width:'100%',height:'100%',objectFit:'cover',opacity:0.6}}
-                    />
+                    <div style={{position:'absolute',inset:0}}>
+                      {p.id==='cloud-launchpad' ? <CloudLaunchpadAnim/> : <CloudArchitectAnim/>}
+                    </div>
                   ) : (
-                    /* Placeholder gradient for upcoming programmes */
-                    <div style={{
-                      position:'absolute',inset:0,
-                      background:`linear-gradient(135deg,rgba(${p.colorRgb},0.15),rgba(7,8,12,0.6))`,
-                      display:'flex',alignItems:'center',justifyContent:'center',
-                    }}>
-                      <div style={{
-                        fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'52px',
-                        color:`rgba(${p.colorRgb},0.2)`,letterSpacing:'-0.05em',
-                      }}>{p.num}</div>
+                    <div style={{position:'absolute',inset:0}}>
+                      {p.id==='fullstack' ? <FullStackAnim/> : <DevOpsAnim/>}
                     </div>
                   )}
                   <div style={{
