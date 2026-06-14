@@ -11,7 +11,7 @@ import {
   BarChart3, Users, Home, TrendingUp, Layers, BookMarked,
   Target, Menu, X, ChevronRight,
 } from 'lucide-react'
-import { logout } from '@/app/actions/auth'
+
 import type { Profile, UserRole } from '@/types/database'
 
 interface SidebarProps { profile: Profile | null }

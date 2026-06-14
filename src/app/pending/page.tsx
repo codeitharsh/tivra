@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import Image from 'next/image'
-import { logout } from '@/app/actions/auth'
+
 import type { Profile } from '@/types/database'
 
 export default async function PendingPage() {
@@ -61,15 +61,13 @@ export default async function PendingPage() {
           <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
             {profile.full_name ?? profile.email}
           </span>
-          <form action={logout}>
-            <button type="submit" style={{
+          <button onClick={async()=>{await fetch("/api/auth/logout",{method:"POST"});window.location.href="/login"}} type="button" style={{
               background: 'none', border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: '8px', padding: '6px 14px', cursor: 'pointer',
               color: 'rgba(255,255,255,0.4)', fontSize: '12px',
             }}>
               Sign Out
             </button>
-          </form>
         </div>
       </div>
 

@@ -39,7 +39,7 @@ export default function ProgramsPage() {
           </h1>
           <p style={{fontSize:'17px',color:'rgba(255,255,255,0.5)',maxWidth:'520px',margin:'0 auto'}}>
             Structured, career-focused certification programmes across technology domains.
-            More programmes launching throughout 2025.
+            More programmes launching throughout 2026.
           </p>
         </div>
 
@@ -178,7 +178,7 @@ export default function ProgramsPage() {
           <div>
             <div style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'16px',
               color:'rgba(255,255,255,0.5)',marginBottom:'4px'}}>
-              More Programmes Coming in 2025
+              More Programmes Coming in 2026
             </div>
             <div style={{fontSize:'13px',color:'rgba(255,255,255,0.3)'}}>
               Full Stack Web Development · DevOps & CI/CD · Data Engineering · Cybersecurity

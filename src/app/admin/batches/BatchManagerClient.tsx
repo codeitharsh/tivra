@@ -175,7 +175,7 @@ export default function BatchManagerClient({
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
           <div>
             <label className="form-label">Batch Name *</label>
-            <input className="form-input" placeholder="e.g. Cloud LaunchPad — Jan 2025"
+            <input className="form-input" placeholder="e.g. Cloud LaunchPad — Jan 2026"
               value={f.name} onChange={e => set({ name: e.target.value })}/>
           </div>
           <div>

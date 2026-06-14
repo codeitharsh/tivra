@@ -1,201 +1,67 @@
 'use client'
-
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
-import { login } from '@/app/actions/auth'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const [isPending, startTransition] = useTransition()
-  const [showPass, setShowPass]      = useState(false)
-  const [error, setError]            = useState<string | null>(null)
+  const router = useRouter()
+  const [error, setError] = useState<string|null>(null)
+  const [isPending, start] = useTransition()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     const fd = new FormData(e.currentTarget)
-
-    startTransition(async () => {
-      const result = await login(fd)
-      if (result?.error) setError(result.error)
+    start(async () => {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') }),
+      })
+      const data = await res.json() as { error?: string; success?: boolean }
+      if (data.error) { setError(data.error); return }
+      router.push('/dashboard')
+      router.refresh()
     })
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 'clamp(16px,4vw,24px)',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Background glow */}
-      <div style={{
-        position: 'absolute', top: '-100px', left: '50%',
-        transform: 'translateX(-50%)', pointerEvents: 'none', zIndex: 0,
-      }}>
-        <svg width="700" height="300" viewBox="0 0 700 300" fill="none">
-          <defs><filter id="lg"><feGaussianBlur stdDeviation="40"/></filter></defs>
-          <ellipse cx="350" cy="150" rx="300" ry="100" fill="#3b5bdb" opacity="0.07" filter="url(#lg)"/>
-          <ellipse cx="350" cy="150" rx="180" ry="60"  fill="#00c8f8" opacity="0.06" filter="url(#lg)"/>
-        </svg>
-      </div>
+    <div style={{ minHeight:'100vh', background:'#07080c', display:'flex', alignItems:'center', justifyContent:'center', padding:'24px' }}>
+      <div style={{ width:'100%', maxWidth:'400px' }}>
+        <Link href="/" style={{ display:'flex', alignItems:'center', gap:'10px', textDecoration:'none', marginBottom:'32px', justifyContent:'center' }}>
+          <Image src="/tivra-logo.png" alt="Tivra" width={32} height={32} style={{ borderRadius:'8px', objectFit:'cover' }}/>
+          <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'18px', letterSpacing:'0.1em', background:'linear-gradient(135deg,#00d4ff,#7c3aed)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>TIVRA</span>
+        </Link>
 
-      <div className="grid-lines" style={{ position: 'fixed' }}>
-        <div className="grid-line" style={{ left: '25%' }}/>
-        <div className="grid-line" style={{ left: '50%' }}/>
-        <div className="grid-line" style={{ left: '75%' }}/>
-      </div>
-
-      <div style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1 }}>
-
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <Link href="/" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '12px', textDecoration: 'none',
-          }}>
-            <Image
-              src="/tivra-logo.png"
-              alt="Tivra"
-              width={44} height={44}
-              style={{ borderRadius: '11px', objectFit: 'cover' }}
-            />
-            <div>
-              <div style={{
-                fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px',
-                background: 'linear-gradient(135deg, #00c8f8, #7030d0)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text', letterSpacing: '0.06em',
-              }}>
-                TIVRA
-              </div>
-              <div style={{
-                fontSize: '8px', color: 'var(--muted)',
-                letterSpacing: '0.12em', textTransform: 'uppercase',
-              }}>
-                Rise Beyond
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        {/* Card */}
-        <div className="glass" style={{ padding: '32px' }}>
-          <h1 style={{
-            fontFamily: 'Syne, sans-serif', fontSize: '24px', fontWeight: 800,
-            color: '#fff', marginBottom: '6px',
-          }}>
-            Welcome back
-          </h1>
-          <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '28px' }}>
-            Sign in to continue your AWS journey
-          </p>
+        <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'20px', padding:'32px', position:'relative', overflow:'hidden' }}>
+          <div style={{ position:'absolute', top:0, left:0, right:0, height:'2px', background:'linear-gradient(90deg,#00d4ff,#3b5bdb,#7c3aed)' }}/>
+          <h1 style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'22px', color:'#fff', marginBottom:'6px' }}>Welcome back</h1>
+          <p style={{ fontSize:'14px', color:'rgba(255,255,255,0.4)', marginBottom:'28px' }}>Sign in to your Tivra account</p>
 
           {error && (
-            <div className="banner banner-warning" style={{ marginBottom: '20px' }}>
-              <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
-              <span style={{ fontSize: '13px' }}>{error}</span>
-            </div>
+            <div style={{ padding:'12px 16px', borderRadius:'10px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', fontSize:'13px', marginBottom:'20px' }}>{error}</div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-
+          <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
             <div>
-              <label className="form-label" htmlFor="email">Email address</label>
-              <input
-                className="form-input"
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                required
-                autoComplete="email"
-              />
+              <label style={{ display:'block', fontSize:'12px', color:'rgba(255,255,255,0.5)', marginBottom:'6px', fontWeight:600, letterSpacing:'0.04em' }}>Email</label>
+              <input name="email" type="email" required placeholder="you@example.com" style={{ width:'100%', padding:'12px 16px', borderRadius:'10px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', fontSize:'14px', outline:'none', boxSizing:'border-box' }}/>
             </div>
-
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label className="form-label" htmlFor="password" style={{ margin: 0 }}>Password</label>
-              </div>
-              <div style={{ position: 'relative' }}>
-                <input
-                  className="form-input"
-                  id="password"
-                  name="password"
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  required
-                  autoComplete="current-password"
-                  style={{ paddingRight: '44px' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(v => !v)}
-                  style={{
-                    position: 'absolute', right: '12px', top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'var(--muted)', display: 'flex', alignItems: 'center',
-                  }}
-                >
-                  {showPass ? <EyeOff size={16}/> : <Eye size={16}/>}
-                </button>
-              </div>
+              <label style={{ display:'block', fontSize:'12px', color:'rgba(255,255,255,0.5)', marginBottom:'6px', fontWeight:600, letterSpacing:'0.04em' }}>Password</label>
+              <input name="password" type="password" required placeholder="••••••••" style={{ width:'100%', padding:'12px 16px', borderRadius:'10px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', fontSize:'14px', outline:'none', boxSizing:'border-box' }}/>
             </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isPending}
-              style={{ width: '100%', justifyContent: 'center', fontSize: '14px', padding: '13px' }}
-            >
-              {isPending
-                ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }}/> Signing in…</>
-                : <><ArrowRight size={15}/> Sign In</>
-              }
+            <button type="submit" disabled={isPending} style={{ padding:'13px', borderRadius:'100px', background:'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)', color:'#fff', border:'none', fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'14px', cursor:isPending?'wait':'pointer', marginTop:'4px', opacity:isPending?0.7:1 }}>
+              {isPending ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
 
-          <div style={{
-            marginTop: '24px', paddingTop: '20px',
-            borderTop: '1px solid var(--border)',
-            display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center',
-          }}>
-            <p style={{ fontSize: '13px', color: 'var(--muted)' }}>
-              Don&apos;t have an account?{' '}
-              <Link href="/register" style={{ color: '#00c8f8', textDecoration: 'none', fontWeight: 500 }}>
-                Register now
-              </Link>
-            </p>
-            <p style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              Admin?{' '}
-              <span
-                style={{ color: '#a78bfa', textDecoration: 'none', cursor: 'pointer' }}
-                onClick={() => {
-                  const emailInput = document.getElementById('email') as HTMLInputElement
-                  if (emailInput) emailInput.focus()
-                }}
-              >
-                Use your admin email to login
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* Info hint */}
-        <div className="banner banner-info" style={{ marginTop: '16px', fontSize: '12px' }}>
-          <span style={{ flexShrink: 0 }}>💡</span>
-          <span>
-            New here? Register and our team will activate your account after payment verification.
-          </span>
+          <p style={{ textAlign:'center', marginTop:'20px', fontSize:'13px', color:'rgba(255,255,255,0.35)' }}>
+            Don&apos;t have an account?{' '}
+            <Link href="/register" style={{ color:'#00d4ff', textDecoration:'none', fontWeight:600 }}>Enrol Now</Link>
+          </p>
         </div>
       </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

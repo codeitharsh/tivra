@@ -115,7 +115,7 @@ export default async function CertificatePage() {
                   fontSize: '14px', color: 'var(--muted)', marginBottom: '20px',
                   position: 'relative', zIndex: 1,
                 }}>
-                  {cert.phases?.title} · Cloud LaunchPad 2025
+                  {cert.phases?.title} · Cloud LaunchPad 2026
                 </div>
                 <div style={{
                   fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '52px',

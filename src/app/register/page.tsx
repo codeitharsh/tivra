@@ -1,169 +1,73 @@
 'use client'
-
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react'
-import { register } from '@/app/actions/auth'
+import { useRouter } from 'next/navigation'
 
 export default function RegisterPage() {
-  const [isPending, startTransition] = useTransition()
-  const [error, setError]            = useState<string | null>(null)
-  const [showPass, setShowPass]      = useState(false)
+  const router = useRouter()
+  const [error, setError] = useState<string|null>(null)
+  const [isPending, start] = useTransition()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     const fd = new FormData(e.currentTarget)
-    startTransition(async () => {
-      const result = await register(fd)
-      if (result?.error) setError(result.error)
+    const password = fd.get('password') as string
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    start(async () => {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: fd.get('email'), password, full_name: fd.get('full_name'), phone: fd.get('phone') }),
+      })
+      const data = await res.json() as { error?: string; success?: boolean }
+      if (data.error) { setError(data.error); return }
+      router.push('/pending')
+      router.refresh()
     })
   }
 
   return (
-    <div style={{
-      minHeight: '100vh', background: 'var(--bg)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 'clamp(16px,4vw,24px)', position: 'relative', overflow: 'hidden',
-    }}>
-      {/* Glow */}
-      <div style={{ position:'absolute', top:'-80px', left:'50%', transform:'translateX(-50%)', pointerEvents:'none', zIndex:0 }}>
-        <svg width="700" height="300" viewBox="0 0 700 300" fill="none">
-          <defs><filter id="rg"><feGaussianBlur stdDeviation="40"/></filter></defs>
-          <ellipse cx="350" cy="150" rx="300" ry="100" fill="#3b5bdb" opacity="0.07" filter="url(#rg)"/>
-          <ellipse cx="350" cy="150" rx="180" ry="60"  fill="#00c8f8" opacity="0.06" filter="url(#rg)"/>
-        </svg>
-      </div>
-      <div className="grid-lines" style={{ position:'fixed' }}>
-        <div className="grid-line" style={{ left:'25%' }}/>
-        <div className="grid-line" style={{ left:'50%' }}/>
-        <div className="grid-line" style={{ left:'75%' }}/>
-      </div>
+    <div style={{ minHeight:'100vh', background:'#07080c', display:'flex', alignItems:'center', justifyContent:'center', padding:'24px' }}>
+      <div style={{ width:'100%', maxWidth:'420px' }}>
+        <Link href="/" style={{ display:'flex', alignItems:'center', gap:'10px', textDecoration:'none', marginBottom:'32px', justifyContent:'center' }}>
+          <Image src="/tivra-logo.png" alt="Tivra" width={32} height={32} style={{ borderRadius:'8px', objectFit:'cover' }}/>
+          <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'18px', letterSpacing:'0.1em', background:'linear-gradient(135deg,#00d4ff,#7c3aed)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>TIVRA</span>
+        </Link>
 
-      <div style={{ width:'100%', maxWidth:'420px', position:'relative', zIndex:1 }}>
-
-        {/* Logo */}
-        <div style={{ textAlign:'center', marginBottom:'28px' }}>
-          <Link href="/" style={{ display:'inline-flex', alignItems:'center', gap:'12px', textDecoration:'none' }}>
-            <Image src="/tivra-logo.png" alt="Tivra" width={44} height={44}
-              style={{ borderRadius:'11px', objectFit:'cover' }}/>
-            <div>
-              <div style={{
-                fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'20px',
-                background:'linear-gradient(135deg,#00c8f8,#7030d0)',
-                WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
-                backgroundClip:'text', letterSpacing:'0.06em',
-              }}>TIVRA</div>
-              <div style={{ fontSize:'8px', color:'var(--muted)', letterSpacing:'0.12em', textTransform:'uppercase' }}>
-                Rise Beyond
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        {/* Card */}
-        <div className="glass" style={{ padding:'32px' }}>
-          <h1 style={{ fontFamily:'Syne,sans-serif', fontSize:'22px', fontWeight:800, color:'#fff', marginBottom:'6px' }}>
-            Create your account
-          </h1>
-          <p style={{ fontSize:'13px', color:'var(--muted)', marginBottom:'24px' }}>
-            Join Cloud LaunchPad and start your AWS journey
-          </p>
-
-          <div className="banner banner-info" style={{ marginBottom:'20px', fontSize:'12px' }}>
-            <span style={{ flexShrink:0 }}>ℹ️</span>
-            <span>After registering, our team will review and activate your account within 24 hours.</span>
-          </div>
+        <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'20px', padding:'32px', position:'relative', overflow:'hidden' }}>
+          <div style={{ position:'absolute', top:0, left:0, right:0, height:'2px', background:'linear-gradient(90deg,#00d4ff,#3b5bdb,#7c3aed)' }}/>
+          <h1 style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'22px', color:'#fff', marginBottom:'6px' }}>Create your account</h1>
+          <p style={{ fontSize:'14px', color:'rgba(255,255,255,0.4)', marginBottom:'28px' }}>Join Tivra and start learning</p>
 
           {error && (
-            <div className="banner banner-warning" style={{ marginBottom:'20px' }}>
-              <span style={{ flexShrink:0, fontSize:'16px' }}>⚠️</span>
-              <span style={{ fontSize:'13px' }}>{error}</span>
-            </div>
+            <div style={{ padding:'12px 16px', borderRadius:'10px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', fontSize:'13px', marginBottom:'20px' }}>{error}</div>
           )}
 
           <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
-
-            {/* Full name */}
-            <div>
-              <label className="form-label" htmlFor="full_name">Full name</label>
-              <input className="form-input" id="full_name" name="full_name"
-                type="text" placeholder="Your full name" required autoComplete="name"/>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="form-label" htmlFor="email">Email address</label>
-              <input className="form-input" id="email" name="email"
-                type="email" placeholder="you@example.com" required autoComplete="email"/>
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="form-label" htmlFor="phone">Phone number</label>
-              <input className="form-input" id="phone" name="phone"
-                type="tel" placeholder="+91 98765 43210" autoComplete="tel"/>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label className="form-label" htmlFor="password">Password</label>
-              <div style={{ position:'relative' }}>
-                <input className="form-input" id="password" name="password"
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="Minimum 8 characters"
-                  required minLength={8} autoComplete="new-password"
-                  style={{ paddingRight:'44px' }}/>
-                <button type="button" onClick={() => setShowPass(v => !v)} style={{
-                  position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)',
-                  background:'none', border:'none', cursor:'pointer',
-                  color:'var(--muted)', display:'flex', alignItems:'center',
-                }}>
-                  {showPass ? <EyeOff size={16}/> : <Eye size={16}/>}
-                </button>
+            {[
+              { name:'full_name', label:'Full Name', type:'text',     placeholder:'Harsh Sharma' },
+              { name:'email',     label:'Email',     type:'email',    placeholder:'you@example.com' },
+              { name:'phone',     label:'Phone (optional)', type:'tel', placeholder:'+91 98765 43210' },
+              { name:'password',  label:'Password',  type:'password', placeholder:'Min. 8 characters' },
+            ].map(f => (
+              <div key={f.name}>
+                <label style={{ display:'block', fontSize:'12px', color:'rgba(255,255,255,0.5)', marginBottom:'6px', fontWeight:600, letterSpacing:'0.04em' }}>{f.label}</label>
+                <input name={f.name} type={f.type} required={f.name !== 'phone'} placeholder={f.placeholder}
+                  style={{ width:'100%', padding:'12px 16px', borderRadius:'10px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', fontSize:'14px', outline:'none', boxSizing:'border-box' }}/>
               </div>
-            </div>
-
-            {/* Terms */}
-            <label style={{
-              display:'flex', alignItems:'flex-start', gap:'10px',
-              cursor:'pointer', fontSize:'12px', color:'var(--muted)',
-            }}>
-              <input type="checkbox" name="terms" required
-                style={{ marginTop:'2px', accentColor:'#00c8f8', flexShrink:0 }}/>
-              <span>
-                I agree to the{' '}
-                <Link href="/terms" style={{ color:'#00c8f8', textDecoration:'none' }}>Terms of Service</Link>
-                {' '}and{' '}
-                <Link href="/privacy" style={{ color:'#00c8f8', textDecoration:'none' }}>Privacy Policy</Link>
-              </span>
-            </label>
-
-            <button type="submit" className="btn btn-primary" disabled={isPending}
-              style={{ width:'100%', justifyContent:'center', fontSize:'14px', padding:'13px' }}>
-              {isPending
-                ? <><Loader2 size={15} style={{ animation:'spin 1s linear infinite' }}/> Creating account…</>
-                : <><ArrowRight size={15}/> Create Account</>
-              }
+            ))}
+            <button type="submit" disabled={isPending} style={{ padding:'13px', borderRadius:'100px', background:'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)', color:'#fff', border:'none', fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'14px', cursor:isPending?'wait':'pointer', marginTop:'4px', opacity:isPending?0.7:1 }}>
+              {isPending ? 'Creating account…' : 'Create Account'}
             </button>
           </form>
 
-          <div style={{
-            marginTop:'20px', paddingTop:'18px',
-            borderTop:'1px solid var(--border)', textAlign:'center',
-          }}>
-            <p style={{ fontSize:'13px', color:'var(--muted)' }}>
-              Already have an account?{' '}
-              <Link href="/login" style={{ color:'#00c8f8', textDecoration:'none', fontWeight:500 }}>
-                Sign in
-              </Link>
-            </p>
-          </div>
+          <p style={{ textAlign:'center', marginTop:'20px', fontSize:'13px', color:'rgba(255,255,255,0.35)' }}>
+            Already have an account?{' '}
+            <Link href="/login" style={{ color:'#00d4ff', textDecoration:'none', fontWeight:600 }}>Sign In</Link>
+          </p>
         </div>
       </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

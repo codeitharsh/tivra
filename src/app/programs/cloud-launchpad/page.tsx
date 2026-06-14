@@ -353,7 +353,7 @@ export default function CloudLaunchpadPage() {
       <footer style={{borderTop:'1px solid rgba(255,255,255,0.07)',padding:'32px 40px',
         textAlign:'center'}}>
         <div style={{fontSize:'12px',color:'rgba(255,255,255,0.2)'}}>
-          © 2025 Tivra · <Link href="/" style={{color:'inherit',textDecoration:'none'}}>Home</Link>
+          © 2026 Tivra · <Link href="/" style={{color:'inherit',textDecoration:'none'}}>Home</Link>
           {' · '}<Link href="/programs" style={{color:'inherit',textDecoration:'none'}}>All Programmes</Link>
         </div>
       </footer>
