@@ -28,7 +28,7 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['phases']['Insert']>
       }
       modules: {
-        Row: { id:string; phase_id:string; title:string; module_number:number; notes_url:string|null; is_unlocked:boolean; created_at:string }
+        Row: { id:string; phase_id:string; title:string; module_number:number; notes_url:string|null; is_unlocked:boolean; created_at:string; updated_by:string|null; updated_at:string|null }
         Insert: Omit<Database['public']['Tables']['modules']['Row'],'id'|'created_at'>
         Update: Partial<Database['public']['Tables']['modules']['Insert']>
       }
@@ -49,6 +49,7 @@ export interface Database {
         Row: {
           id:string; student_id:string; program_id:string|null
           amount:number|null; payment_method:string|null; transaction_ref:string|null
+          razorpay_order_id:string|null; plan:string|null
           screenshot_url:string|null; status:PaymentStatus
           reviewed_by:string|null; reviewed_at:string|null; rejection_note:string|null
           created_at:string

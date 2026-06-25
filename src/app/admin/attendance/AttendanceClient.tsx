@@ -2,7 +2,16 @@
 
 import { useState } from 'react'
 import { Download, Users, Clock, CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
-import { getAttendanceCSV } from '@/app/actions/admin'
+
+// ── Calls the edge-compatible /api/admin route (migrated off Server Actions) ──
+async function callAdminApi(payload: Record<string, unknown>): Promise<{ error?: string; csv?: string | null }> {
+  const res = await fetch('/api/admin', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+  })
+  return res.json()
+}
 
 interface AttendanceSummary {
   present: number
@@ -29,7 +38,7 @@ export default function AttendanceClient({ sessions, attendanceMap, totalStudent
 
   async function exportCSV(sessionId?: string, sessionTitle?: string) {
     setExporting(sessionId ?? 'all')
-    const result = await getAttendanceCSV(sessionId)
+    const result = await callAdminApi({ action: 'attendance_csv', session_id: sessionId })
     if (result.error) {
       showToast('Export failed: ' + result.error)
     } else if (result.csv) {

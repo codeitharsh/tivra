@@ -42,10 +42,20 @@ export async function POST(req: NextRequest) {
   if (file.size > 50 * 1024 * 1024)
     return NextResponse.json({ error: 'File too large (max 50MB)' }, { status: 400 })
 
+  const arrayBuffer = await file.arrayBuffer()
+
+  // ── Verify actual file content, not just the filename. A renamed
+  //    non-PDF file would otherwise pass the .endsWith('.pdf') check above.
+  //    Real PDFs always begin with the magic bytes "%PDF-". ──────────────
+  const headerBytes = new Uint8Array(arrayBuffer.slice(0, 5))
+  const headerStr    = new TextDecoder().decode(headerBytes)
+  if (headerStr !== '%PDF-') {
+    return NextResponse.json({ error: 'File content does not match a valid PDF.' }, { status: 400 })
+  }
+
   const sb   = adminSB()
   const path = `${phaseId}/${moduleId}.pdf`
 
-  const arrayBuffer = await file.arrayBuffer()
   const { error: uploadError } = await sb.storage
     .from('notes').upload(path, arrayBuffer, { upsert: true, contentType: 'application/pdf' })
   if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 })

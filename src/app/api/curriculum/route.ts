@@ -83,7 +83,9 @@ export async function POST(req: NextRequest) {
     case 'update_module': {
       const { moduleId, title } = body
       if (!moduleId || !title) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
-      const { error } = await sb.from('modules').update({ title }).eq('id', moduleId)
+      const { error } = await sb.from('modules')
+        .update({ title, updated_by: auth.user.id, updated_at: new Date().toISOString() })
+        .eq('id', moduleId)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
     }
@@ -102,7 +104,8 @@ export async function POST(req: NextRequest) {
       const { moduleId, isUnlocked } = body
       if (!moduleId) return NextResponse.json({ error: 'Missing moduleId' }, { status: 400 })
       const { error } = await sb.from('modules')
-        .update({ is_unlocked: isUnlocked }).eq('id', moduleId)
+        .update({ is_unlocked: isUnlocked, updated_by: auth.user.id, updated_at: new Date().toISOString() })
+        .eq('id', moduleId)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
     }
@@ -110,9 +113,22 @@ export async function POST(req: NextRequest) {
     case 'swap_module_order': {
       const { moduleId1, order1, moduleId2, order2 } = body
       if (!moduleId1 || !moduleId2) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+
+      // Validate order1/order2 are positive integers — prevents corrupting
+      // module ordering with negative/zero/non-numeric values from a
+      // malformed or tampered request.
+      const n1 = Number(order1)
+      const n2 = Number(order2)
+      if (!Number.isInteger(n1) || n1 < 1 || !Number.isInteger(n2) || n2 < 1) {
+        return NextResponse.json({ error: 'order1/order2 must be positive integers' }, { status: 400 })
+      }
+      if (moduleId1 === moduleId2) {
+        return NextResponse.json({ error: 'Cannot swap a module with itself' }, { status: 400 })
+      }
+
       // Swap module_numbers
-      await sb.from('modules').update({ module_number: order1 }).eq('id', moduleId1)
-      await sb.from('modules').update({ module_number: order2 }).eq('id', moduleId2)
+      await sb.from('modules').update({ module_number: n1 }).eq('id', moduleId1)
+      await sb.from('modules').update({ module_number: n2 }).eq('id', moduleId2)
       return NextResponse.json({ success: true })
     }
 

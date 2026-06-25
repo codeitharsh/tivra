@@ -1,15 +1,40 @@
 export const runtime = 'edge'
 
+import { createServerClient } from '@supabase/ssr'
+import { createClient as createSB } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
+
+function adminSB() {
+  return createSB(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
+const PLANS: Record<string, { amount: number; label: string }> = {
+  cloud_launchpad: { amount: 699900,  label: 'Cloud LaunchPad'             },
+  cloud_architect: { amount: 999900,  label: 'Cloud Architect'             },
+  bundle:          { amount: 1499900, label: 'Cloud LaunchPad + Architect' },
+}
+
 export async function POST(req: Request): Promise<Response> {
   try {
+    // ── Authenticate the caller — the order is tied to THIS verified
+    //    session's user, never to a client-supplied ID. This is the
+    //    record that verify-payment will later trust, not the client. ──
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return Response.json({ error: 'Unauthorized — please log in again.' }, { status: 401 })
+    }
+
     const body = await req.json() as { plan?: string }
     const plan = body.plan ?? 'cloud_launchpad'
-
-    const PLANS: Record<string, { amount: number; label: string }> = {
-      cloud_launchpad: { amount: 699900,  label: 'Cloud LaunchPad'             },
-      cloud_architect: { amount: 999900,  label: 'Cloud Architect'             },
-      bundle:          { amount: 1499900, label: 'Cloud LaunchPad + Architect' },
-    }
 
     if (!PLANS[plan]) {
       return Response.json({ error: `Invalid plan: ${plan}` }, { status: 400 })
@@ -41,7 +66,7 @@ export async function POST(req: Request): Promise<Response> {
         amount,
         currency: 'INR',
         receipt,
-        notes: { plan, plan_label: label },
+        notes: { plan, plan_label: label, student_id: user.id },
       }),
     })
 
@@ -54,6 +79,25 @@ export async function POST(req: Request): Promise<Response> {
     if (!rzpRes.ok || !data.id) {
       const msg = data.error?.description ?? `Razorpay error (HTTP ${rzpRes.status})`
       return Response.json({ error: msg }, { status: 502 })
+    }
+
+    // ── Record the order server-side BEFORE the client ever sees it.
+    //    verify-payment will look this row up by order_id to recover
+    //    the real student_id/plan/amount — the client's later claims
+    //    about who/what are never trusted directly. ──
+    const sb = adminSB()
+    const { error: insertError } = await sb.from('payment_requests').insert({
+      student_id:        user.id,
+      amount:            amount / 100, // store in rupees, Razorpay amount is paise
+      payment_method:    'razorpay',
+      razorpay_order_id: data.id,
+      status:            'pending',
+      plan,
+    })
+
+    if (insertError) {
+      console.error('[create-order] Failed to record pending order:', insertError.message)
+      return Response.json({ error: 'Could not initialise payment. Please try again.' }, { status: 500 })
     }
 
     return Response.json({

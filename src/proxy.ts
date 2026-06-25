@@ -79,7 +79,7 @@ export async function proxy(request: NextRequest) {
   // ── STEP 4: Admin routes ───────────────────────────────────
   if (matches(pathname, ADMIN_ROUTES)) {
     if (role !== 'admin')
-      return NextResponse.redirect(new URL('/admin-only', request.url))
+      return NextResponse.redirect(new URL('/dashboard', request.url))
     return response
   }
 

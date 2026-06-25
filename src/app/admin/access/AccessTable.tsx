@@ -2,8 +2,18 @@
 
 import { useState, useTransition } from 'react'
 import { CheckCircle2, XCircle, Loader2, Search, ChevronDown, RefreshCw } from 'lucide-react'
-import { grantAccess, revokeAccess, changeRole } from '@/app/actions/admin'
 import { useRouter } from 'next/navigation'
+
+// ── Calls the edge-compatible /api/admin route (migrated off Server Actions,
+//    which do not run reliably on Cloudflare Pages) ──────────────────────
+async function callAdminApi(payload: Record<string, unknown>): Promise<{ error?: string; success?: boolean }> {
+  const res = await fetch('/api/admin', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+  })
+  return res.json()
+}
 
 const STATUS_META: Record<string, { color:string; bg:string; dot:string; label:string }> = {
   active:          { color:'var(--green)', bg:'rgba(34,197,94,0.12)',  dot:'●',  label:'Active'     },
@@ -52,12 +62,13 @@ export default function AccessTable({ rows, adminId }: { rows: Record<string,unk
   async function doGrant() {
     if (!grantM) return
     setActionId(grantM.id as string)
-    const fd = new FormData()
-    fd.append('student_id', grantM.id as string)
-    fd.append('notes',      grantNotes)
-    fd.append('role',       grantRole)
     start(async () => {
-      const r = await grantAccess(fd)
+      const r = await callAdminApi({
+        action:     'grant_access',
+        student_id: grantM.id as string,
+        notes:      grantNotes,
+        role:       grantRole,
+      })
       if (r?.error) toast3(r.error,'error')
       else { toast3(`✓ Access granted to ${grantM.full_name}`,'success'); router.refresh() }
       setGrantM(null); setGrantNotes(''); setGrantRole('student'); setActionId(null)
@@ -68,7 +79,7 @@ export default function AccessTable({ rows, adminId }: { rows: Record<string,unk
     if (!revokeM) return
     setActionId(revokeM.id as string)
     start(async () => {
-      const r = await revokeAccess(revokeM.id as string)
+      const r = await callAdminApi({ action: 'revoke_access', student_id: revokeM.id as string })
       if (r?.error) toast3(r.error,'error')
       else { toast3(`Access revoked for ${revokeM.full_name}`,'success'); router.refresh() }
       setRevokeM(null); setActionId(null)
@@ -78,7 +89,7 @@ export default function AccessTable({ rows, adminId }: { rows: Record<string,unk
   async function doRoleChange(id:string, name:string, newRole:string) {
     setActionId(id)
     start(async () => {
-      const r = await changeRole(id, newRole)
+      const r = await callAdminApi({ action: 'change_role', student_id: id, new_role: newRole })
       if (r?.error) toast3(r.error,'error')
       else { toast3(`✓ ${name}'s role → ${newRole}`,'success'); router.refresh() }
       setActionId(null)

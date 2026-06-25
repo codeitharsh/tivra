@@ -2,8 +2,19 @@
 
 import { useState, useTransition } from 'react'
 import { CheckCircle2, XCircle, Loader2, Search } from 'lucide-react'
-import { grantAccess, rejectPayment } from '@/app/actions/admin'
 import { useRouter } from 'next/navigation'
+
+// ── Calls the edge-compatible /api/admin route. The caller's admin identity
+//    is taken from the verified session server-side — adminId is no longer
+//    sent or trusted from the client. ──────────────────────────────────────
+async function callAdminApi(payload: Record<string, unknown>): Promise<{ error?: string; success?: boolean }> {
+  const res = await fetch('/api/admin', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+  })
+  return res.json()
+}
 
 type FilterStatus = 'all' | 'pending' | 'approved' | 'rejected'
 
@@ -30,13 +41,13 @@ export default function PaymentsClient({ rows, adminId }: { rows: Record<string,
 
   async function doApprove(row: Record<string,unknown>) {
     setActionId(row.id as string)
-    const fd = new FormData()
-    fd.append('student_id', row.student_id as string)
-    fd.append('admin_id',   adminId)
-    fd.append('notes',      `Payment approved — ${row.payment_method} ref: ${row.transaction_ref ?? 'N/A'}`)
-    fd.append('role',       'student')
     start(async () => {
-      const r = await grantAccess(fd)
+      const r = await callAdminApi({
+        action:     'grant_access',
+        student_id: row.student_id as string,
+        notes:      `Payment approved — ${row.payment_method} ref: ${row.transaction_ref ?? 'N/A'}`,
+        role:       'student',
+      })
       if (r?.error) showToast(r.error, 'error')
       else { showToast('✓ Payment approved — student activated', 'success'); router.refresh() }
       setActionId(null)
@@ -46,12 +57,12 @@ export default function PaymentsClient({ rows, adminId }: { rows: Record<string,
   async function doReject() {
     if (!rejectModal) return
     setActionId(rejectModal.id as string)
-    const fd = new FormData()
-    fd.append('request_id',    rejectModal.id as string)
-    fd.append('admin_id',      adminId)
-    fd.append('rejection_note', rejectNote)
     start(async () => {
-      const r = await rejectPayment(fd)
+      const r = await callAdminApi({
+        action:         'reject_payment',
+        request_id:     rejectModal.id as string,
+        rejection_note: rejectNote,
+      })
       if (r?.error) showToast(r.error, 'error')
       else { showToast('Payment rejected', 'success'); router.refresh() }
       setRejectModal(null); setRejectNote(''); setActionId(null)

@@ -44,12 +44,23 @@ function getRoomName(sessionId: string): string {
   return `tivra-${short}`
 }
 
-// Deterministic password from sessionId — same session always gets same password
-// Students never see this — it's passed silently via the embed config
-function getRoomPassword(sessionId: string): string {
-  const chars = sessionId.replace(/-/g, '')
-  // Take chars from middle of UUID for extra unpredictability
-  return chars.slice(8, 16) + chars.slice(20, 24)
+// Password derived via HMAC keyed by a server-only secret, not just a
+// slice of the publicly-visible session ID. The room name (and therefore
+// the session ID) appears in URLs shared with students, so a password
+// derived purely from slicing that same ID adds no real protection —
+// anyone who learns the slicing pattern could recompute it. Keying with
+// RAZORPAY_KEY_SECRET (already present, server-only, never sent to the
+// client) means the password can't be recomputed without server access,
+// while staying deterministic for the same session.
+async function getRoomPassword(sessionId: string): Promise<string> {
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'tivra-fallback-secret'
+  const enc = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  )
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(sessionId))
+  const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
+  return hex.slice(0, 16)
 }
 
 function getJitsiUrls(roomName: string, password: string) {
@@ -132,7 +143,7 @@ export async function POST(req: NextRequest) {
 
     // Use existing room name or generate a new one
     const roomName   = s.daily_room_name ?? getRoomName(sessionId)
-    const password   = getRoomPassword(sessionId)
+    const password   = await getRoomPassword(sessionId)
     const { roomUrl } = getJitsiUrls(roomName, password)
 
     // Teacher URL — moderator with password set automatically
@@ -207,10 +218,10 @@ export async function POST(req: NextRequest) {
     if (s.is_completed) return NextResponse.json({ error: 'Session has ended' }, { status: 410 })
     if (!s.daily_room_name) return NextResponse.json({ error: 'Room not ready yet' }, { status: 404 })
 
-    const { roomUrl } = getJitsiUrls(s.daily_room_name, getRoomPassword(sessionId))
+    const password   = await getRoomPassword(sessionId)
+    const { roomUrl } = getJitsiUrls(s.daily_room_name, password)
 
     // Student URL — muted, no video, password passed silently
-    const password   = getRoomPassword(sessionId)
     const studentUrl = `${roomUrl}#userInfo.displayName="${encodeURIComponent(user.full_name ?? 'Student')}"&config.startWithVideoMuted=true&config.startWithAudioMuted=true&config.prejoinPageEnabled=false&password=${password}`
 
     return NextResponse.json({ success: true, roomUrl: studentUrl, roomName: s.daily_room_name })

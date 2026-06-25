@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   const studentId = user.id
 
   if (action === 'join') {
-    const { data: ctrl } = await admin
+    const { data: ctrl } = await sb
       .from('session_controls')
       .select('session_code, attendance_window_open')
       .eq('id', sessionId)
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     if (c?.attendance_window_open && sessionCode && c.session_code !== sessionCode)
       return NextResponse.json({ error: 'Invalid session code' }, { status: 403 })
 
-    const { error } = await admin
+    const { error } = await sb
       .from('attendance_records')
       .upsert({
         session_id:   sessionId,
@@ -71,14 +71,14 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'leave') {
-    const { data: existing } = await admin
+    const { data: existing } = await sb
       .from('attendance_records')
       .select('joined_at')
       .eq('session_id', sessionId)
       .eq('student_id', studentId)
       .maybeSingle()
 
-    const { data: session } = await admin
+    const { data: session } = await sb
       .from('live_sessions')
       .select('duration_minutes')
       .eq('id', sessionId)
