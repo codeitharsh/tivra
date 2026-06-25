@@ -144,7 +144,7 @@ export default function Sidebar({ profile }: SidebarProps) {
       {/* Brand */}
       <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <Image src="/tivra-logo.jpeg" alt="Tivra" width={32} height={32}
+          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32}
             style={{ borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}/>
           <div>
             <div style={{

@@ -29,7 +29,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ code: s
     }}>
       <div style={{ maxWidth:'480px', width:'100%', textAlign:'center' }}>
         <Link href="/" style={{ display:'inline-flex', alignItems:'center', gap:'10px', textDecoration:'none', marginBottom:'36px', justifyContent:'center' }}>
-          <Image src="/tivra-logo.png" alt="Tivra" width={40} height={40} style={{ borderRadius:'10px', objectFit:'cover' }}/>
+          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={40} height={40} />
           <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'18px',
             background:'linear-gradient(135deg,#00c8f8,#7030d0)',
             WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>

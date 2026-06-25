@@ -11,8 +11,8 @@ export default function PublicNav() {
       position: 'sticky', top: 0, zIndex: 50,
     }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-        <Image src="/tivra-logo.png" alt="Tivra" width={32} height={32}
-          style={{ borderRadius: '8px', objectFit: 'cover' }}/>
+        <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32}
+          />
         <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '16px',
           background: 'linear-gradient(135deg,#00c8f8,#7030d0)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',

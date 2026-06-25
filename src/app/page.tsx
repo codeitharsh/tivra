@@ -695,10 +695,11 @@ const PROGRAMMES = [
     id:'cloud-launchpad', num:'01',
     name:'Cloud LaunchPad',
     tag:'AWS Cloud Certifications',
-    duration:'2 months', modules:11,
+    duration:'4 months', modules:11,
     price:'₹6,999',
     color:'#00d4ff', colorRgb:'0,212,255',
     status:'enrolling',
+    href:'/programs/cloud-launchpad',
     desc:'From zero cloud knowledge to AWS Cloud Practitioner certified — live classes, hands-on labs, weekly tests, and a verified certificate.',
     features:['AWS Cloud Practitioner prep','11 structured modules','Live weekly classes','Weekly tests & phase assessment','Verified certificate on passing'],
   },
@@ -706,10 +707,11 @@ const PROGRAMMES = [
     id:'cloud-architect', num:'02',
     name:'Cloud Architect',
     tag:'AWS Solutions Architect',
-    duration:'4 months', modules:12,
+    duration:'6 months', modules:12,
     price:'₹9,999',
     color:'#7c3aed', colorRgb:'124,58,237',
-    status:'soon',
+    status:'enrolling',
+    href:'/programs/cloud-architect',
     desc:'Advanced cloud architecture, AWS Solutions Architect Associate certification — for engineers who want to design scalable production systems.',
     features:['AWS SAA-C03 prep','12 advanced modules','Live weekly classes','Architecture labs & projects','Verified certificate on passing'],
   },
@@ -721,6 +723,7 @@ const PROGRAMMES = [
     price:'Coming 2026',
     color:'#f59e0b', colorRgb:'245,158,11',
     status:'planned',
+    href:'/programs',
     desc:'Modern full-stack web development — React, Node.js, databases, deployment — from building your first component to shipping real products.',
     features:['React & Node.js from scratch','14 project-based modules','Portfolio-worthy capstone','Industry code reviews','Completion certificate'],
   },
@@ -732,6 +735,7 @@ const PROGRAMMES = [
     price:'Coming 2026',
     color:'#22c55e', colorRgb:'34,197,94',
     status:'planned',
+    href:'/programs',
     desc:'Containers, pipelines, and deployment automation — Docker, Kubernetes, GitHub Actions, and production-grade infrastructure practices.',
     features:['Docker & Kubernetes','CI/CD pipelines','Infrastructure as Code','10 hands-on modules','Completion certificate'],
   },
@@ -814,8 +818,8 @@ export default function HomePage() {
         }}>
 
           <Link href="/" style={{display:'flex',alignItems:'center',gap:'9px',textDecoration:'none',flexShrink:0}}>
-            <Image src="/tivra-logo.png" alt="Tivra" width={30} height={30}
-              style={{borderRadius:'8px',objectFit:'cover'}}/>
+            <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={30} height={30}
+              />
             <div>
               <div style={{
                 fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'15px',letterSpacing:'0.1em',
@@ -993,28 +997,29 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Stats */}
+          {/* Trust signals */}
           <div style={{
-            display:'flex',flexWrap:'wrap',gap:'0',
+            display:'flex',flexWrap:'wrap',alignItems:'center',gap:'28px',
             paddingTop:'32px',borderTop:'1px solid rgba(255,255,255,0.07)',
           }}>
             {[
-              ['4+','Programmes'],
-              ['24+','Total modules'],
-              ['₹6,999','Starting from'],
-              ['75%+','Pass mark'],
-            ].map(([n,l],i,arr)=>(
-              <div key={l} style={{
-                flex:'1 1 110px',padding:'0 24px',
-                borderRight:i<arr.length-1?'1px solid rgba(255,255,255,0.07)':'none',
+              ['🎯','Industry-aligned curriculum'],
+              ['🧑\u200d🏫','Live instructor-led sessions'],
+              ['📜','Verified digital certificates'],
+              ['🤝','1-on-1 doubt support'],
+            ].map(([icon,label])=>(
+              <div key={label} style={{
+                display:'flex',alignItems:'center',gap:'10px',
               }}>
-                <div style={{
-                  fontFamily:'Syne,sans-serif',fontWeight:800,
-                  fontSize:'clamp(1.3rem,2.8vw,1.9rem)',lineHeight:1,marginBottom:'5px',
-                  background:'linear-gradient(135deg,#00d4ff,#3b5bdb)',
-                  WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
-                }}>{n}</div>
-                <div style={{fontSize:'11px',color:'rgba(255,255,255,0.32)',letterSpacing:'0.06em',textTransform:'uppercase'}}>{l}</div>
+                <span style={{
+                  width:'34px',height:'34px',borderRadius:'10px',flexShrink:0,
+                  background:'rgba(0,212,255,0.07)',border:'1px solid rgba(0,212,255,0.15)',
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  fontSize:'15px',
+                }}>{icon}</span>
+                <span style={{
+                  fontSize:'13px',color:'rgba(255,255,255,0.45)',fontWeight:500,
+                }}>{label}</span>
               </div>
             ))}
           </div>
@@ -1167,11 +1172,12 @@ export default function HomePage() {
             display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'16px',
           }} className="r-grid-2">
             {PROGRAMMES.map(p=>(
-              <div key={p.id} style={{
+              <Link key={p.id} href={p.href} style={{textDecoration:'none',display:'block'}}>
+              <div style={{
                 borderRadius:'20px',overflow:'hidden',
                 background:`rgba(${p.colorRgb},0.04)`,
                 border:`1px solid rgba(${p.colorRgb},0.14)`,
-                position:'relative',
+                position:'relative',cursor:'pointer',
                 transition:'all 0.3s cubic-bezier(0.25,0.1,0.25,1)',
               }} className="prog-card">
                 {/* Video / header */}
@@ -1259,6 +1265,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+              </Link>
             ))}
           </div>
 
@@ -1276,7 +1283,7 @@ export default function HomePage() {
                 🎯 Cloud Bundle — LaunchPad + Architect
               </div>
               <div style={{fontSize:'13px',color:'rgba(255,255,255,0.4)'}}>
-                Both cloud programmes · 6 months total · Save ₹1,999
+                Both cloud programmes · 10 months total · Save ₹1,999
               </div>
             </div>
             <div style={{display:'flex',alignItems:'center',gap:'16px',flexWrap:'wrap'}}>
@@ -1304,7 +1311,7 @@ export default function HomePage() {
         <div style={{maxWidth:'1200px',margin:'0 auto'}}>
           <SH n="4" eyebrow="Sample Curriculum"
             title={<>Cloud LaunchPad <span style={{background:'linear-gradient(135deg,#00d4ff,#7c3aed)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>Module List</span></>}
-            sub="11 modules across 2 months — starting from zero cloud knowledge, ending at AWS Cloud Practitioner certified."
+            sub="11 modules across 4 months — starting from zero cloud knowledge, ending at AWS Cloud Practitioner certified."
           />
 
           <div style={{
@@ -1325,7 +1332,7 @@ export default function HomePage() {
                 AWS Cloud Practitioner
               </span>
               <span style={{marginLeft:'auto',fontSize:'12px',color:'rgba(255,255,255,0.3)'}}>
-                11 modules · 2 months
+                11 modules · 4 months
               </span>
             </div>
             {CLOUD_MODULES.map(([num,title,topics],i)=>(
@@ -1389,7 +1396,7 @@ export default function HomePage() {
                 marginBottom:'4px',
               }}>₹6,999</div>
               <div style={{fontSize:'12px',color:'rgba(255,255,255,0.35)',marginBottom:'20px'}}>
-                One-time · 2 months access
+                One-time · 4 months access
               </div>
               {['AWS Cloud Practitioner prep','11 modules + live classes','Weekly tests & assessment',
                 'Doubt Corner access','Verified certificate'].map(t=>(
@@ -1408,12 +1415,6 @@ export default function HomePage() {
               borderRadius:'20px',padding:'28px',position:'relative',overflow:'hidden',
             }}>
               <div style={{position:'absolute',top:0,left:0,right:0,height:'2px',background:'linear-gradient(90deg,#7c3aed,#3b5bdb)'}}/>
-              <div style={{
-                position:'absolute',top:'16px',right:'16px',
-                padding:'3px 10px',borderRadius:'100px',fontSize:'9px',fontWeight:800,
-                letterSpacing:'0.08em',textTransform:'uppercase',
-                background:'rgba(245,158,11,0.15)',color:'#f59e0b',
-              }}>Coming Soon</div>
               <div style={{fontSize:'11px',color:'#a78bfa',fontFamily:'Space Mono,monospace',
                 letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:'10px'}}>Cloud Architect</div>
               <div style={{
@@ -1423,7 +1424,7 @@ export default function HomePage() {
                 marginBottom:'4px',
               }}>₹9,999</div>
               <div style={{fontSize:'12px',color:'rgba(255,255,255,0.35)',marginBottom:'20px'}}>
-                One-time · 4 months access
+                One-time · 6 months access
               </div>
               {['AWS Solutions Architect prep','12 modules + live classes','Advanced architecture labs',
                 'Doubt Corner access','Verified certificate'].map(t=>(
@@ -1432,7 +1433,7 @@ export default function HomePage() {
                 </div>
               ))}
               <div style={{marginTop:'24px'}}>
-                <Btn text="Coming Soon" href="#programs" variant="ghost" size="sm"/>
+                <Btn text="Enrol Now" href="/register" size="sm"/>
               </div>
             </div>
 
@@ -1458,7 +1459,7 @@ export default function HomePage() {
                 marginBottom:'4px',
               }}>₹14,999</div>
               <div style={{fontSize:'12px',color:'rgba(255,255,255,0.35)',marginBottom:'20px'}}>
-                One-time · 6 months · Save ₹1,999
+                One-time · 10 months · Save ₹1,999
               </div>
               {['Both cloud programmes','All 23 modules + live classes',
                 '2 certification preps','Priority doubt resolution',
@@ -1577,8 +1578,8 @@ export default function HomePage() {
         }} className="footer-grid">
           <div>
             <Link href="/" style={{display:'flex',alignItems:'center',gap:'9px',textDecoration:'none',marginBottom:'12px'}}>
-              <Image src="/tivra-logo.png" alt="Tivra" width={28} height={28}
-                style={{borderRadius:'7px',objectFit:'cover'}}/>
+              <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={28} height={28}
+                />
               <span style={{
                 fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'14px',letterSpacing:'0.1em',
                 background:'linear-gradient(135deg,#00d4ff,#7c3aed)',
@@ -1611,7 +1612,7 @@ export default function HomePage() {
               letterSpacing:'0.14em',textTransform:'uppercase',
               color:'rgba(255,255,255,0.25)',marginBottom:'14px'}}>Company</div>
             {[['About','/about'],['Programs','/programs'],['Contact','/contact'],
-              ['Terms','/terms'],['Privacy','/privacy'],['Refund Policy','/refund']].map(([l,h])=>(
+              ['Terms','/terms'],['Privacy','/privacy']].map(([l,h])=>(
               <Link key={l} href={h} style={{display:'block',fontSize:'13px',color:'rgba(255,255,255,0.35)',
                 textDecoration:'none',marginBottom:'8px'}}>{l}</Link>
             ))}

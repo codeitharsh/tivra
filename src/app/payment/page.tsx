@@ -168,7 +168,7 @@ export default function PaymentPage() {
         currency:    orderData.currency ?? 'INR',
         name:        'Tivra',
         description: `${plan.name} — ${plan.subtitle}`,
-        image:       '/tivra-logo.png',
+        image:       '/tivra-logo-no-bg.png',
         order_id:    orderData.order_id,
 
         handler: async (response) => {
@@ -271,8 +271,8 @@ export default function PaymentPage() {
         background: 'rgba(255,255,255,0.015)',
       }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <Image src="/tivra-logo.png" alt="Tivra" width={32} height={32}
-            style={{ borderRadius: '8px', objectFit: 'cover' }}/>
+          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32}
+            />
           <span style={{
             fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '16px',
             letterSpacing: '0.08em',
@@ -490,10 +490,6 @@ export default function PaymentPage() {
           <a href="mailto:contact@tivra.in" style={{ color: 'rgba(0,212,255,0.5)', textDecoration: 'none' }}>
             contact@tivra.in
           </a>
-          {' · '}
-          <Link href="/refund" style={{ color: 'rgba(0,212,255,0.5)', textDecoration: 'none' }}>
-            Refund Policy
-          </Link>
         </p>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

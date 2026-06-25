@@ -9,10 +9,10 @@ export default function PrivacyPage() {
     ['4. Certificates & Verification', 'Certificate records including your name and score are stored permanently and accessible via the public verification URL. This is required for certificate authenticity.'],
     ['5. Cookies', 'We use essential cookies for authentication. No advertising or tracking cookies are used.'],
     ['6. Data Security', 'Your data is stored on Supabase infrastructure with row-level security. Passwords are hashed and never stored in plain text.'],
-    ['7. Your Rights', 'You may request deletion of your account and associated data by contacting support@tivra.in. Note that certificate records may be retained for verification purposes.'],
+    ['7. Your Rights', 'You may request deletion of your account and associated data by contacting contact@tivra.in. Note that certificate records may be retained for verification purposes.'],
     ['8. Children\'s Privacy', 'Tivra is intended for users aged 15 and above. We do not knowingly collect data from children under 15.'],
     ['9. Changes', 'We may update this policy. Significant changes will be communicated via email or a platform notification.'],
-    ['10. Contact', 'Privacy questions or requests: privacy@tivra.in'],
+    ['10. Contact', 'Privacy questions or requests: contact@tivra.in'],
   ]
 
   return (
@@ -22,7 +22,7 @@ export default function PrivacyPage() {
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <Image src="/tivra-logo.png" alt="Tivra" width={32} height={32} style={{ borderRadius: '8px', objectFit: 'cover' }}/>
+          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32} />
           <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '16px',
             background: 'linear-gradient(135deg,#00c8f8,#7030d0)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',

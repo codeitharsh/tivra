@@ -39,12 +39,12 @@ export default function ContactPage() {
             {
               icon: '🎓', title: 'Academic Support',
               desc: 'Issues with your account, content, or certificates.',
-              value: 'support@tivra.in', href: 'mailto:support@tivra.in',
+              value: 'contact@tivra.in', href: 'mailto:contact@tivra.in',
             },
             {
               icon: '💳', title: 'Payment & Billing',
-              desc: 'Payment confirmation, refund requests, or billing queries.',
-              value: 'billing@tivra.in', href: 'mailto:billing@tivra.in',
+              desc: 'Payment confirmation or billing queries.',
+              value: 'contact@tivra.in', href: 'mailto:contact@tivra.in',
             },
             {
               icon: '🏢', title: 'Institutional / Group',

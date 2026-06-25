@@ -9,10 +9,10 @@ export default function TermsPage() {
     ['4. Programme Enrolment', 'Access is granted only after payment verification by our team. We reserve the right to reject or revoke access at our discretion.'],
     ['5. Content Usage', 'All study notes, videos, assessments, and materials are for your personal learning only. You may not distribute, resell, or share platform content without written permission.'],
     ['6. Certificates', 'Certificates are issued automatically upon passing phase assessments with a score of 75% or above. Tivra reserves the right to revoke certificates if fraudulent activity is detected.'],
-    ['7. Refund Policy', 'Refunds are considered on a case-by-case basis within 7 days of payment. Contact us at support@tivra.in with your payment reference.'],
+    ['7. Refund Policy', 'Refunds are considered on a case-by-case basis within 7 days of payment. Contact us at contact@tivra.in with your payment reference.'],
     ['8. Conduct', 'You agree not to misuse the platform, harass other users or staff, attempt to circumvent security measures, or use automated tools to access the platform.'],
     ['9. Modifications', 'We may update these terms at any time. Continued use of the platform after changes constitutes acceptance of the new terms.'],
-    ['10. Contact', 'For questions about these terms, contact us at legal@tivra.in.'],
+    ['10. Contact', 'For questions about these terms, contact us at contact@tivra.in.'],
   ]
 
   return (
@@ -22,7 +22,7 @@ export default function TermsPage() {
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <Image src="/tivra-logo.png" alt="Tivra" width={32} height={32} style={{ borderRadius: '8px', objectFit: 'cover' }}/>
+          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32} />
           <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '16px',
             background: 'linear-gradient(135deg,#00c8f8,#7030d0)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',

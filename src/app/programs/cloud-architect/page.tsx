@@ -1,27 +1,28 @@
 import Link from 'next/link'
 import Image from 'next/image'
 
-export default function CloudLaunchpadPage() {
+export default function CloudArchitectPage() {
   const modules = [
-    ['1','Intro to Cloud Computing','Cloud fundamentals, history, IaaS/PaaS/SaaS'],
-    ['2','AWS Global Infrastructure','Regions, AZs, Edge Locations'],
-    ['3','IAM & Shared Responsibility','Users, groups, roles, policies, MFA'],
-    ['4','EC2 & Compute Services','Instance types, pricing, AMIs, security groups'],
-    ['5','Storage — S3 & EBS','Storage classes, lifecycle, versioning, EBS'],
-    ['6','Database — RDS & DynamoDB','Relational vs NoSQL, read replicas'],
-    ['7','Networking & VPC','Subnets, route tables, IGW, NAT, peering'],
-    ['8','Monitoring & Security','CloudWatch, CloudTrail, GuardDuty'],
-    ['9','AWS Pricing & Billing','Cost Explorer, Budgets, Savings Plans'],
-    ['10','Cost Optimisation','Reserved instances, Spot, rightsizing'],
-    ['11','Exam Prep','Full mock test, tips, certification guidance'],
+    ['1','EC2 Advanced & Auto Scaling','Launch templates, ASG, scaling policies'],
+    ['2','Load Balancers & HA','ALB, NLB, GLB, target groups'],
+    ['3','Serverless','Lambda, API Gateway, concurrency'],
+    ['4','Advanced Storage','S3 replication, Transfer Acceleration, FSx'],
+    ['5','Hybrid Connectivity','VPN, Direct Connect, Transit Gateway'],
+    ['6','Route 53 & DNS','Latency, weighted, failover routing'],
+    ['7','CloudFront & CDN','Origins, behaviors, Global Accelerator'],
+    ['8','Advanced IAM & Security','Permission boundaries, WAF, KMS, Shield'],
+    ['9','Migration & DR','7 Rs, DMS, RTO/RPO, DR patterns'],
+    ['10','Architecture Patterns','Well-Architected pillars, microservices'],
+    ['11','Cost & Performance','Optimisation strategies at scale'],
+    ['12','Exam Prep','Mock test, exam-day strategy'],
   ]
   const faqs = [
-    ['Who is this for?','Engineering students, freshers, and career-switchers. No prior cloud experience needed.'],
-    ['What certification will I get?','You\u2019ll be prepared for and receive a verified Tivra certificate for the AWS Cloud Practitioner track.'],
+    ['Who is this for?','Engineers who already know cloud fundamentals and want to design production-grade, scalable systems.'],
+    ['What certification will I get?','You\u2019ll be prepared for and receive a verified Tivra certificate for the AWS Solutions Architect Associate track.'],
+    ['Do I need Cloud LaunchPad first?','Not required, but recommended if you\u2019re new to AWS. The Bundle covers both in sequence.'],
     ['Are classes live or recorded?','Live weekly sessions, all recorded and available for replay on the platform.'],
     ['What if I fail an assessment?','You can retake after a 24-hour cooldown. No limit on retakes.'],
-    ['How long is the programme?','4 months total, with live classes every week.'],
-    ['Is it self-paced?','Content and notes are self-paced. Live classes run on a weekly schedule.'],
+    ['How long is the programme?','6 months total, with live classes every week.'],
   ]
 
   return (
@@ -66,24 +67,24 @@ export default function CloudLaunchpadPage() {
       }}>
         <div style={{
           position:'absolute',inset:0,pointerEvents:'none',
-          backgroundImage:'linear-gradient(rgba(59,91,219,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(59,91,219,0.05) 1px,transparent 1px)',
+          backgroundImage:'linear-gradient(rgba(124,58,237,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,0.05) 1px,transparent 1px)',
           backgroundSize:'60px 60px',
         }}/>
         <div style={{position:'absolute',top:'20%',left:'50%',transform:'translateX(-50%)',
           width:'600px',height:'300px',
-          background:'radial-gradient(ellipse,rgba(0,212,255,0.1) 0%,transparent 70%)',
+          background:'radial-gradient(ellipse,rgba(124,58,237,0.12) 0%,transparent 70%)',
           pointerEvents:'none'}}/>
 
         <div style={{position:'relative',zIndex:1,maxWidth:'800px',margin:'0 auto',padding:'0 40px'}}>
           <div style={{
             display:'inline-flex',alignItems:'center',gap:'8px',
             padding:'5px 14px',borderRadius:'100px',
-            background:'rgba(0,212,255,0.08)',border:'1px solid rgba(0,212,255,0.2)',
+            background:'rgba(124,58,237,0.08)',border:'1px solid rgba(124,58,237,0.25)',
             marginBottom:'24px',
           }}>
             <span style={{width:'6px',height:'6px',borderRadius:'50%',
-              background:'#00d4ff',boxShadow:'0 0 6px #00d4ff'}}/>
-            <span style={{fontSize:'11px',color:'#00d4ff',fontFamily:'Space Mono,monospace',
+              background:'#a78bfa',boxShadow:'0 0 6px #a78bfa'}}/>
+            <span style={{fontSize:'11px',color:'#a78bfa',fontFamily:'Space Mono,monospace',
               letterSpacing:'0.12em',textTransform:'uppercase'}}>
               Now Enrolling
             </span>
@@ -92,21 +93,21 @@ export default function CloudLaunchpadPage() {
           <h1 style={{fontFamily:'Syne,sans-serif',fontWeight:800,
             fontSize:'clamp(40px,7vw,76px)',color:'#fff',
             letterSpacing:'-0.03em',lineHeight:0.92,marginBottom:'20px'}}>
-            Cloud LaunchPad
+            Cloud Architect
           </h1>
           <div style={{
             fontFamily:'DM Sans,sans-serif',fontWeight:300,
             fontSize:'clamp(16px,2.5vw,22px)',
             color:'rgba(255,255,255,0.45)',letterSpacing:'0.02em',marginBottom:'28px',
           }}>
-            AWS Cloud Practitioner — your first step into the cloud
+            AWS Solutions Architect Associate — design systems that scale
           </div>
 
           <p style={{fontSize:'17px',color:'rgba(255,255,255,0.55)',
             maxWidth:'560px',margin:'0 auto 40px',lineHeight:1.7}}>
-            A structured 4-month programme with live classes, weekly tests,
-            hands-on labs, and a verified certificate — designed for
-            Indian engineering students and freshers.
+            A structured 6-month programme with live classes, weekly tests,
+            architecture labs, and a verified certificate — for engineers
+            who want to design scalable, production-grade systems.
           </p>
 
           <div style={{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap',marginBottom:'56px'}}>
@@ -138,8 +139,8 @@ export default function CloudLaunchpadPage() {
             borderRadius:'14px',overflow:'hidden',
           }}>
             {[
-              {num:'4 months',label:'Duration'},
-              {num:'11',label:'Modules'},
+              {num:'6 months',label:'Duration'},
+              {num:'12',label:'Modules'},
               {num:'1',label:'Certification'},
               {num:'75%',label:'Pass mark'},
             ].map((s,i) => (
@@ -174,7 +175,7 @@ export default function CloudLaunchpadPage() {
               {icon:'🎥',t:'Live Weekly Classes',d:'Instructor-led sessions every week'},
               {icon:'📄',t:'Study Notes PDF',d:'Uploaded per module by your teacher'},
               {icon:'📋',t:'Weekly Tests',d:'Time-gated quizzes every week'},
-              {icon:'🎯',t:'Phase Assessment',d:'60 MCQs to earn your certificate'},
+              {icon:'🎯',t:'Phase Assessment',d:'75 MCQs to earn your certificate'},
               {icon:'🏆',t:'Verified Certificate',d:'Auto-issued with unique verify URL'},
               {icon:'💬',t:'Doubt Corner',d:'Post questions, get teacher answers'},
               {icon:'📊',t:'Progress Dashboard',d:'Track every module, test, and session'},
@@ -206,16 +207,16 @@ export default function CloudLaunchpadPage() {
           <div>
             <div style={{
               padding:'14px 20px',borderRadius:'10px 10px 0 0',
-              background:'rgba(0,212,255,0.06)',border:'1px solid rgba(0,212,255,0.18)',
+              background:'rgba(124,58,237,0.08)',border:'1px solid rgba(124,58,237,0.2)',
               display:'flex',alignItems:'center',gap:'12px',
             }}>
-              <span style={{fontFamily:'Space Mono,monospace',fontSize:'10px',color:'#00d4ff',
-                letterSpacing:'0.12em',textTransform:'uppercase'}}>Cloud LaunchPad</span>
+              <span style={{fontFamily:'Space Mono,monospace',fontSize:'10px',color:'#a78bfa',
+                letterSpacing:'0.12em',textTransform:'uppercase'}}>Cloud Architect</span>
               <span style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'15px',color:'#fff'}}>
-                AWS Cloud Practitioner
+                AWS Solutions Architect Associate
               </span>
               <span style={{marginLeft:'auto',fontSize:'12px',color:'rgba(255,255,255,0.35)'}}>
-                11 modules · 4 months · 60Q final exam
+                12 modules · 6 months · 75Q final exam
               </span>
             </div>
             <div style={{border:'1px solid rgba(255,255,255,0.07)',borderTop:'none',
@@ -229,9 +230,9 @@ export default function CloudLaunchpadPage() {
                 }}>
                   <div style={{
                     width:'26px',height:'26px',borderRadius:'7px',flexShrink:0,
-                    background:'rgba(0,212,255,0.1)',display:'flex',alignItems:'center',
+                    background:'rgba(124,58,237,0.12)',display:'flex',alignItems:'center',
                     justifyContent:'center',fontFamily:'Syne,sans-serif',fontWeight:800,
-                    fontSize:'10px',color:'#00d4ff',
+                    fontSize:'10px',color:'#a78bfa',
                   }}>{n}</div>
                   <div>
                     <div style={{fontSize:'13px',fontWeight:600,color:'#fff',marginBottom:'2px'}}>{t}</div>
@@ -244,10 +245,10 @@ export default function CloudLaunchpadPage() {
 
           <div style={{marginTop:'24px',textAlign:'center'}}>
             <span style={{fontSize:'13px',color:'rgba(255,255,255,0.3)'}}>
-              Want to go further? Check out{' '}
-              <Link href="/programs/cloud-architect" style={{color:'#00d4ff',textDecoration:'none'}}>
-                Cloud Architect
-              </Link>{' '}or the full bundle on the{' '}
+              New to cloud? Start with{' '}
+              <Link href="/programs/cloud-launchpad" style={{color:'#00d4ff',textDecoration:'none'}}>
+                Cloud LaunchPad
+              </Link>{' '}or check out the full bundle on the{' '}
               <Link href="/programs" style={{color:'#00d4ff',textDecoration:'none'}}>programmes page</Link>.
             </span>
           </div>
@@ -271,7 +272,7 @@ export default function CloudLaunchpadPage() {
                   fontFamily:'Syne,sans-serif',fontWeight:600,fontSize:'14px',color:'#fff',
                   display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                   {q}
-                  <span style={{color:'rgba(0,212,255,0.7)',fontSize:'18px',flexShrink:0,marginLeft:'10px'}}>+</span>
+                  <span style={{color:'rgba(124,58,237,0.8)',fontSize:'18px',flexShrink:0,marginLeft:'10px'}}>+</span>
                 </summary>
                 <div style={{padding:'0 20px 16px',fontSize:'14px',
                   color:'rgba(255,255,255,0.55)',lineHeight:1.7}}>{a}</div>
@@ -286,7 +287,7 @@ export default function CloudLaunchpadPage() {
         <div style={{maxWidth:'600px',margin:'0 auto'}}>
           <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'clamp(28px,5vw,44px)',
             color:'#fff',letterSpacing:'-0.03em',marginBottom:'14px'}}>
-            Ready to launch?
+            Ready to architect?
           </h2>
           <p style={{fontSize:'16px',color:'rgba(255,255,255,0.5)',marginBottom:'32px'}}>
             Register today. Our team will activate your account within 24 hours.
@@ -299,7 +300,7 @@ export default function CloudLaunchpadPage() {
             fontSize:'15px',letterSpacing:'0.05em',textDecoration:'none',
             boxShadow:'0 8px 32px rgba(59,91,219,0.45)',
           }}>
-            Enrol in Cloud LaunchPad →
+            Enrol in Cloud Architect →
           </Link>
         </div>
       </section>

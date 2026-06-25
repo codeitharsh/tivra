@@ -15,7 +15,7 @@ export default function ProgramsPage() {
         borderBottom:'1px solid rgba(255,255,255,0.06)',
       }}>
         <Link href="/" style={{display:'flex',alignItems:'center',gap:'10px',textDecoration:'none'}}>
-          <Image src="/tivra-logo.png" alt="Tivra" width={32} height={32} style={{borderRadius:'8px',objectFit:'cover'}}/>
+          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32} />
           <div style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',letterSpacing:'0.08em',
             background:'linear-gradient(135deg,#00c8f8,#7030d0)',
             WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
@@ -63,7 +63,7 @@ export default function ProgramsPage() {
                         Cloud LaunchPad
                       </div>
                       <div style={{fontSize:'12px',color:'rgba(255,255,255,0.4)',marginTop:'2px'}}>
-                        AWS Cloud Certifications · 2 months
+                        AWS Cloud Certifications · 4 months
                       </div>
                     </div>
                     <span style={{padding:'3px 10px',borderRadius:'20px',fontSize:'10px',fontWeight:700,
@@ -76,7 +76,7 @@ export default function ProgramsPage() {
                     Live classes, hands-on labs, weekly tests, and a verified certificate.
                   </p>
                   <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
-                    {['2 Months','11 Modules','AWS Certification','Live Classes','₹6,999'].map(t => (
+                    {['4 Months','11 Modules','AWS Certification','Live Classes','₹6,999'].map(t => (
                       <span key={t} style={{padding:'4px 12px',borderRadius:'20px',fontSize:'11px',fontWeight:600,
                         background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.6)'}}>{t}</span>
                     ))}
@@ -93,7 +93,7 @@ export default function ProgramsPage() {
           </Link>
 
           {/* Cloud Architect */}
-          <Link href="/programs/cloud-launchpad" style={{textDecoration:'none',display:'block'}}>
+          <Link href="/programs/cloud-architect" style={{textDecoration:'none',display:'block'}}>
             <div style={{
               background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.08)',
               borderRadius:'18px',padding:'28px',cursor:'pointer',position:'relative',overflow:'hidden',
@@ -109,12 +109,12 @@ export default function ProgramsPage() {
                         Cloud Architect
                       </div>
                       <div style={{fontSize:'12px',color:'rgba(255,255,255,0.4)',marginTop:'2px'}}>
-                        AWS Solutions Architect · 4 months
+                        AWS Solutions Architect · 6 months
                       </div>
                     </div>
                     <span style={{padding:'3px 10px',borderRadius:'20px',fontSize:'10px',fontWeight:700,
-                      background:'rgba(245,158,11,0.12)',color:'var(--amber)',marginLeft:'4px'}}>
-                      Coming Soon
+                      background:'rgba(34,197,94,0.12)',color:'var(--green)',marginLeft:'4px'}}>
+                      ● Enrolling Now
                     </span>
                   </div>
                   <p style={{fontSize:'14px',color:'rgba(255,255,255,0.55)',maxWidth:'500px',lineHeight:1.65,marginBottom:'16px'}}>
@@ -122,7 +122,7 @@ export default function ProgramsPage() {
                     For engineers who want to design scalable, production-grade systems.
                   </p>
                   <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
-                    {['4 Months','12 Modules','AWS SAA-C03','Live Classes','₹9,999'].map(t => (
+                    {['6 Months','12 Modules','AWS SAA-C03','Live Classes','₹9,999'].map(t => (
                       <span key={t} style={{padding:'4px 12px',borderRadius:'20px',fontSize:'11px',fontWeight:600,
                         background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.6)'}}>{t}</span>
                     ))}
@@ -130,11 +130,10 @@ export default function ProgramsPage() {
                 </div>
                 <div style={{
                   padding:'12px 22px',borderRadius:'100px',
-                  border:'1px solid rgba(255,255,255,0.15)',
-                  background:'rgba(255,255,255,0.05)',
-                  color:'rgba(255,255,255,0.5)',fontFamily:'Syne,sans-serif',fontWeight:700,
-                  fontSize:'13px',whiteSpace:'nowrap',flexShrink:0,
-                }}>Notify Me</div>
+                  background:'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)',
+                  color:'#fff',fontFamily:'Syne,sans-serif',fontWeight:700,
+                  fontSize:'13px',letterSpacing:'0.04em',whiteSpace:'nowrap',flexShrink:0,
+                }}>View Programme →</div>
               </div>
             </div>
           </Link>
@@ -152,7 +151,7 @@ export default function ProgramsPage() {
               🎯 Cloud LaunchPad + Cloud Architect Bundle
             </div>
             <div style={{fontSize:'13px',color:'rgba(255,255,255,0.5)'}}>
-              Enrol in both programmes together and get the full 6-month journey —
+              Enrol in both programmes together and get the full 10-month journey —
               from Cloud Practitioner to Solutions Architect.
             </div>
           </div>

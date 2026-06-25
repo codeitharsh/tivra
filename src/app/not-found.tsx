@@ -17,8 +17,8 @@ export default function NotFound() {
       <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px',
           textDecoration: 'none', marginBottom: '40px', justifyContent: 'center' }}>
-          <Image src="/tivra-logo.png" alt="Tivra" width={36} height={36}
-            style={{ borderRadius: '9px', objectFit: 'cover' }}/>
+          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={36} height={36}
+            />
           <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '18px',
             background: 'linear-gradient(135deg,#00c8f8,#7030d0)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',

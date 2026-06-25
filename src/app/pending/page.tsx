@@ -45,8 +45,8 @@ export default async function PendingPage() {
         background: 'rgba(255,255,255,0.02)',
       }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <Image src="/tivra-logo.png" alt="Tivra" width={32} height={32}
-            style={{ borderRadius: '8px', objectFit: 'cover' }}/>
+          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32}
+            />
           <div>
             <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '15px',
               letterSpacing: '0.08em',

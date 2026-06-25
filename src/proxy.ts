@@ -8,7 +8,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // 1. Anyone can access — no login needed
 const PUBLIC_ROUTES = [
   '/', '/programs', '/login', '/register', '/verify',
-  '/about', '/contact', '/refund', '/terms', '/privacy',
+  '/about', '/contact', '/terms', '/privacy',
   '/pending',   // pending page is public so redirect works
   '/payment',   // payment submission page
 ]

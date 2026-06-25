@@ -29,7 +29,7 @@ export default function LoginPage() {
     <div style={{ minHeight:'100vh', background:'#07080c', display:'flex', alignItems:'center', justifyContent:'center', padding:'24px' }}>
       <div style={{ width:'100%', maxWidth:'400px' }}>
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:'10px', textDecoration:'none', marginBottom:'32px', justifyContent:'center' }}>
-          <Image src="/tivra-logo.png" alt="Tivra" width={32} height={32} style={{ borderRadius:'8px', objectFit:'cover' }}/>
+          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32} />
           <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'18px', letterSpacing:'0.1em', background:'linear-gradient(135deg,#00d4ff,#7c3aed)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>TIVRA</span>
         </Link>
 

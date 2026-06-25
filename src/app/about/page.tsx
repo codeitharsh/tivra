@@ -23,16 +23,16 @@ export default function AboutPage() {
           <h1 style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800,
             fontSize: 'clamp(32px,5vw,52px)', color: '#fff',
             letterSpacing: '-0.03em', lineHeight: 0.95, marginBottom: '20px' }}>
-            Built for students<br/>
+            Learn skills.<br/>
             <span style={{ background: 'linear-gradient(135deg,#00d4ff,#7c3aed)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               backgroundClip: 'text' }}>
-              who mean business
+              Earn certificates.
             </span>
           </h1>
           <p style={{ fontSize: '18px', color: 'var(--muted)', lineHeight: 1.7, maxWidth: '580px' }}>
-            Tivra is a career-focused career tech training platform designed for Indian engineering students
-            and freshers who want real cloud skills — not just certificates.
+            Tivra is a career-focused tech training platform designed for Indian engineering students
+            and freshers who want real, job-ready skills — not just certificates.
           </p>
         </div>
 
@@ -74,13 +74,13 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* The programme */}
+        {/* The programmes */}
         <div style={{ marginBottom: '48px' }}>
           <h2 style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '22px',
-            color: '#fff', marginBottom: '12px' }}>Cloud LaunchPad</h2>
+            color: '#fff', marginBottom: '12px' }}>Our Programmes</h2>
           <p style={{ fontSize: '15px', color: 'var(--muted)', lineHeight: 1.7, marginBottom: '16px' }}>
-            Our flagship programme takes students from zero cloud knowledge to two professional certifications
-            in 6 months — industry-recognised certifications.
+            We run structured, instructor-led programmes across cloud computing, full-stack development,
+            DevOps, and more — each designed to take you from zero to certified, job-ready.
           </p>
           <p style={{ fontSize: '15px', color: 'var(--muted)', lineHeight: 1.7 }}>
             Every session is live. Every note is uploaded. Every doubt gets answered.
