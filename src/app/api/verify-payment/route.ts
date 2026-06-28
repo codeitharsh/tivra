@@ -160,11 +160,25 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     // Activate account
-    await sb.from('profiles').update({
+    // NOTE: payment_verified_by is a uuid column (references an admin's
+    // profile id, presumably for manual approvals) — it cannot hold the
+    // string 'razorpay_auto'. Previously this silently failed (the
+    // update's error was never checked), meaning the account never
+    // actually flipped to 'active' even though the route returned
+    // success to the client. Leaving it NULL for auto-verified payments
+    // since there's no admin to attribute it to.
+    const { error: activateErr } = await sb.from('profiles').update({
       access_status:       'active',
       payment_verified_at: new Date().toISOString(),
-      payment_verified_by: 'razorpay_auto',
+      payment_verified_by: null,
     }).eq('id', user.id)
+
+    if (activateErr) {
+      console.error('[verify-payment] Account activation failed:', activateErr.message)
+      return Response.json({
+        error: 'Payment was verified but account activation failed. Contact support with your payment ID: ' + razorpay_payment_id,
+      }, { status: 500 })
+    }
 
     // Welcome notification
     await sb.from('notifications').insert({
