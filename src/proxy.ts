@@ -7,11 +7,27 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 // 1. Anyone can access — no login needed
 const PUBLIC_ROUTES = [
-  '/', '/programs', '/login', '/register', '/verify',
+  '/', '/login', '/register', '/verify',
   '/about', '/contact', '/terms', '/privacy',
-  '/pending',   // pending page is public so redirect works
+  '/pending',   // pending/explore page is public so redirect works
   '/payment',   // payment submission page
 ]
+
+// Programme LANDING pages are public (marketing pages — anyone can browse
+// before paying), but everything NESTED under them (content, tests,
+// assessments, certificate) is paid content and must NOT match here.
+// Previously '/programs' matched with startsWith(), which made every
+// nested route public too — e.g. /programs/cloud-launchpad/content was
+// reachable by a logged-out visitor with zero payment check.
+const PUBLIC_PROGRAMME_LANDING_PAGES = [
+  '/programs',
+  '/programs/cloud-launchpad',
+  '/programs/cloud-architect',
+]
+
+// Paid content routes — require an active enrollment in the SPECIFIC
+// programme, checked against enrolled_programs, not just access_status.
+const PROGRAMME_SLUGS = ['cloud-launchpad', 'cloud-architect']
 
 // 2. Admin only
 const ADMIN_ROUTES = ['/admin']
@@ -22,6 +38,12 @@ const TEACHER_ROUTES = ['/teacher']
 // ─────────────────────────────────────────────────────────────
 function matches(path: string, routes: string[]) {
   return routes.some(r => path === r || path.startsWith(r + '/'))
+}
+
+// Exact match only — used for the programme landing pages, which must
+// NOT wildcard-match their nested paid-content subroutes.
+function exactMatch(path: string, routes: string[]) {
+  return routes.includes(path)
 }
 
 export async function proxy(request: NextRequest) {
@@ -59,6 +81,12 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL('/pending', request.url))
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
+    return response
+  }
+
+  // ── STEP 1b: Programme LANDING pages only — exact match, never
+  //    wildcards into the paid content nested underneath. ────────
+  if (exactMatch(pathname, PUBLIC_PROGRAMME_LANDING_PAGES)) {
     return response
   }
 
@@ -105,7 +133,34 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/pending', request.url))
   }
 
-  // ── STEP 9: Active student — allow everything ──────────────
+  // ── STEP 9: Active student — but only into programmes they
+  //    actually paid for. Any /programs/[slug]/... path that isn't
+  //    the bare landing page (already allowed in STEP 1b above) is
+  //    paid content — check enrolled_programs for that specific slug,
+  //    not just "is this student active at all." ──────────────────
+  const programmeMatch = pathname.match(/^\/programs\/([^/]+)\/.+/)
+  if (programmeMatch) {
+    const slug = programmeMatch[1]
+    if (PROGRAMME_SLUGS.includes(slug)) {
+      const { data: enrolledRaw } = await supabase
+        .from('enrolled_programs')
+        .select('id, programs!program_id(slug)')
+        .eq('student_id', user.id)
+
+      const enrolledSlugs = ((enrolledRaw ?? []) as { programs: { slug: string } | null }[])
+        .map(e => e.programs?.slug)
+        .filter((s): s is string => !!s)
+
+      if (!enrolledSlugs.includes(slug)) {
+        // Active account, but never paid for THIS specific programme —
+        // send them to the explore page for that programme instead of
+        // a generic dashboard, so the next step is obviously "enrol."
+        return NextResponse.redirect(new URL(`/programs/${slug}`, request.url))
+      }
+    }
+  }
+
+  // ── STEP 10: Active student, entitled to this route — allow ────
   return response
 }
 
