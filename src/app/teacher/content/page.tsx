@@ -18,17 +18,23 @@ export default async function TeacherContentPage() {
 
   const admin = createAdminClient()
 
+  // Fetch every programme's phases/modules — previously this was
+  // hardcoded to cloud-launchpad only, meaning Cloud Architect's
+  // modules were never shown here and could never have notes
+  // uploaded or deleted through this page at all.
   const { data: phasesRaw } = await admin
     .from('phases')
     .select(`
-      id, title, phase_number,
+      id, title, phase_number, program_id,
+      programs!program_id (name, slug),
       modules (id, title, module_number, notes_url)
     `)
-    .eq('program_id', ((await admin.from('programs').select('id').eq('slug','cloud-launchpad').single()).data as {id:string}|null)?.id ?? '')
+    .order('program_id')
     .order('phase_number')
 
   const phases = (phasesRaw ?? []) as {
-    id: string; title: string; phase_number: number
+    id: string; title: string; phase_number: number; program_id: string
+    programs: { name: string; slug: string } | null
     modules: { id: string; title: string; module_number: number; notes_url: string|null }[]
   }[]
 

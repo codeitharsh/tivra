@@ -9,6 +9,7 @@ interface Module {
 }
 interface Phase {
   id: string; title: string; phase_number: number; modules: Module[]
+  programs: { name: string; slug: string } | null
 }
 
 export default function ContentUploadClient({ phases, userId }: { phases: Phase[]; userId: string }) {
@@ -106,7 +107,7 @@ export default function ContentUploadClient({ phases, userId }: { phases: Phase[
                 onChange={e => { setSelectedPhase(e.target.value); setSelectedModule('') }}>
                 {phases.map(p => (
                   <option key={p.id} value={p.id}>
-                    Phase {p.phase_number}: {p.title}
+                    {p.programs?.name ?? 'Programme'} — Phase {p.phase_number}: {p.title}
                   </option>
                 ))}
               </select>
@@ -243,7 +244,7 @@ export default function ContentUploadClient({ phases, userId }: { phases: Phase[
           {phases.map(phase => (
             <div key={phase.id} style={{ marginBottom: '20px' }}>
               <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '14px', marginBottom: '10px' }}>
-                Phase {phase.phase_number}: {phase.title}
+                {phase.programs?.name ?? 'Programme'} — Phase {phase.phase_number}: {phase.title}
                 <span style={{ fontSize: '12px', color: 'var(--muted)', marginLeft: '10px', fontWeight: 400 }}>
                   {phase.modules.filter(m => m.notes_url).length}/{phase.modules.length} uploaded
                 </span>
