@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { Upload, CheckCircle2, AlertCircle, Loader2, Trash2 } from 'lucide-react'
 
 interface Module {
   id: string; title: string; module_number: number; notes_url: string | null
@@ -19,6 +19,8 @@ export default function ContentUploadClient({ phases, userId }: { phases: Phase[
   const [selectedModule, setSelectedModule] = useState('')
   const [file,           setFile]           = useState<File | null>(null)
   const [uploading,      setUploading]      = useState(false)
+  const [deleting,       setDeleting]       = useState<string | null>(null)
+  const [confirmDelete,  setConfirmDelete]  = useState<string | null>(null)
   const [toast,          setToast]          = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
 
   const showToast = (msg: string, type: 'success' | 'error') => {
@@ -55,6 +57,28 @@ export default function ContentUploadClient({ phases, userId }: { phases: Phase[
       showToast(err instanceof Error ? err.message : 'Upload failed', 'error')
     } finally {
       setUploading(false)
+    }
+  }
+
+  async function handleDelete(moduleId: string, moduleTitle: string) {
+    setDeleting(moduleId)
+    try {
+      const res = await fetch('/api/delete-notes', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ module_id: moduleId }),
+      })
+      const json = await res.json() as { error?: string }
+
+      if (!res.ok) throw new Error(json.error ?? 'Delete failed')
+
+      showToast(`✓ Notes removed for "${moduleTitle}"`, 'success')
+      setConfirmDelete(null)
+      router.refresh()
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Delete failed', 'error')
+    } finally {
+      setDeleting(null)
     }
   }
 
@@ -138,9 +162,60 @@ export default function ContentUploadClient({ phases, userId }: { phases: Phase[
                 border: `1px solid ${currentModule.notes_url ? 'rgba(34,197,94,0.2)' : 'rgba(245,158,11,0.2)'}`,
                 color: currentModule.notes_url ? 'var(--green)' : 'var(--amber)',
               }}>
-                {currentModule.notes_url
-                  ? '✓ Notes already uploaded — uploading will replace the current file'
-                  : '⚠ No notes uploaded yet for this module'}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                  <span>
+                    {currentModule.notes_url
+                      ? '✓ Notes already uploaded — uploading will replace the current file'
+                      : '⚠ No notes uploaded yet for this module'}
+                  </span>
+                  {currentModule.notes_url && confirmDelete !== currentModule.id && (
+                    <button
+                      onClick={() => setConfirmDelete(currentModule.id)}
+                      style={{
+                        flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--red)', display: 'flex', alignItems: 'center', padding: '2px',
+                      }}
+                      title="Delete uploaded notes"
+                    >
+                      <Trash2 size={14}/>
+                    </button>
+                  )}
+                </div>
+
+                {currentModule.notes_url && confirmDelete === currentModule.id && (
+                  <div style={{
+                    marginTop: '10px', paddingTop: '10px',
+                    borderTop: '1px solid rgba(239,68,68,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
+                  }}>
+                    <span style={{ color: 'var(--red)', fontSize: '11px' }}>
+                      Delete this file? This can&apos;t be undone.
+                    </span>
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                      <button
+                        onClick={() => handleDelete(currentModule.id, currentModule.title)}
+                        disabled={deleting === currentModule.id}
+                        className="btn"
+                        style={{
+                          fontSize: '11px', padding: '5px 10px',
+                          background: 'rgba(239,68,68,0.15)', color: 'var(--red)',
+                          border: '1px solid rgba(239,68,68,0.3)',
+                        }}
+                      >
+                        {deleting === currentModule.id
+                          ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }}/>
+                          : 'Delete'}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete(null)}
+                        className="btn btn-ghost"
+                        style={{ fontSize: '11px', padding: '5px 10px' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
