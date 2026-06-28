@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, BookOpen, ClipboardList, Award,
   Trophy, MessageCircle, CalendarCheck, Video, LogOut,
@@ -109,6 +109,7 @@ function NavSection({
 
 export default function Sidebar({ profile }: SidebarProps) {
   const pathname    = usePathname()
+  const router      = useRouter()
   const [busy, setBusy]       = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const role = profile?.role ?? 'student'
@@ -136,7 +137,22 @@ export default function Sidebar({ profile }: SidebarProps) {
       ? pathname === href
       : pathname.startsWith(href)
 
-  async function handleLogout() { setBusy(true); await logout() }
+  async function handleLogout() {
+    setBusy(true)
+    try {
+      const res = await fetch('/api/auth/logout', { method: 'POST' })
+      if (!res.ok) throw new Error('Logout request failed')
+      router.push('/login')
+      router.refresh()
+    } catch (err) {
+      console.error('[Sidebar] Logout failed:', err)
+      setBusy(false)
+      // Fall back to a hard redirect so the user isn't stuck even if
+      // the fetch itself failed (e.g. network blip) — re-hitting
+      // /login will bounce them back through auth state regardless.
+      window.location.href = '/login'
+    }
+  }
 
   // ── Sidebar content (shared between desktop and mobile) ──
   const SidebarContent = () => (
