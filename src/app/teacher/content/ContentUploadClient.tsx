@@ -68,9 +68,14 @@ export default function ContentUploadClient({ phases, userId }: { phases: Phase[
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ module_id: moduleId }),
       })
-      const json = await res.json() as { error?: string }
 
-      if (!res.ok) throw new Error(json.error ?? 'Delete failed')
+      // Guard against an empty or non-JSON body — surfaces a clear error
+      // instead of throwing "Unexpected end of JSON input" with no context.
+      const text = await res.text()
+      let json: { error?: string; success?: boolean } = {}
+      try { json = text ? JSON.parse(text) : {} } catch { /* leave json as {} */ }
+
+      if (!res.ok) throw new Error(json.error ?? `Delete failed (HTTP ${res.status})`)
 
       showToast(`✓ Notes removed for "${moduleTitle}"`, 'success')
       setConfirmDelete(null)
