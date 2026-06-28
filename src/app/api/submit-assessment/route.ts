@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { checkAndIssueProgramCompletion } from '@/lib/program-completion'
 
 function adminSB() {
   return createSB(
@@ -110,6 +111,7 @@ export async function POST(req: NextRequest) {
   })
 
   // Auto-issue certificate if passed
+  let programCompletion: { issued: boolean; plan?: string } = { issued: false }
   if (didPass) {
     await sb.from('certificates').upsert({
       student_id:    user.id,
@@ -120,6 +122,11 @@ export async function POST(req: NextRequest) {
       issued_by:     'auto',
       is_revoked:    false,
     }, { onConflict: 'student_id,assessment_id' })
+
+    // Check whether this phase pass completes everything the student
+    // is enrolled in (e.g. both halves of a Bundle) — if so, issue a
+    // separate overall Programme Completion Certificate too.
+    programCompletion = await checkAndIssueProgramCompletion(sb, user.id)
   }
 
   return NextResponse.json({
@@ -129,5 +136,6 @@ export async function POST(req: NextRequest) {
     correct,
     total:    questions.length,
     passMark: a.passing_percent,
+    programCompletionIssued: programCompletion.issued,
   })
 }

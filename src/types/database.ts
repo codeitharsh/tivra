@@ -27,6 +27,16 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['phases']['Row'],'id'>
         Update: Partial<Database['public']['Tables']['phases']['Insert']>
       }
+      enrolled_programs: {
+        Row: { id:string; student_id:string; program_id:string; plan:string|null; amount_paid:number|null; enrolled_at:string; access_granted_at:string|null }
+        Insert: Omit<Database['public']['Tables']['enrolled_programs']['Row'],'id'>
+        Update: Partial<Database['public']['Tables']['enrolled_programs']['Insert']>
+      }
+      program_completions: {
+        Row: { id:string; student_id:string; program_id:string|null; plan:string; phase_ids_completed:string[]; issued_at:string; is_revoked:boolean; verification_code:string }
+        Insert: Omit<Database['public']['Tables']['program_completions']['Row'],'id'|'issued_at'|'verification_code'>
+        Update: Partial<Database['public']['Tables']['program_completions']['Insert']>
+      }
       modules: {
         Row: { id:string; phase_id:string; title:string; module_number:number; notes_url:string|null; is_unlocked:boolean; created_at:string; updated_by:string|null; updated_at:string|null }
         Insert: Omit<Database['public']['Tables']['modules']['Row'],'id'|'created_at'>
@@ -145,6 +155,8 @@ export type Module          = Database['public']['Tables']['modules']['Row']
 export type WeeklyTest      = Database['public']['Tables']['weekly_tests']['Row']
 export type Assessment      = Database['public']['Tables']['assessments']['Row']
 export type Certificate     = Database['public']['Tables']['certificates']['Row']
+export type EnrolledProgram = Database['public']['Tables']['enrolled_programs']['Row']
+export type ProgramCompletion = Database['public']['Tables']['program_completions']['Row']
 export type Doubt           = Database['public']['Tables']['doubts']['Row']
 export type LiveSession     = Database['public']['Tables']['live_sessions']['Row']
 export type AttendanceRecord = Database['public']['Tables']['attendance_records']['Row']

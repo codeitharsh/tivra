@@ -34,7 +34,26 @@ export default async function CertificatePage() {
     phases: { title: string; phase_number: number } | null
   }[]
 
-  const hasCerts = certs.length > 0
+  // Fetch any programme completion certificate(s) — separate from, and
+  // in addition to, the per-phase certificates above.
+  const { data: completionsRaw } = await supabase
+    .from('program_completions')
+    .select('*')
+    .eq('student_id', user.id)
+    .eq('is_revoked', false)
+    .order('issued_at')
+
+  const PLAN_LABELS: Record<string, string> = {
+    cloud_launchpad: 'Cloud LaunchPad',
+    cloud_architect: 'Cloud Architect',
+    bundle:          'Cloud LaunchPad + Cloud Architect (Bundle)',
+  }
+
+  const completions = (completionsRaw ?? []) as {
+    id: string; plan: string; issued_at: string; verification_code: string
+  }[]
+
+  const hasCerts = certs.length > 0 || completions.length > 0
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
@@ -42,6 +61,109 @@ export default async function CertificatePage() {
       <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
         <Topbar title="My Certificates" subtitle="Earned by passing phase assessments with ≥75%"/>
         <div style={{ padding: '28px', maxWidth: '800px' }}>
+
+          {/* Programme completion certificate(s) — shown above phase certs */}
+          {completions.map(comp => (
+            <div key={comp.id} style={{ marginBottom: '32px' }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #1a1408 0%, #1f1810 50%, #2a1c0a 100%)',
+                border: '1px solid rgba(245,158,11,0.4)',
+                borderRadius: '16px', padding: '40px', textAlign: 'center',
+                position: 'relative', overflow: 'hidden',
+                marginBottom: '16px',
+              }}>
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  transform: 'translate(-50%,-50%)',
+                  width: '420px', height: '220px', borderRadius: '50%',
+                  background: 'radial-gradient(ellipse, rgba(245,158,11,0.14) 0%, transparent 70%)',
+                  pointerEvents: 'none',
+                }}/>
+
+                <div style={{
+                  width: '72px', height: '72px', borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '32px', margin: '0 auto 20px',
+                  boxShadow: '0 0 40px rgba(245,158,11,0.4)',
+                  position: 'relative', zIndex: 1,
+                }}>
+                  🎓
+                </div>
+
+                <div style={{
+                  fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase',
+                  color: '#f59e0b', marginBottom: '8px', position: 'relative', zIndex: 1, fontWeight: 700,
+                }}>
+                  Programme Completion Certificate
+                </div>
+                <div style={{
+                  fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '26px',
+                  color: '#fff', marginBottom: '4px', position: 'relative', zIndex: 1,
+                }}>
+                  {profile.full_name}
+                </div>
+                <div style={{
+                  fontSize: '14px', color: 'var(--muted)', marginBottom: '20px',
+                  position: 'relative', zIndex: 1,
+                }}>
+                  {PLAN_LABELS[comp.plan] ?? 'Tivra Programme'}
+                </div>
+                <div style={{
+                  fontSize: '13px', color: '#f59e0b', marginBottom: '20px',
+                  position: 'relative', zIndex: 1,
+                }}>
+                  Issued {new Date(comp.issued_at).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })}
+                </div>
+
+                <div style={{
+                  display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap',
+                  position: 'relative', zIndex: 1,
+                }}>
+                  <a
+                    href={`/api/program-completion-certificate/${comp.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-primary"
+                    style={{ fontSize: '13px', background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
+                  >
+                    ⬇ Download PDF
+                  </a>
+                  <a
+                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_APP_URL}/verify/${comp.verification_code}`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-ghost"
+                    style={{ fontSize: '13px' }}
+                  >
+                    Share on LinkedIn
+                  </a>
+                </div>
+              </div>
+
+              <div className="card" style={{ padding: '16px 20px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>
+                  Verification code — shareable link
+                </div>
+                <div style={{
+                  fontFamily: 'monospace', fontSize: '12px',
+                  background: 'rgba(255,255,255,0.04)', padding: '8px 12px',
+                  borderRadius: '6px', color: 'var(--muted)', marginBottom: '8px',
+                  letterSpacing: '0.05em', wordBreak: 'break-all',
+                }}>
+                  {process.env.NEXT_PUBLIC_APP_URL}/verify/{comp.verification_code}
+                </div>
+                <a
+                  href={`/verify/${comp.verification_code}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: '12px', color: 'var(--teal)', textDecoration: 'none' }}
+                >
+                  Verify this certificate →
+                </a>
+              </div>
+            </div>
+          ))}
 
           {/* No certificates yet */}
           {!hasCerts && (

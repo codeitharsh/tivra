@@ -4,6 +4,12 @@ import { createClient as createSB } from '@supabase/supabase-js'
 import Link from 'next/link'
 import Image from 'next/image'
 
+const PLAN_LABELS: Record<string, string> = {
+  cloud_launchpad: 'Cloud LaunchPad',
+  cloud_architect: 'Cloud Architect',
+  bundle:          'Cloud LaunchPad + Cloud Architect (Bundle)',
+}
+
 export default async function VerifyPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params
   const admin = createSB(
@@ -11,16 +17,25 @@ export default async function VerifyPage({ params }: { params: Promise<{ code: s
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { data } = await admin
+  // Try a per-phase certificate first...
+  const { data: phaseCertData } = await admin
     .from('certificates')
     .select('*, profiles!student_id(full_name), phases!phase_id(title, phase_number)')
     .eq('verification_code', code)
-    .single()
+    .maybeSingle()
 
-  const cert    = data as Record<string,unknown> | null
+  // ...fall back to a programme completion certificate if no phase cert matched.
+  const { data: completionData } = phaseCertData ? { data: null } : await admin
+    .from('program_completions')
+    .select('*, profiles!student_id(full_name)')
+    .eq('verification_code', code)
+    .maybeSingle()
+
+  const isCompletion = !phaseCertData && !!completionData
+  const cert    = (phaseCertData ?? completionData) as Record<string,unknown> | null
   const valid   = !!cert && !cert.is_revoked
   const profile = cert?.profiles as { full_name: string } | null
-  const phase   = cert?.phases   as { title: string; phase_number: number } | null
+  const phase   = !isCompletion ? (cert?.phases as { title: string; phase_number: number } | null) : null
 
   return (
     <div style={{
@@ -49,16 +64,37 @@ export default async function VerifyPage({ params }: { params: Promise<{ code: s
           </div>
           <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'22px',
             color: valid ? '#22c55e' : '#ef4444', marginBottom:'8px' }}>
-            {valid ? 'Certificate Verified' : cert?.is_revoked ? 'Certificate Revoked' : 'Certificate Not Found'}
+            {valid
+              ? (isCompletion ? 'Programme Completion Verified' : 'Certificate Verified')
+              : cert?.is_revoked ? 'Certificate Revoked' : 'Certificate Not Found'}
           </div>
 
-          {valid && cert && (
+          {valid && cert && !isCompletion && (
             <div style={{ marginTop:'20px', display:'flex', flexDirection:'column', gap:'10px' }}>
               {[
                 ['Student',   profile?.full_name ?? '—'],
                 ['Program',   'Cloud LaunchPad · Tivra'],
                 ['Phase',     phase ? `Phase ${phase.phase_number}: ${phase.title}` : '—'],
                 ['Score',     `${Math.round(cert.score_percent as number)}%`],
+                ['Issued',    new Date(cert.issued_at as string).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})],
+              ].map(([label, value]) => (
+                <div key={label} style={{
+                  display:'flex', justifyContent:'space-between', padding:'10px 14px',
+                  background:'rgba(255,255,255,0.04)', borderRadius:'8px', fontSize:'13px',
+                }}>
+                  <span style={{ color:'var(--muted)' }}>{label}</span>
+                  <span style={{ color:'#fff', fontWeight:500 }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {valid && cert && isCompletion && (
+            <div style={{ marginTop:'20px', display:'flex', flexDirection:'column', gap:'10px' }}>
+              {[
+                ['Student',   profile?.full_name ?? '—'],
+                ['Programme', PLAN_LABELS[String(cert.plan)] ?? 'Tivra Programme'],
+                ['Status',    'All phase assessments passed'],
                 ['Issued',    new Date(cert.issued_at as string).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})],
               ].map(([label, value]) => (
                 <div key={label} style={{
