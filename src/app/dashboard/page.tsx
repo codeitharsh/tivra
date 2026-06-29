@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
+import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 
 export default async function DashboardPage({
@@ -29,8 +30,17 @@ export default async function DashboardPage({
   if (p.role === 'admin')   redirect('/admin')
   if (p.role === 'teacher') redirect('/teacher')
 
+  // ── Hard access gate — defense in depth ───────────────────
+  // proxy.ts (middleware) is supposed to block restricted/pending
+  // students before this page ever renders. This is a second,
+  // independent check — if middleware is ever bypassed, cached, or
+  // fails to run for any reason, a restricted or unpaid student
+  // must NEVER see dashboard data, even behind a warning banner.
+  // Previously this page rendered the full dashboard with a banner
+  // instead of blocking outright.
+  requireActiveStudent(p)
+
   const isPending    = p.access_status === 'pending_payment'
-  const isRestricted = p.access_status === 'restricted'
   const showPayBanner = isPending || params.banner === 'payment_required'
 
   const admin = createAdminClient()
@@ -168,16 +178,6 @@ export default async function DashboardPage({
         />
 
         <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
-
-          {/* ── Restricted banner ── */}
-          {isRestricted && (
-            <div className="banner banner-warning" style={{ marginBottom:'20px' }}>
-              <span style={{ fontSize:'20px', flexShrink:0 }}>🔒</span>
-              <div style={{ flex:1 }}>
-                <strong>Your access has been suspended.</strong> Please contact support to resolve this.
-              </div>
-            </div>
-          )}
 
           {/* ── Payment banner ── */}
           {showPayBanner && (

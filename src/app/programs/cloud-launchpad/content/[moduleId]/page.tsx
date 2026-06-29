@@ -7,6 +7,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import MarkCompleteButton from './MarkCompleteButton'
+import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 
 export default async function ModulePage({
@@ -23,6 +24,11 @@ export default async function ModulePage({
     .from('profiles').select('*').eq('id', user.id).single()
   const profile = profileData as Profile | null
   if (!profile) redirect('/login')
+
+  // Defense-in-depth — see src/lib/access-gate.ts. This is the actual
+  // PAID CONTENT itself (a single module/test/assessment) — the most
+  // important place for this check to exist, and it previously had none.
+  requireActiveStudent(profile)
 
   const admin = createAdminClient()
 

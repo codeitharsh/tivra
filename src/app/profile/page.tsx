@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import ProfileEditClient from './ProfileEditClient'
+import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 
 export default async function ProfilePage() {
@@ -14,6 +15,10 @@ export default async function ProfilePage() {
   const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   const profile = p as Profile | null
   if (!profile) redirect('/login')
+
+  // Defense-in-depth — see src/lib/access-gate.ts for why this exists
+  // alongside proxy.ts middleware.
+  requireActiveStudent(profile)
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>

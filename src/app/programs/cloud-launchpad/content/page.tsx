@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
+import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 
 // ── Types ────────────────────────────────────────────────────
@@ -97,6 +98,12 @@ export default async function ContentPage() {
     .from('profiles').select('*').eq('id', user.id).single()
   const profile = profileData as Profile | null
   if (!profile) redirect('/login')
+
+  // ── Hard access gate — defense in depth ───────────────────
+  // This page previously had NO access_status check at all — only
+  // "are you logged in." A restricted or pending-payment student
+  // could see full study content if middleware was ever bypassed.
+  requireActiveStudent(profile)
 
   const admin = createAdminClient()
 

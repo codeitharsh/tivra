@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import Link from 'next/link'
+import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 
 export default async function LivePage() {
@@ -14,6 +15,13 @@ export default async function LivePage() {
   if (!user) redirect('/login')
   const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   const profile = p as Profile | null
+  if (!profile) redirect('/login')
+
+  // Defense-in-depth — see src/lib/access-gate.ts for why this exists
+  // alongside proxy.ts middleware. This page previously had NO
+  // access_status check at all, and didn't even guard against a
+  // null profile before using it.
+  requireActiveStudent(profile)
 
   const admin = createAdminClient()
 

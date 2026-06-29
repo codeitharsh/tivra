@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import LiveRoomClient from './LiveRoomClient'
+import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 
 export default async function LiveRoomPage({
@@ -21,6 +22,9 @@ export default async function LiveRoomPage({
   const { data: pd } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   const profile = pd as Profile | null
   if (!profile) redirect('/login')
+
+  // Defense-in-depth — see src/lib/access-gate.ts.
+  requireActiveStudent(profile)
 
   const admin = createAdminClient()
 

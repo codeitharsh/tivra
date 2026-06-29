@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import DoubtsClient from './DoubtsClient'
+import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 
 export default async function DoubtsPage() {
@@ -15,6 +16,10 @@ export default async function DoubtsPage() {
   const { data: pd } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   const profile = pd as Profile | null
   if (!profile) redirect('/login')
+
+  // Defense-in-depth — see src/lib/access-gate.ts for why this exists
+  // alongside proxy.ts middleware.
+  requireActiveStudent(profile)
 
   const admin = createAdminClient()
 
