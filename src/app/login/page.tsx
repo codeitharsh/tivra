@@ -1,13 +1,32 @@
 'use client'
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function LoginPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  restricted: 'Your account access has been suspended. Please contact contact@tivra.in to resolve this.',
+}
+
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [error, setError] = useState<string|null>(null)
   const [isPending, start] = useTransition()
+
+  // Picks up ?error=... set by proxy.ts middleware when it redirects a
+  // restricted/blocked user back here (e.g. /login?error=restricted).
+  // Previously this param was set in the URL but never read or
+  // displayed — the page just showed a blank login form with no
+  // explanation, so a restricted user who re-entered correct credentials
+  // would silently bounce back here in a confusing loop with zero
+  // feedback about why.
+  useEffect(() => {
+    const urlError = searchParams.get('error')
+    if (urlError && ERROR_MESSAGES[urlError]) {
+      setError(ERROR_MESSAGES[urlError])
+    }
+  }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -63,5 +82,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm/>
+    </Suspense>
   )
 }
