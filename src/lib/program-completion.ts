@@ -33,11 +33,20 @@ export async function checkAndIssueProgramCompletion(
     .select('program_id, plan, programs!program_id(slug)')
     .eq('student_id', studentId)
 
-  const enrollments = (enrollmentsRaw ?? []) as {
+  // Same Supabase to-one-join shape ambiguity as my-programs/route.ts —
+  // handled defensively rather than force-cast, since this result
+  // directly drives certificate issuance and a silently wrong shape
+  // here would be a real correctness bug, not just a lint warning.
+  type EnrollmentRow = {
     program_id: string
     plan: string | null
-    programs: { slug: string } | null
-  }[]
+    programs: { slug: string } | { slug: string }[] | null
+  }
+  const enrollments = ((enrollmentsRaw ?? []) as unknown as EnrollmentRow[]).map(row => ({
+    program_id: row.program_id,
+    plan: row.plan,
+    programs: Array.isArray(row.programs) ? (row.programs[0] ?? null) : row.programs,
+  }))
 
   if (enrollments.length === 0) return { issued: false }
 

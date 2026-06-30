@@ -31,7 +31,7 @@ const ROLE_META: Record<string, { color:string; bg:string }> = {
 type FS = 'all'|'pending_payment'|'active'|'restricted'
 type FR = 'all'|'student'|'teacher'|'parent'|'admin'
 
-export default function AccessTable({ rows, adminId }: { rows: Record<string,unknown>[]; adminId: string }) {
+export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }) {
   const router = useRouter()
   const [isPending, start] = useTransition()
   const [search,    setSearch]    = useState('')
@@ -42,6 +42,12 @@ export default function AccessTable({ rows, adminId }: { rows: Record<string,unk
   const [grantM,    setGrantM]    = useState<Record<string,unknown>|null>(null)
   const [grantNotes,setGrantNotes]= useState('')
   const [grantRole, setGrantRole] = useState('student')
+  // Which programme(s) to enrol the student in — previously missing
+  // entirely from this manual-grant flow, which meant an admin
+  // manually activating a student left them with an active account
+  // but no enrolled_programs row, incorrectly locking them out of
+  // every programme-scoped page once those checks existed.
+  const [grantPlan,  setGrantPlan] = useState('cloud_launchpad')
   const [revokeM,   setRevokeM]   = useState<Record<string,unknown>|null>(null)
 
   const toast3 = (msg:string,type:'success'|'error') => {
@@ -68,10 +74,11 @@ export default function AccessTable({ rows, adminId }: { rows: Record<string,unk
         student_id: grantM.id as string,
         notes:      grantNotes,
         role:       grantRole,
+        plan:       grantRole === 'student' ? grantPlan : undefined,
       })
       if (r?.error) toast3(r.error,'error')
       else { toast3(`✓ Access granted to ${grantM.full_name}`,'success'); router.refresh() }
-      setGrantM(null); setGrantNotes(''); setGrantRole('student'); setActionId(null)
+      setGrantM(null); setGrantNotes(''); setGrantRole('student'); setGrantPlan('cloud_launchpad'); setActionId(null)
     })
   }
 
@@ -333,6 +340,19 @@ export default function AccessTable({ rows, adminId }: { rows: Record<string,unk
                   {grantRole==='student'&&'📚 Access to all content, tests, and live classes.'}
                 </div>
               </div>
+              {grantRole === 'student' && (
+                <div>
+                  <label className="form-label">Programme</label>
+                  <select className="form-select" value={grantPlan} onChange={e=>setGrantPlan(e.target.value)}>
+                    <option value="cloud_launchpad">Cloud LaunchPad</option>
+                    <option value="cloud_architect">Cloud Architect</option>
+                    <option value="bundle">Bundle (both programmes)</option>
+                  </select>
+                  <div style={{fontSize:'11px',color:'var(--muted)',marginTop:'5px'}}>
+                    Determines which programme(s) this student gets enrolled in and can access.
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="form-label">Notes (optional)</label>
                 <input className="form-input" placeholder="e.g. UPI ref TXN123, Cash ₹5000, Batch Q1"

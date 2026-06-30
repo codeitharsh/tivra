@@ -13,21 +13,13 @@ const PUBLIC_ROUTES = [
   '/payment',   // payment submission page
 ]
 
-// Programme LANDING pages are public (marketing pages — anyone can browse
-// before paying), but everything NESTED under them (content, tests,
-// assessments, certificate) is paid content and must NOT match here.
-// Previously '/programs' matched with startsWith(), which made every
-// nested route public too — e.g. /programs/cloud-launchpad/content was
-// reachable by a logged-out visitor with zero payment check.
-const PUBLIC_PROGRAMME_LANDING_PAGES = [
-  '/programs',
-  '/programs/cloud-launchpad',
-  '/programs/cloud-architect',
-]
-
-// Paid content routes — require an active enrollment in the SPECIFIC
-// programme, checked against enrolled_programs, not just access_status.
-const PROGRAMME_SLUGS = ['cloud-launchpad', 'cloud-architect']
+// Programme LANDING pages (e.g. /programs/cloud-launchpad) are public
+// marketing pages — anyone can browse before paying. Everything NESTED
+// under them (content, tests, assessments, certificate) is paid content.
+// Previously this was a hardcoded array of slugs requiring a code change
+// for every new programme. Now resolved dynamically against the real
+// `programs` table (see isPublicProgrammeLandingPage below) — adding
+// programme #3 requires zero changes to this file.
 
 // 2. Admin only
 const ADMIN_ROUTES = ['/admin']
@@ -38,12 +30,6 @@ const TEACHER_ROUTES = ['/teacher']
 // ─────────────────────────────────────────────────────────────
 function matches(path: string, routes: string[]) {
   return routes.some(r => path === r || path.startsWith(r + '/'))
-}
-
-// Exact match only — used for the programme landing pages, which must
-// NOT wildcard-match their nested paid-content subroutes.
-function exactMatch(path: string, routes: string[]) {
-  return routes.includes(path)
 }
 
 export async function proxy(request: NextRequest) {
@@ -84,9 +70,17 @@ export async function proxy(request: NextRequest) {
     return response
   }
 
-  // ── STEP 1b: Programme LANDING pages only — exact match, never
-  //    wildcards into the paid content nested underneath. ────────
-  if (exactMatch(pathname, PUBLIC_PROGRAMME_LANDING_PAGES)) {
+  // ── STEP 1b: Programme LANDING pages only — a path shaped exactly
+  //    like /programs (the listing of all programmes) or
+  //    /programs/{slug} (a single programme's marketing page) is
+  //    always public, regardless of whether {slug} resolves to a
+  //    real, active programme — the page component itself renders a
+  //    404 for an unknown slug. Anything with a 3rd path segment
+  //    (/programs/{slug}/content) is paid content and falls through
+  //    to the auth checks below. Deliberately NOT using the wildcard
+  //    matches() helper here — that was the original bug: '/programs'
+  //    wildcard-matched into every paid subroute underneath it. ────
+  if (pathname === '/programs' || /^\/programs\/[^/]+$/.test(pathname)) {
     return response
   }
 
@@ -137,21 +131,34 @@ export async function proxy(request: NextRequest) {
   //    actually paid for. Any /programs/[slug]/... path that isn't
   //    the bare landing page (already allowed in STEP 1b above) is
   //    paid content — check enrolled_programs for that specific slug,
-  //    not just "is this student active at all." ──────────────────
+  //    not just "is this student active at all." Validated against
+  //    the REAL programs table, not a hardcoded slug list — this is
+  //    what makes the gate scale to any number of programmes without
+  //    a code change. ────────────────────────────────────────────
   const programmeMatch = pathname.match(/^\/programs\/([^/]+)\/.+/)
   if (programmeMatch) {
     const slug = programmeMatch[1]
-    if (PROGRAMME_SLUGS.includes(slug)) {
-      const { data: enrolledRaw } = await supabase
+
+    const { data: prog } = await supabase
+      .from('programs')
+      .select('id')
+      .eq('slug', slug)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    // Unknown/inactive programme slug in a content-shaped URL — not
+    // this gate's job to 404 it, just don't treat it as a real
+    // programme requiring entitlement (the page itself 404s).
+    if (prog) {
+      const programId = (prog as { id: string }).id
+      const { data: enrolled } = await supabase
         .from('enrolled_programs')
-        .select('id, programs!program_id(slug)')
+        .select('id')
         .eq('student_id', user.id)
+        .eq('program_id', programId)
+        .maybeSingle()
 
-      const enrolledSlugs = ((enrolledRaw ?? []) as { programs: { slug: string } | null }[])
-        .map(e => e.programs?.slug)
-        .filter((s): s is string => !!s)
-
-      if (!enrolledSlugs.includes(slug)) {
+      if (!enrolled) {
         // Active account, but never paid for THIS specific programme —
         // send them to the explore page for that programme instead of
         // a generic dashboard, so the next step is obviously "enrol."

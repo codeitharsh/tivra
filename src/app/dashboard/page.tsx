@@ -26,24 +26,43 @@ export default async function DashboardPage({
   const p = profileData as Profile
 
   // ── Role-based redirect ───────────────────────────────────
-  // Admin and teacher have their own dashboards — never show them the student view
   if (p.role === 'admin')   redirect('/admin')
   if (p.role === 'teacher') redirect('/teacher')
 
   // ── Hard access gate — defense in depth ───────────────────
-  // proxy.ts (middleware) is supposed to block restricted/pending
-  // students before this page ever renders. This is a second,
-  // independent check — if middleware is ever bypassed, cached, or
-  // fails to run for any reason, a restricted or unpaid student
-  // must NEVER see dashboard data, even behind a warning banner.
-  // Previously this page rendered the full dashboard with a banner
-  // instead of blocking outright.
   requireActiveStudent(p)
 
   const isPending    = p.access_status === 'pending_payment'
   const showPayBanner = isPending || params.banner === 'payment_required'
 
   const admin = createAdminClient()
+
+  // ── Resolve the student's actual enrolled programmes ──────
+  // Previously every query below was hardcoded to a single
+  // 'cloud-launchpad' slug — a student enrolled in a DIFFERENT or
+  // ADDITIONAL programme would see wrong, missing, or mixed-together
+  // data (e.g. phase assessment cards from a programme they never
+  // enrolled in, since the phases/assessments queries had no
+  // program_id filter at all). This is now the single source of truth
+  // for which programmes' data should appear anywhere on this page.
+  const { data: enrolledRaw } = await supabase
+    .from('enrolled_programs')
+    .select('programs!program_id(id, name, slug)')
+    .eq('student_id', user.id)
+
+  // Same Supabase to-one-join shape ambiguity flagged in
+  // my-programs/route.ts and program-completion.ts — handled
+  // defensively here too even though tsc didn't flag this particular
+  // call site, since the underlying runtime ambiguity is identical and
+  // a wrong shape here would silently show the wrong enrolled
+  // programmes on a student's own dashboard.
+  type EnrolledRow = { programs: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null }
+  const enrolledProgramsList = ((enrolledRaw ?? []) as unknown as EnrolledRow[])
+    .map(e => Array.isArray(e.programs) ? (e.programs[0] ?? null) : e.programs)
+    .filter((pr): pr is { id: string; name: string; slug: string } => !!pr)
+
+  const enrolledProgramIds = enrolledProgramsList.map(pr => pr.id)
+  const slugByProgramId = new Map(enrolledProgramsList.map(pr => [pr.id, pr.slug]))
 
   // ── Stats ────────────────────────────────────────────────
   const [
@@ -67,50 +86,78 @@ export default async function DashboardPage({
     : 0
 
   const modulesCompleted = completedModules ?? 0
-  const progress         = Math.round((modulesCompleted / 24) * 100)
-  const streak           = p.streak_count ?? 0
-  const certs            = (certsRaw ?? []) as { phase_id: string }[]
 
-  // ── Upcoming tests ───────────────────────────────────────
-  const { data: prog } = await admin.from('programs').select('id').eq('slug','cloud-launchpad').single()
-  const { data: upcomingTestsRaw } = await admin
-    .from('weekly_tests')
-    .select('id, title, topic, week_number, unlock_datetime, duration_minutes, is_manually_unlocked')
-    .eq('program_id', (prog as {id:string}|null)?.id ?? '')
-    .order('unlock_datetime')
-    .limit(10)
+  // Total module count across ONLY the student's enrolled programmes —
+  // previously hardcoded as a literal /24, which was only ever correct
+  // for the original single-programme, 2-phase, 24-module Cloud
+  // LaunchPad. Computed dynamically now so it stays correct regardless
+  // of which programme(s) a student is in or how many modules any
+  // given programme has.
+  let totalModulesAcrossEnrolled = 0
+  if (enrolledProgramIds.length > 0) {
+    const { data: phaseIdsRaw } = await admin
+      .from('phases')
+      .select('id')
+      .in('program_id', enrolledProgramIds)
+    const phaseIds = ((phaseIdsRaw ?? []) as { id: string }[]).map(ph => ph.id)
+    if (phaseIds.length > 0) {
+      const { count } = await admin
+        .from('modules')
+        .select('*', { count: 'exact', head: true })
+        .in('phase_id', phaseIds)
+      totalModulesAcrossEnrolled = count ?? 0
+    }
+  }
+  const progress = totalModulesAcrossEnrolled > 0
+    ? Math.round((modulesCompleted / totalModulesAcrossEnrolled) * 100)
+    : 0
 
-  const takenTestIds = new Set((attemptsRaw ?? []).map((_a: Record<string,unknown>) => ''))
-  // Refetch attempts with test_id
-  const { data: attemptsWithId } = await supabase
-    .from('test_attempts').select('test_id').eq('student_id', user.id)
-  const takenIds = new Set(((attemptsWithId??[]) as {test_id:string}[]).map(a => a.test_id))
+  const streak = p.streak_count ?? 0
+  const certs  = (certsRaw ?? []) as { phase_id: string }[]
 
   const now = new Date()
-  type UpcomingTest = {
+
+  // ── Upcoming tests — scoped to enrolled programmes only ───
+  let upcomingTests: {
     id: string; title: string; topic: string|null; week_number: number
     duration_minutes: number; is_manually_unlocked: boolean; unlock_datetime: string|null
     isOpen: boolean; isUpcoming: boolean | null; unlockDt: Date | null
+    slug: string
+  }[] = []
+
+  if (enrolledProgramIds.length > 0) {
+    const { data: upcomingTestsRaw } = await admin
+      .from('weekly_tests')
+      .select('id, title, topic, week_number, unlock_datetime, duration_minutes, is_manually_unlocked, program_id')
+      .in('program_id', enrolledProgramIds)
+      .order('unlock_datetime')
+      .limit(20)
+
+    const { data: attemptsWithId } = await supabase
+      .from('test_attempts').select('test_id').eq('student_id', user.id)
+    const takenIds = new Set(((attemptsWithId??[]) as {test_id:string}[]).map(a => a.test_id))
+
+    upcomingTests = ((upcomingTestsRaw ?? []) as Record<string,unknown>[])
+      .filter(t => !takenIds.has(t.id as string))
+      .map(t => {
+        const unlockDt   = t.unlock_datetime ? new Date(t.unlock_datetime as string) : null
+        const isOpen     = !!(t.is_manually_unlocked) || (unlockDt ? now >= unlockDt : false)
+        const isUpcoming = !isOpen && unlockDt && unlockDt > now
+        return {
+          id:                   t.id as string,
+          title:                t.title as string,
+          topic:                t.topic as string|null,
+          week_number:          t.week_number as number,
+          duration_minutes:     t.duration_minutes as number,
+          is_manually_unlocked: t.is_manually_unlocked as boolean,
+          unlock_datetime:      t.unlock_datetime as string|null,
+          isOpen, isUpcoming, unlockDt,
+          slug: slugByProgramId.get(t.program_id as string) ?? '',
+        }
+      })
+      .filter(t => t.isOpen || t.isUpcoming)
+      .slice(0, 3)
   }
-  const upcomingTests: UpcomingTest[] = ((upcomingTestsRaw ?? []) as Record<string,unknown>[])
-    .filter(t => !takenIds.has(t.id as string))
-    .map(t => {
-      const unlockDt   = t.unlock_datetime ? new Date(t.unlock_datetime as string) : null
-      const isOpen     = !!(t.is_manually_unlocked) || (unlockDt ? now >= unlockDt : false)
-      const isUpcoming = !isOpen && unlockDt && unlockDt > now
-      return {
-        id:                   t.id as string,
-        title:                t.title as string,
-        topic:                t.topic as string|null,
-        week_number:          t.week_number as number,
-        duration_minutes:     t.duration_minutes as number,
-        is_manually_unlocked: t.is_manually_unlocked as boolean,
-        unlock_datetime:      t.unlock_datetime as string|null,
-        isOpen, isUpcoming, unlockDt,
-      }
-    })
-    .filter(t => t.isOpen || t.isUpcoming)
-    .slice(0, 3)
 
   // ── Upcoming live sessions ────────────────────────────────
   const { data: sessionsRaw } = await admin
@@ -123,50 +170,73 @@ export default async function DashboardPage({
 
   const sessions = (sessionsRaw ?? []) as Record<string,unknown>[]
 
-  // ── Phase assessment status ───────────────────────────────
-  const { data: phasesRaw } = await admin
-    .from('phases')
-    .select('id, title, phase_number, modules(id)')
-    .order('phase_number')
-  const phases = (phasesRaw ?? []) as { id:string; title:string; phase_number:number; modules:{id:string}[] }[]
+  // ── Phase assessment status — scoped to enrolled programmes ──
+  let phaseStatus: {
+    phase: { id:string; title:string; phase_number:number; program_id: string }
+    assessment: Record<string,unknown> | undefined
+    hasCert: boolean; allDone: boolean; scheduleOk: boolean
+    statusLabel: string; statusColor: string
+    aId: string | undefined; doneCount: number; total: number
+    slug: string
+  }[] = []
 
-  const { data: assessmentsRaw } = await admin
-    .from('assessments')
-    .select('id, phase_id, passing_percent, is_manually_unlocked, unlock_datetime')
-    .in('phase_id', phases.map(p=>p.id))
-  const assessments = (assessmentsRaw ?? []) as Record<string,unknown>[]
+  if (enrolledProgramIds.length > 0) {
+    const { data: phasesRaw } = await admin
+      .from('phases')
+      .select('id, title, phase_number, program_id, modules(id)')
+      .in('program_id', enrolledProgramIds)
+      .order('phase_number')
+    const phases = (phasesRaw ?? []) as { id:string; title:string; phase_number:number; program_id: string; modules:{id:string}[] }[]
 
-  const completedModuleIds = new Set(
-    ((await supabase.from('module_progress').select('module_id').eq('student_id',user.id).eq('status','completed')).data ?? [])
-      .map((m: Record<string,unknown>) => m.module_id as string)
-  )
-  const assessAttempts = (assessAttemptsRaw ?? []) as {score_percent:number; passed:boolean; assessment_id:string}[]
+    const { data: assessmentsRaw } = await admin
+      .from('assessments')
+      .select('id, phase_id, passing_percent, is_manually_unlocked, unlock_datetime')
+      .in('phase_id', phases.map(ph=>ph.id))
+    const assessments = (assessmentsRaw ?? []) as Record<string,unknown>[]
 
-  const phaseStatus = phases.map(phase => {
-    const phaseModuleIds  = phase.modules.map(m=>m.id)
-    const doneCount       = phaseModuleIds.filter(id => completedModuleIds.has(id)).length
-    const allDone         = doneCount === phaseModuleIds.length && phaseModuleIds.length > 0
-    const assessment      = assessments.find(a => a.phase_id === phase.id)
-    const aId             = assessment?.id as string|undefined
-    const latestAttempt   = aId ? assessAttempts.find(a => a.assessment_id === aId) : null
-    const hasCert         = certs.some(c => c.phase_id === phase.id)
-    const scheduleOk      = assessment?.is_manually_unlocked ||
-      (assessment?.unlock_datetime ? now >= new Date(assessment.unlock_datetime as string) : false)
+    const { data: progressRows } = await supabase
+      .from('module_progress').select('module_id').eq('student_id',user.id).eq('status','completed')
+    const completedModuleIds = new Set(
+      ((progressRows ?? []) as Record<string,unknown>[]).map(m => m.module_id as string)
+    )
+    const assessAttempts = (assessAttemptsRaw ?? []) as {score_percent:number; passed:boolean; assessment_id:string}[]
 
-    let statusLabel = ''
-    let statusColor = ''
-    if (hasCert) { statusLabel = '🏆 Certificate earned'; statusColor = 'var(--green)' }
-    else if (latestAttempt && !latestAttempt.passed) { statusLabel = `${Math.round(latestAttempt.score_percent)}% — retake available`; statusColor = 'var(--amber)' }
-    else if (!assessment) { statusLabel = 'Assessment not set up'; statusColor = 'var(--muted)' }
-    else if (!allDone)    { statusLabel = `${doneCount}/${phaseModuleIds.length} modules done`; statusColor = 'var(--muted)' }
-    else if (!scheduleOk) { statusLabel = 'Waiting for admin to unlock'; statusColor = 'var(--amber)' }
-    else                  { statusLabel = '✓ Ready to take'; statusColor = 'var(--cyan)' }
+    phaseStatus = phases.map(phase => {
+      const phaseModuleIds  = phase.modules.map(m=>m.id)
+      const doneCount       = phaseModuleIds.filter(id => completedModuleIds.has(id)).length
+      const allDone         = doneCount === phaseModuleIds.length && phaseModuleIds.length > 0
+      const assessment      = assessments.find(a => a.phase_id === phase.id)
+      const aId             = assessment?.id as string|undefined
+      const latestAttempt   = aId ? assessAttempts.find(a => a.assessment_id === aId) : null
+      const hasCert         = certs.some(c => c.phase_id === phase.id)
+      const scheduleOk      = !!(assessment?.is_manually_unlocked) ||
+        (assessment?.unlock_datetime ? now >= new Date(assessment.unlock_datetime as string) : false)
 
-    return { phase, assessment, hasCert, allDone, scheduleOk, statusLabel, statusColor, aId, doneCount, total: phaseModuleIds.length }
-  })
+      let statusLabel = ''
+      let statusColor = ''
+      if (hasCert) { statusLabel = '🏆 Certificate earned'; statusColor = 'var(--green)' }
+      else if (latestAttempt && !latestAttempt.passed) { statusLabel = `${Math.round(latestAttempt.score_percent)}% — retake available`; statusColor = 'var(--amber)' }
+      else if (!assessment) { statusLabel = 'Assessment not set up'; statusColor = 'var(--muted)' }
+      else if (!allDone)    { statusLabel = `${doneCount}/${phaseModuleIds.length} modules done`; statusColor = 'var(--muted)' }
+      else if (!scheduleOk) { statusLabel = 'Waiting for admin to unlock'; statusColor = 'var(--amber)' }
+      else                  { statusLabel = '✓ Ready to take'; statusColor = 'var(--cyan)' }
 
-  // Streak dots
+      return {
+        phase, assessment, hasCert, allDone, scheduleOk, statusLabel, statusColor, aId, doneCount,
+        total: phaseModuleIds.length,
+        slug: slugByProgramId.get(phase.program_id) ?? '',
+      }
+    })
+  }
+
   const streakDots = Array.from({ length: 7 }, (_, i) => i < Math.min(streak, 7))
+
+  // Used for the top-level "All tests →" / "View all →" links — points
+  // at the first enrolled programme if there's exactly one, otherwise
+  // falls back to nothing (a flat dashboard has no single obvious
+  // destination once 2+ programmes are involved — individual cards
+  // below still link correctly to their own programme).
+  const primarySlug = enrolledProgramsList.length === 1 ? enrolledProgramsList[0].slug : null
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
@@ -179,7 +249,6 @@ export default async function DashboardPage({
 
         <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
 
-          {/* ── Payment banner ── */}
           {showPayBanner && (
             <div className="banner banner-warning" style={{ marginBottom:'20px' }}>
               <span style={{ fontSize:'20px', flexShrink:0 }}>💳</span>
@@ -194,11 +263,20 @@ export default async function DashboardPage({
             </div>
           )}
 
-          {/* ── Stats row ── */}
+          {!isPending && enrolledProgramsList.length === 0 && (
+            <div className="banner banner-info" style={{ marginBottom:'20px' }}>
+              <span style={{ fontSize:'20px', flexShrink:0 }}>📚</span>
+              <div style={{ flex:1 }}>
+                No programme enrollment found on this account yet.
+                If you believe this is a mistake, contact support.
+              </div>
+            </div>
+          )}
+
           <div className="grid-4 grid-2-keep" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'14px', marginBottom:'24px' }}>
             {[
               { label:'Progress',        value:`${progress}%`,     color:'var(--green)', bar:progress },
-              { label:'Modules Done',    value:`${modulesCompleted}/24`, color:'var(--teal)',  bar:null },
+              { label:'Modules Done',    value:`${modulesCompleted}/${totalModulesAcrossEnrolled}`, color:'var(--teal)',  bar:null },
               { label:'Tests Taken',     value:String(testsTaken), color:'var(--blue)',   bar:null, sub: testsTaken>0?`Avg ${avgScore}%`:'No tests yet' },
               { label:'Streak',          value:`${streak} 🔥`,    color:'var(--amber)',  bar:null, sub:'Days in a row' },
             ].map(s => (
@@ -217,10 +295,8 @@ export default async function DashboardPage({
             ))}
           </div>
 
-          {/* ── Middle row ── */}
           <div style={{ display:'grid', marginBottom:'24px' }}>
 
-            {/* Streak widget */}
             <div style={{
               background:'linear-gradient(135deg,rgba(74,222,128,0.06),rgba(245,158,11,0.04))',
               border:'1px solid rgba(74,222,128,0.15)',
@@ -258,15 +334,16 @@ export default async function DashboardPage({
               </div>
             </div>
 
-            {/* Upcoming tests & sessions */}
             <div className="card">
               <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'14px',
                 marginBottom:'14px', display:'flex', justifyContent:'space-between' }}>
                 <span>Coming Up</span>
-                <Link href="/programs/cloud-launchpad/tests"
-                  style={{ fontSize:'11px', color:'var(--teal)', textDecoration:'none' }}>
-                  All tests →
-                </Link>
+                {primarySlug && (
+                  <Link href={`/programs/${primarySlug}/tests`}
+                    style={{ fontSize:'11px', color:'var(--teal)', textDecoration:'none' }}>
+                    All tests →
+                  </Link>
+                )}
               </div>
 
               {isPending ? (
@@ -282,8 +359,8 @@ export default async function DashboardPage({
                   ) : null}
 
                   {upcomingTests.map(t => (
-                    <Link key={t.id as string}
-                      href={t.isOpen ? `/programs/cloud-launchpad/tests/${t.id}` : '/programs/cloud-launchpad/tests'}
+                    <Link key={t.id}
+                      href={t.isOpen ? `/programs/${t.slug}/tests/${t.id}` : `/programs/${t.slug}/tests`}
                       style={{ textDecoration:'none', display:'block' }}>
                       <div className="module-item" style={{
                         background: t.isOpen ? 'rgba(34,197,94,0.06)' : 'rgba(245,158,11,0.06)',
@@ -294,10 +371,10 @@ export default async function DashboardPage({
                         }}>📝</div>
                         <div style={{ flex:1 }}>
                           <div style={{ fontSize:'13px', fontWeight:500 }}>
-                            Week {String(t.week_number)}: {String(t.topic ?? t.title ?? '')}
+                            Week {t.week_number}: {t.topic ?? t.title}
                           </div>
                           <div style={{ fontSize:'11px', color:'var(--muted)' }}>
-                            {String(t.duration_minutes ?? 30)} min
+                            {t.duration_minutes} min
                           </div>
                         </div>
                         <span style={{
@@ -339,22 +416,28 @@ export default async function DashboardPage({
             </div>
           </div>
 
-          {/* ── Phase assessment status ── */}
           <div className="card">
             <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'14px',
               marginBottom:'16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
               <span>Phase Assessments</span>
-              <Link href="/programs/cloud-launchpad/assessments"
-                style={{ fontSize:'11px', color:'var(--teal)', textDecoration:'none' }}>
-                View all →
-              </Link>
+              {primarySlug && (
+                <Link href={`/programs/${primarySlug}/assessments`}
+                  style={{ fontSize:'11px', color:'var(--teal)', textDecoration:'none' }}>
+                  View all →
+                </Link>
+              )}
             </div>
 
             <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-              {phaseStatus.map(({ phase, hasCert, allDone, scheduleOk, statusLabel, statusColor, aId, doneCount, total }) => {
+              {phaseStatus.length === 0 && (
+                <div style={{ fontSize:'13px', color:'var(--muted)', textAlign:'center', padding:'12px 0' }}>
+                  No phase assessments to show yet.
+                </div>
+              )}
+              {phaseStatus.map(({ phase, hasCert, allDone, scheduleOk, statusLabel, statusColor, aId, doneCount, total, slug }) => {
                 const phasePct = total > 0 ? Math.round((doneCount/total)*100) : 0
-                const phaseColors = ['#f59e0b','#00d4ff']
-                const col = phaseColors[phase.phase_number - 1] ?? 'var(--cyan)'
+                const phaseColors = ['#f59e0b','#00d4ff','#a78bfa','#22c55e']
+                const col = phaseColors[(phase.phase_number - 1) % phaseColors.length] ?? 'var(--cyan)'
                 const canStart = allDone && scheduleOk && !hasCert && !!aId
 
                 return (
@@ -391,14 +474,14 @@ export default async function DashboardPage({
                     <div style={{ textAlign:'right', flexShrink:0 }}>
                       <div style={{ fontSize:'12px', color:statusColor, fontWeight:500 }}>{statusLabel}</div>
                       {canStart && (
-                        <Link href={`/programs/cloud-launchpad/assessments/${aId}`}
+                        <Link href={`/programs/${slug}/assessments/${aId}`}
                           className="btn btn-primary"
                           style={{ fontSize:'11px', padding:'5px 12px', marginTop:'6px', display:'inline-flex' }}>
                           Start →
                         </Link>
                       )}
                       {hasCert && (
-                        <Link href="/programs/cloud-launchpad/certificate"
+                        <Link href={`/programs/${slug}/certificate`}
                           className="btn btn-ghost"
                           style={{ fontSize:'11px', padding:'5px 12px', marginTop:'6px', display:'inline-flex' }}>
                           View Cert

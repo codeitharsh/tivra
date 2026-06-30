@@ -47,7 +47,6 @@ export default async function AdminLivePage() {
             sessions={(sessionsRaw ?? []) as Record<string, unknown>[]}
             phases={(phasesRaw ?? []) as Record<string, unknown>[]}
             batches={batches}
-            userId={user.id}
           />
         </div>
       </main>

@@ -1,6 +1,7 @@
 export const runtime = 'edge'
 
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
@@ -8,7 +9,11 @@ import Topbar from '@/components/Topbar'
 import CurriculumEditorClient from './CurriculumEditorClient'
 import type { Profile } from '@/types/database'
 
-export default async function TeacherCurriculumPage() {
+export default async function TeacherCurriculumPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ program?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -18,23 +23,36 @@ export default async function TeacherCurriculumPage() {
   if (!profile || !['admin', 'teacher'].includes(profile.role)) redirect('/dashboard')
 
   const admin = createAdminClient()
+  const { program: requestedSlug } = await searchParams
 
-  const { data: progData } = await admin
-    .from('programs').select('id, name').eq('slug', 'cloud-launchpad').single()
-  const program = progData as { id: string; name: string } | null
+  // Previously hardcoded to a single 'cloud-launchpad' lookup — a
+  // teacher could never edit Cloud Architect's curriculum through
+  // this page. Now fetches every active programme and lets the
+  // teacher switch between them; defaults to the first one
+  // alphabetically if none is specified in the URL.
+  const { data: allProgramsRaw } = await admin
+    .from('programs')
+    .select('id, name, slug')
+    .eq('is_active', true)
+    .order('name')
 
-  const { data: phasesRaw } = await admin
+  const allPrograms = (allProgramsRaw ?? []) as { id: string; name: string; slug: string }[]
+
+  const selectedProgram = requestedSlug
+    ? allPrograms.find(p => p.slug === requestedSlug) ?? allPrograms[0]
+    : allPrograms[0]
+
+  const phasesQuery = selectedProgram ? await admin
     .from('phases')
     .select('id, title, phase_number, description, modules(id, title, module_number, notes_url, is_unlocked)')
-    .eq('program_id', program?.id ?? '')
-    .order('phase_number')
+    .eq('program_id', selectedProgram.id)
+    .order('phase_number') : { data: [] }
 
-  const phases = (phasesRaw ?? []) as {
+  const phases = (phasesQuery.data ?? []) as {
     id: string; title: string; phase_number: number; description: string | null
     modules: { id: string; title: string; module_number: number; notes_url: string | null; is_unlocked: boolean }[]
   }[]
 
-  // Sort modules
   phases.forEach(p => {
     p.modules = (p.modules ?? []).sort((a, b) => a.module_number - b.module_number)
   })
@@ -48,10 +66,32 @@ export default async function TeacherCurriculumPage() {
       <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
         <Topbar
           title="Curriculum Editor"
-          subtitle={`${totalModules} modules · ${withNotes} with notes · Cloud LaunchPad`}
+          subtitle={selectedProgram ? `${totalModules} modules · ${withNotes} with notes · ${selectedProgram.name}` : 'No programmes found'}
         />
         <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
-          <CurriculumEditorClient phases={phases} programId={program?.id ?? ''}/>
+
+          {allPrograms.length > 1 && (
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              {allPrograms.map(p => (
+                <Link
+                  key={p.id}
+                  href={`/teacher/curriculum?program=${p.slug}`}
+                  className={p.id === selectedProgram?.id ? 'btn btn-primary' : 'btn btn-ghost'}
+                  style={{ fontSize: '13px' }}
+                >
+                  {p.name}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {selectedProgram ? (
+            <CurriculumEditorClient phases={phases} programId={selectedProgram.id}/>
+          ) : (
+            <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+              No active programmes found. Create one in the admin panel first.
+            </div>
+          )}
         </div>
       </main>
     </div>

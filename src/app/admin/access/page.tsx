@@ -115,7 +115,7 @@ export default async function AdminAccessPage() {
             </div>
           </div>
 
-          <AccessTable rows={rows} adminId={user.id}/>
+          <AccessTable rows={rows}/>
         </div>
       </main>
     </div>

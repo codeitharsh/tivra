@@ -23,7 +23,7 @@ export default async function AdminPaymentsPage() {
     .select(`
       id, student_id, amount, payment_method, transaction_ref,
       screenshot_url, status, rejection_note, created_at,
-      reviewed_at, reviewed_by,
+      reviewed_at, reviewed_by, plan,
       profiles!student_id (full_name, email, phone)
     `)
     .order('created_at', { ascending: false })
@@ -54,7 +54,7 @@ export default async function AdminPaymentsPage() {
             ))}
           </div>
 
-          <PaymentsClient rows={rows} adminId={user.id}/>
+          <PaymentsClient rows={rows}/>
         </div>
       </main>
     </div>

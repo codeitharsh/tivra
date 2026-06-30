@@ -29,110 +29,119 @@ function adminSB() {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await getAuthUser()
-  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
 
-  const body = await req.json() as Record<string, unknown>
-  const sb   = adminSB()
+    const auth = await getAuthUser()
+    if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  switch (body.action) {
+    const body = await req.json() as Record<string, unknown>
+    const sb   = adminSB()
 
-    // ── PHASE ──────────────────────────────────────────────
-    case 'create_phase': {
-      const { programId, title, phase_number } = body
-      if (!programId || !title) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
-      const { data, error } = await sb.from('phases')
-        .insert({ program_id: programId, title, phase_number: phase_number ?? 1 })
-        .select('id').single()
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      return NextResponse.json({ success: true, phaseId: (data as { id: string }).id })
-    }
+    switch (body.action) {
 
-    case 'update_phase': {
-      const { phaseId, title, description } = body
-      if (!phaseId) return NextResponse.json({ error: 'Missing phaseId' }, { status: 400 })
-      const { error } = await sb.from('phases')
-        .update({ title, description: description ?? null }).eq('id', phaseId)
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      return NextResponse.json({ success: true })
-    }
-
-    case 'delete_phase': {
-      const { phaseId } = body
-      if (!phaseId) return NextResponse.json({ error: 'Missing phaseId' }, { status: 400 })
-      // Check no modules
-      const { data: mods } = await sb.from('modules').select('id').eq('phase_id', phaseId)
-      if ((mods ?? []).length > 0)
-        return NextResponse.json({ error: 'Remove all modules first' }, { status: 400 })
-      const { error } = await sb.from('phases').delete().eq('id', phaseId)
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      return NextResponse.json({ success: true })
-    }
-
-    // ── MODULE ─────────────────────────────────────────────
-    case 'create_module': {
-      const { phaseId, title, module_number } = body
-      if (!phaseId || !title) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
-      const { data, error } = await sb.from('modules')
-        .insert({ phase_id: phaseId, title, module_number: module_number ?? 1, is_unlocked: false })
-        .select('id').single()
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      return NextResponse.json({ success: true, moduleId: (data as { id: string }).id })
-    }
-
-    case 'update_module': {
-      const { moduleId, title } = body
-      if (!moduleId || !title) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
-      const { error } = await sb.from('modules')
-        .update({ title, updated_by: auth.user.id, updated_at: new Date().toISOString() })
-        .eq('id', moduleId)
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      return NextResponse.json({ success: true })
-    }
-
-    case 'delete_module': {
-      const { moduleId } = body
-      if (!moduleId) return NextResponse.json({ error: 'Missing moduleId' }, { status: 400 })
-      // Delete progress records first
-      await sb.from('module_progress').delete().eq('module_id', moduleId)
-      const { error } = await sb.from('modules').delete().eq('id', moduleId)
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      return NextResponse.json({ success: true })
-    }
-
-    case 'toggle_module_unlock': {
-      const { moduleId, isUnlocked } = body
-      if (!moduleId) return NextResponse.json({ error: 'Missing moduleId' }, { status: 400 })
-      const { error } = await sb.from('modules')
-        .update({ is_unlocked: isUnlocked, updated_by: auth.user.id, updated_at: new Date().toISOString() })
-        .eq('id', moduleId)
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      return NextResponse.json({ success: true })
-    }
-
-    case 'swap_module_order': {
-      const { moduleId1, order1, moduleId2, order2 } = body
-      if (!moduleId1 || !moduleId2) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
-
-      // Validate order1/order2 are positive integers — prevents corrupting
-      // module ordering with negative/zero/non-numeric values from a
-      // malformed or tampered request.
-      const n1 = Number(order1)
-      const n2 = Number(order2)
-      if (!Number.isInteger(n1) || n1 < 1 || !Number.isInteger(n2) || n2 < 1) {
-        return NextResponse.json({ error: 'order1/order2 must be positive integers' }, { status: 400 })
-      }
-      if (moduleId1 === moduleId2) {
-        return NextResponse.json({ error: 'Cannot swap a module with itself' }, { status: 400 })
+      // ── PHASE ──────────────────────────────────────────────
+      case 'create_phase': {
+        const { programId, title, phase_number } = body
+        if (!programId || !title) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+        const { data, error } = await sb.from('phases')
+          .insert({ program_id: programId, title, phase_number: phase_number ?? 1 })
+          .select('id').single()
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ success: true, phaseId: (data as { id: string }).id })
       }
 
-      // Swap module_numbers
-      await sb.from('modules').update({ module_number: n1 }).eq('id', moduleId1)
-      await sb.from('modules').update({ module_number: n2 }).eq('id', moduleId2)
-      return NextResponse.json({ success: true })
+      case 'update_phase': {
+        const { phaseId, title, description } = body
+        if (!phaseId) return NextResponse.json({ error: 'Missing phaseId' }, { status: 400 })
+        const { error } = await sb.from('phases')
+          .update({ title, description: description ?? null }).eq('id', phaseId)
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ success: true })
+      }
+
+      case 'delete_phase': {
+        const { phaseId } = body
+        if (!phaseId) return NextResponse.json({ error: 'Missing phaseId' }, { status: 400 })
+        // Check no modules
+        const { data: mods } = await sb.from('modules').select('id').eq('phase_id', phaseId)
+        if ((mods ?? []).length > 0)
+          return NextResponse.json({ error: 'Remove all modules first' }, { status: 400 })
+        const { error } = await sb.from('phases').delete().eq('id', phaseId)
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ success: true })
+      }
+
+      // ── MODULE ─────────────────────────────────────────────
+      case 'create_module': {
+        const { phaseId, title, module_number } = body
+        if (!phaseId || !title) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+        const { data, error } = await sb.from('modules')
+          .insert({ phase_id: phaseId, title, module_number: module_number ?? 1, is_unlocked: false })
+          .select('id').single()
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ success: true, moduleId: (data as { id: string }).id })
+      }
+
+      case 'update_module': {
+        const { moduleId, title } = body
+        if (!moduleId || !title) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+        const { error } = await sb.from('modules')
+          .update({ title, updated_by: auth.user.id, updated_at: new Date().toISOString() })
+          .eq('id', moduleId)
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ success: true })
+      }
+
+      case 'delete_module': {
+        const { moduleId } = body
+        if (!moduleId) return NextResponse.json({ error: 'Missing moduleId' }, { status: 400 })
+        // Delete progress records first
+        await sb.from('module_progress').delete().eq('module_id', moduleId)
+        const { error } = await sb.from('modules').delete().eq('id', moduleId)
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ success: true })
+      }
+
+      case 'toggle_module_unlock': {
+        const { moduleId, isUnlocked } = body
+        if (!moduleId) return NextResponse.json({ error: 'Missing moduleId' }, { status: 400 })
+        const { error } = await sb.from('modules')
+          .update({ is_unlocked: isUnlocked, updated_by: auth.user.id, updated_at: new Date().toISOString() })
+          .eq('id', moduleId)
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ success: true })
+      }
+
+      case 'swap_module_order': {
+        const { moduleId1, order1, moduleId2, order2 } = body
+        if (!moduleId1 || !moduleId2) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+
+        // Validate order1/order2 are positive integers — prevents corrupting
+        // module ordering with negative/zero/non-numeric values from a
+        // malformed or tampered request.
+        const n1 = Number(order1)
+        const n2 = Number(order2)
+        if (!Number.isInteger(n1) || n1 < 1 || !Number.isInteger(n2) || n2 < 1) {
+          return NextResponse.json({ error: 'order1/order2 must be positive integers' }, { status: 400 })
+        }
+        if (moduleId1 === moduleId2) {
+          return NextResponse.json({ error: 'Cannot swap a module with itself' }, { status: 400 })
+        }
+
+        // Swap module_numbers
+        await sb.from('modules').update({ module_number: n1 }).eq('id', moduleId1)
+        await sb.from('modules').update({ module_number: n2 }).eq('id', moduleId2)
+        return NextResponse.json({ success: true })
+      }
+
+      default:
+        return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
     }
 
-    default:
-      return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
+  } catch (err) {
+    console.error('[curriculum] Unexpected error:', err)
+    return NextResponse.json({
+      error: err instanceof Error ? err.message : 'Unexpected server error',
+    }, { status: 500 })
   }
 }

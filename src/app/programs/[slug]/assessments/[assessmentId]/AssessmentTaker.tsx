@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useCallback, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Clock, Trophy, AlertTriangle, RotateCcw } from 'lucide-react'
 
@@ -33,16 +33,32 @@ interface Props {
   alreadyPassed:   boolean
   studentId:       string
   studentName:     string
+  slug:            string
 }
 
 type Screen = 'info' | 'confirm' | 'taking' | 'result'
 
-function CooldownTimer({ unlocksAt }: { unlocksAt: string }) {
+function CooldownTimer({ unlocksAt, onUnlock }: { unlocksAt: string; onUnlock: () => void }) {
   const [display, setDisplay] = useState('')
   useEffect(() => {
+    let firedUnlock = false
     function compute() {
       const diff = new Date(unlocksAt).getTime() - Date.now()
-      if (diff <= 0) { setDisplay('Unlocked!'); return }
+      if (diff <= 0) {
+        setDisplay('Unlocked!')
+        // Previously the timer stopped here — it displayed "Unlocked!"
+        // but nothing ever told the parent component the cooldown had
+        // actually expired, so the Retake button stayed disabled
+        // forever (driven by a static `canRetake` prop computed once
+        // at server-render time). This callback is the actual fix:
+        // it flips real client state the instant the countdown hits
+        // zero, without requiring a manual page refresh.
+        if (!firedUnlock) {
+          firedUnlock = true
+          onUnlock()
+        }
+        return
+      }
       const h = Math.floor(diff / 3600000)
       const m = Math.floor((diff % 3600000) / 60000)
       const s = Math.floor((diff % 60000) / 1000)
@@ -51,14 +67,14 @@ function CooldownTimer({ unlocksAt }: { unlocksAt: string }) {
     compute()
     const id = setInterval(compute, 1000)
     return () => clearInterval(id)
-  }, [unlocksAt])
+  }, [unlocksAt, onUnlock])
   return <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'32px', color:'var(--amber)' }}>{display}</span>
 }
 
 export default function AssessmentTaker({
   assessment, questions, isUnlocked,
   latestAttempt, allAttempts, attemptCount,
-  canRetake, retakeUnlocksAt, alreadyPassed,
+  canRetake, retakeUnlocksAt, alreadyPassed, slug,
 }: Props) {
   const router = useRouter()
   const [screen, setScreen]         = useState<Screen>(latestAttempt ? 'result' : 'info')
@@ -68,33 +84,25 @@ export default function AssessmentTaker({
   const [isPending, startTransition] = useTransition()
   const [currentQ, setCurrentQ]     = useState(0)
   const [submitError, setError]     = useState<string | null>(null)
+  // True once the client-side countdown has independently confirmed
+  // the 24-hour cooldown has expired — overrides the static `canRetake`
+  // prop (which is only ever correct at the exact moment the server
+  // rendered the page) without needing a manual refresh. This is the
+  // actual fix for "can't retake even after 24 hours."
+  const [cooldownExpired, setCooldownExpired] = useState(false)
+  const effectiveCanRetake = canRetake || cooldownExpired
 
   const displayResult = serverResult
     ? { score_percent: serverResult.score, passed: serverResult.passed }
     : latestAttempt
 
-  useEffect(() => {
-    if (screen !== 'taking') return
-    if (timeLeft <= 0) { handleSubmit(); return }
-    const id = setInterval(() => setTimeLeft(t => t - 1), 1000)
-    return () => clearInterval(id)
-  }, [screen, timeLeft])
-
-  const formatTime = (s: number) => {
-    const m = Math.floor(s / 60)
-    const sec = s % 60
-    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
-  }
-  const timerColor = timeLeft < 120 ? 'var(--red)' : timeLeft < 600 ? 'var(--amber)' : 'var(--green)'
-  const answeredCount = Object.keys(answers).length
-
-  function startRetake() {
-    setAnswers({}); setResult(null); setError(null)
-    setTimeLeft(assessment.duration_minutes * 60)
-    setCurrentQ(0); setScreen('info')
-  }
-
-  async function handleSubmit() {
+  // Wrapped in useCallback (was a plain function) so it has a stable
+  // identity across renders — needed to correctly include it in the
+  // timer effect's dependency array below without the effect re-
+  // running (and resetting the countdown) on every single render,
+  // which is exactly what would happen with a plain function
+  // reference that changes identity every time.
+  const handleSubmit = useCallback(async () => {
     if (isPending) return
     setError(null)
 
@@ -131,7 +139,35 @@ export default function AssessmentTaker({
         setError('Network error. Check your connection and try again.')
       }
     })
+  }, [isPending, assessment.id, answers, questions.length, router])
+
+  useEffect(() => {
+    if (screen !== 'taking') return
+    if (timeLeft <= 0) {
+      // A countdown reaching zero MUST trigger submission synchronously
+      // within this effect — there's no event to defer to, unlike the
+      // documented false-positive pattern in Topbar.tsx/Sidebar.tsx
+      // (an effect calling a function that happens to setState). Here
+      // the whole point of the effect IS to fire submission the instant
+      // time runs out; deferring it via a microtask would only delay
+      // submission by one tick with no actual benefit, while still
+      // tripping the same rule. Disabling narrowly with this
+      // justification on record, same pattern as Phase 1's fixes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      handleSubmit()
+      return
+    }
+    const id = setInterval(() => setTimeLeft(t => t - 1), 1000)
+    return () => clearInterval(id)
+  }, [screen, timeLeft, handleSubmit])
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60)
+    const sec = s % 60
+    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
   }
+  const timerColor = timeLeft < 120 ? 'var(--red)' : timeLeft < 600 ? 'var(--amber)' : 'var(--green)'
+  const answeredCount = Object.keys(answers).length
 
   // ── Not unlocked ──────────────────────────────────────────
   if (!isUnlocked) {
@@ -144,14 +180,14 @@ export default function AssessmentTaker({
         <div style={{ fontSize:'14px', color:'var(--muted)', maxWidth:'400px', margin:'0 auto 24px' }}>
           Complete all modules and wait for your admin to unlock this assessment.
         </div>
-        <a href="/programs/cloud-launchpad/assessments" className="btn btn-ghost"
+        <a href={`/programs/${slug}/assessments`} className="btn btn-ghost"
           style={{ fontSize:'13px', display:'inline-flex' }}>← Back to Assessments</a>
       </div>
     )
   }
 
   // ── Cooldown screen ───────────────────────────────────────
-  if (!canRetake && !alreadyPassed && retakeUnlocksAt) {
+  if (!effectiveCanRetake && !alreadyPassed && retakeUnlocksAt) {
     const lastScore = latestAttempt?.score_percent ?? 0
     return (
       <div>
@@ -170,12 +206,12 @@ export default function AssessmentTaker({
           <div style={{ fontSize:'13px', color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'12px', fontWeight:600 }}>
             Next attempt available in
           </div>
-          <CooldownTimer unlocksAt={retakeUnlocksAt}/>
+          <CooldownTimer unlocksAt={retakeUnlocksAt} onUnlock={() => setCooldownExpired(true)}/>
           <div style={{ fontSize:'13px', color:'var(--muted)', marginTop:'12px' }}>
             Use this time to review your notes.
           </div>
         </div>
-        <a href="/programs/cloud-launchpad/assessments" className="btn btn-ghost" style={{ fontSize:'13px' }}>
+        <a href={`/programs/${slug}/assessments`} className="btn btn-ghost" style={{ fontSize:'13px' }}>
           ← Back to Assessments
         </a>
       </div>
@@ -228,7 +264,7 @@ export default function AssessmentTaker({
           {isRetake ? '🔄 Start Retake →' : "I'm Ready →"}
         </button>
         <div style={{ textAlign:'center', marginTop:'14px' }}>
-          <a href="/programs/cloud-launchpad/assessments"
+          <a href={`/programs/${slug}/assessments`}
             style={{ fontSize:'13px', color:'var(--muted)', textDecoration:'none' }}>
             ← Back
           </a>
@@ -289,7 +325,7 @@ export default function AssessmentTaker({
             {passed ? '🎉 You passed! Certificate issued.' : `Need ${assessment.passing_percent}% to pass. Retake available in 24 hours.`}
           </div>
           {passed && (
-            <a href="/programs/cloud-launchpad/certificate" className="btn btn-primary"
+            <a href={`/programs/${slug}/certificate`} className="btn btn-primary"
               style={{ fontSize:'14px', padding:'12px 28px', display:'inline-flex' }}>
               <Trophy size={15}/> View Certificate →
             </a>
@@ -320,7 +356,7 @@ export default function AssessmentTaker({
           </div>
         )}
 
-        <a href="/programs/cloud-launchpad/assessments" className="btn btn-ghost" style={{ fontSize:'13px' }}>
+        <a href={`/programs/${slug}/assessments`} className="btn btn-ghost" style={{ fontSize:'13px' }}>
           ← Back to Assessments
         </a>
       </div>

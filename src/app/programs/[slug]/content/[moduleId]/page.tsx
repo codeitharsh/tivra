@@ -8,14 +8,15 @@ import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import MarkCompleteButton from './MarkCompleteButton'
 import { requireActiveStudent } from '@/lib/access-gate'
+import { requireProgramAccess } from '@/lib/program-access'
 import type { Profile } from '@/types/database'
 
 export default async function ModulePage({
   params,
 }: {
-  params: Promise<{ moduleId: string }>
+  params: Promise<{ slug: string; moduleId: string }>
 }) {
-  const { moduleId } = await params
+  const { slug, moduleId } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -26,11 +27,20 @@ export default async function ModulePage({
   if (!profile) redirect('/login')
 
   // Defense-in-depth — see src/lib/access-gate.ts. This is the actual
-  // PAID CONTENT itself (a single module/test/assessment) — the most
-  // important place for this check to exist, and it previously had none.
+  // PAID CONTENT itself (a single module) — the most important place
+  // for this check to exist.
   requireActiveStudent(profile)
 
   const admin = createAdminClient()
+
+  // Resolves the programme by slug and checks entitlement. This was
+  // PREVIOUSLY MISSING ENTIRELY on this page — a student could fetch
+  // /programs/cloud-launchpad/content/{any-module-id} for a module
+  // belonging to a programme they never paid for, as long as they
+  // could guess or enumerate a valid module UUID. The fetch below
+  // additionally double-checks the module actually belongs to THIS
+  // resolved programme, closing the gap completely.
+  const program = await requireProgramAccess(admin, profile, slug)
 
   // Fetch module with phase info
   const { data: modData } = await admin
@@ -46,7 +56,14 @@ export default async function ModulePage({
     phases: { title: string; phase_number: number; program_id: string } | null
   }
 
-  // Fetch student progress for this module
+  // Cross-check: this module must actually belong to the programme
+  // resolved from the URL slug. Without this, a student entitled to
+  // Programme A could still view Programme B's module content simply
+  // by knowing/guessing a Programme B module's UUID and substituting
+  // Programme A's slug in the URL — the slug and the moduleId were
+  // never correlated before.
+  if (mod.phases?.program_id !== program.id) notFound()
+
   const { data: progressData } = await supabase
     .from('module_progress')
     .select('status')
@@ -56,16 +73,14 @@ export default async function ModulePage({
 
   const status = (progressData as { status: string } | null)?.status ?? 'not_started'
 
-  // Generate signed URL for notes PDF if exists
   let signedUrl: string | null = null
   if (mod.notes_url) {
     const { data: urlData } = await admin.storage
       .from('notes')
-      .createSignedUrl(mod.notes_url, 3600) // 1 hour expiry
+      .createSignedUrl(mod.notes_url, 3600)
     signedUrl = urlData?.signedUrl ?? null
   }
 
-  // Fetch related doubts for this module
   const { data: doubtsRaw } = await admin
     .from('doubts')
     .select('id, question_text, upvotes, is_resolved, created_at')
@@ -89,12 +104,11 @@ export default async function ModulePage({
 
         <div style={{ padding: '28px', maxWidth: '900px' }}>
 
-          {/* Breadcrumb */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             fontSize: '12px', color: 'var(--muted)', marginBottom: '24px',
           }}>
-            <Link href="/programs/cloud-launchpad/content" style={{ color: 'var(--muted)', textDecoration: 'none' }}>
+            <Link href={`/programs/${slug}/content`} style={{ color: 'var(--muted)', textDecoration: 'none' }}>
               Study Content
             </Link>
             <span>›</span>
@@ -103,7 +117,6 @@ export default async function ModulePage({
             <span style={{ color: 'var(--text)' }}>Module {mod.module_number}</span>
           </div>
 
-          {/* Module header */}
           <div className="card" style={{ marginBottom: '20px', padding: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
               <div>
@@ -134,7 +147,6 @@ export default async function ModulePage({
                   )}
                 </div>
               </div>
-              {/* Mark complete button */}
               <MarkCompleteButton
                 moduleId={mod.id}
                 studentId={user.id}
@@ -143,7 +155,6 @@ export default async function ModulePage({
             </div>
           </div>
 
-          {/* PDF Viewer */}
           {signedUrl ? (
             <div className="card" style={{ marginBottom: '20px', padding: '0', overflow: 'hidden' }}>
               <div style={{
@@ -185,7 +196,6 @@ export default async function ModulePage({
             </div>
           )}
 
-          {/* Related doubts */}
           {doubts.length > 0 && (
             <div className="card" style={{ marginBottom: '20px' }}>
               <div style={{
@@ -227,10 +237,9 @@ export default async function ModulePage({
             </div>
           )}
 
-          {/* Navigation between modules */}
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
             <Link
-              href="/programs/cloud-launchpad/content"
+              href={`/programs/${slug}/content`}
               className="btn btn-ghost"
               style={{ fontSize: '13px' }}
             >

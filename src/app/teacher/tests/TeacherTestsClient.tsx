@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Plus, Trash2, Loader2, Lock, Unlock,
-  ChevronDown, ChevronUp, Edit2, X, Check,
+  ChevronDown, ChevronUp, X, Check,
 } from 'lucide-react'
 import { createClient as createSBClient } from '@supabase/supabase-js'
 
@@ -59,8 +59,6 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3500)
   }
-
-  const selectedPhase = phases.find(p => p.id === form.phase_id)
 
   // ── Add / remove question in create form ─────────────────
   function addQuestion() {

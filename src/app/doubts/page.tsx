@@ -56,7 +56,6 @@ export default async function DoubtsPage() {
           <DoubtsClient
             doubts={doubts}
             modules={(modules as {id:string;title:string}[])}
-            userId={user.id}
             userRole={profile.role ?? 'student'}
           />
         </div>

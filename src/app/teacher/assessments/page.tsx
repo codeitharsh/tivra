@@ -20,13 +20,29 @@ export default async function TeacherAssessmentsPage() {
 
   const admin = createAdminClient()
 
-  // Fetch phases
+  // Fetch phases — previously fetched with no programme info at all,
+  // meaning if a second programme's phases ever existed they'd show
+  // up mixed in with no way to tell which programme each belonged to,
+  // and the hardcoded "phase 1 vs phase 2" placeholder defaults below
+  // assumed exactly Cloud LaunchPad's 2-phase structure. Now includes
+  // programme name/slug so the client can group and label correctly.
   const { data: phasesRaw } = await admin
     .from('phases')
-    .select('id, title, phase_number')
+    .select('id, title, phase_number, program_id, programs!program_id(name, slug)')
+    .order('program_id')
     .order('phase_number')
 
-  const phases = (phasesRaw ?? []) as { id: string; title: string; phase_number: number }[]
+  // Same Supabase to-one-join shape ambiguity as elsewhere in this
+  // codebase — handled defensively rather than relying on tsc to
+  // catch every instance (it didn't catch this particular one).
+  type PhaseRow = {
+    id: string; title: string; phase_number: number; program_id: string
+    programs: { name: string; slug: string } | { name: string; slug: string }[] | null
+  }
+  const phases = ((phasesRaw ?? []) as unknown as PhaseRow[]).map(row => ({
+    ...row,
+    programs: Array.isArray(row.programs) ? (row.programs[0] ?? null) : row.programs,
+  }))
 
   // Fetch assessments with phase info
   const { data: assessmentsRaw } = await admin

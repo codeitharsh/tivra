@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
-import Link from 'next/link'
 import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 

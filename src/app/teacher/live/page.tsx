@@ -50,7 +50,6 @@ export default async function TeacherLivePage() {
             sessions={sessions}
             phases={phases}
             batches={batches}
-            userId={user.id}
           />
         </div>
       </main>

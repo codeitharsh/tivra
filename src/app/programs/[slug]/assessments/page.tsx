@@ -7,9 +7,22 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import { requireActiveStudent } from '@/lib/access-gate'
+import { requireProgramAccess } from '@/lib/program-access'
 import type { Profile } from '@/types/database'
 
-export default async function AssessmentsPage() {
+const PHASE_PALETTE = [
+  { gradient: 'linear-gradient(135deg,rgba(255,107,35,0.08),rgba(245,158,11,0.05))', border: 'rgba(255,107,35,0.25)', accent: '#ff6b23' },
+  { gradient: 'linear-gradient(135deg,rgba(0,212,170,0.05),rgba(59,91,219,0.05))',   border: 'rgba(0,212,170,0.2)',  accent: 'var(--teal)' },
+  { gradient: 'linear-gradient(135deg,rgba(167,139,250,0.08),rgba(124,58,237,0.05))', border: 'rgba(167,139,250,0.25)', accent: '#a78bfa' },
+  { gradient: 'linear-gradient(135deg,rgba(34,197,94,0.08),rgba(22,163,74,0.05))',   border: 'rgba(34,197,94,0.25)',  accent: '#22c55e' },
+]
+
+export default async function AssessmentsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -19,28 +32,22 @@ export default async function AssessmentsPage() {
   const profile = profileData as Profile | null
   if (!profile) redirect('/login')
 
-  // Defense-in-depth — see src/lib/access-gate.ts for why this exists
-  // alongside proxy.ts middleware.
   requireActiveStudent(profile)
 
   const admin = createAdminClient()
+  const program = await requireProgramAccess(admin, profile, slug)
 
-  const { data: program } = await admin
-    .from('programs').select('id').eq('slug', 'cloud-launchpad').single()
-
-  // Phases with module counts
   const { data: phasesRaw } = await admin
     .from('phases')
     .select('id, title, phase_number, modules(id)')
-    .eq('program_id', (program as {id:string}|null)?.id ?? '')
+    .eq('program_id', program.id)
     .order('phase_number')
 
-  const phases = (phasesRaw ?? []) as {
+  const phases = ((phasesRaw ?? []) as {
     id: string; title: string; phase_number: number
     modules: { id: string }[]
-  }[]
+  }[]).sort((a, b) => a.phase_number - b.phase_number)
 
-  // Student module progress
   const { data: progressRaw } = await supabase
     .from('module_progress')
     .select('module_id, status')
@@ -52,7 +59,6 @@ export default async function AssessmentsPage() {
       .map(p => p.module_id)
   )
 
-  // Assessments
   const { data: assessmentsRaw } = await admin
     .from('assessments')
     .select('*')
@@ -64,7 +70,6 @@ export default async function AssessmentsPage() {
     unlock_datetime: string | null; is_manually_unlocked: boolean
   }[]
 
-  // Student assessment attempts
   const { data: attemptsRaw } = await supabase
     .from('assessment_attempts')
     .select('assessment_id, score_percent, passed, submitted_at')
@@ -75,7 +80,6 @@ export default async function AssessmentsPage() {
       .map(a => [a.assessment_id, a])
   )
 
-  // Certificates
   const { data: certsRaw } = await supabase
     .from('certificates')
     .select('phase_id, score_percent, issued_at')
@@ -87,56 +91,53 @@ export default async function AssessmentsPage() {
       .map(c => [c.phase_id, c])
   )
 
-  // Phase 1 pass check (for Phase 2 eligibility)
-  const phase1Assessment = assessments.find(a => {
-    const ph = phases.find(p => p.id === a.phase_id)
-    return ph?.phase_number === 1
+  // Generic sequential eligibility: phase N's assessment is only
+  // attemptable once phase N-1's assessment has been PASSED — not
+  // just hardcoded to "phase 1 unlocks phase 2." Works for any number
+  // of phases.
+  const phasePassedMap = new Map<string, boolean>()
+  phases.forEach(phase => {
+    const a = assessments.find(x => x.phase_id === phase.id)
+    phasePassedMap.set(phase.id, a ? attemptMap.get(a.id)?.passed === true : false)
   })
-  const phase1Passed = phase1Assessment
-    ? attemptMap.get(phase1Assessment.id)?.passed === true
-    : false
 
   const now = new Date()
-
-  const phaseColors = [
-    { gradient: 'linear-gradient(135deg,rgba(255,107,35,0.08),rgba(245,158,11,0.05))', border: 'rgba(255,107,35,0.25)', accent: '#ff6b23' },
-    { gradient: 'linear-gradient(135deg,rgba(0,212,170,0.05),rgba(59,91,219,0.05))',   border: 'rgba(0,212,170,0.2)',  accent: 'var(--teal)' },
-  ]
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       <Sidebar profile={profile}/>
       <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar title="Assessments" subtitle="Score ≥ 75% to earn your certificate"/>
+        <Topbar title="Assessments" subtitle={`${program.name} — Score ≥ 75% to earn your certificate`}/>
         <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
 
-          {/* Phase assessment cards */}
           <div style={{ display:'grid', marginBottom: '24px' }}>
             {phases.map((phase, pi) => {
               const assessment = assessments.find(a => a.phase_id === phase.id)
               const attempt    = assessment ? attemptMap.get(assessment.id) : null
               const cert       = certMap.get(phase.id)
-              const colors     = phaseColors[pi]
+              const colors     = PHASE_PALETTE[pi % PHASE_PALETTE.length]
 
-              // Module completion check
               const phaseModuleIds   = phase.modules.map(m => m.id)
               const completedCount   = phaseModuleIds.filter(id => completedSet.has(id)).length
               const allModulesDone   = completedCount === phaseModuleIds.length && phaseModuleIds.length > 0
               const modulePct        = phaseModuleIds.length > 0
                 ? Math.round((completedCount / phaseModuleIds.length) * 100) : 0
 
-              // Lock conditions
               const scheduleOk = !assessment
                 ? false
                 : assessment.is_manually_unlocked ||
                   (assessment.unlock_datetime ? now >= new Date(assessment.unlock_datetime) : false)
 
-              const phase2EligOk = pi === 0 ? true : phase1Passed
+              // First phase (lowest phase_number) has no prerequisite;
+              // every subsequent phase requires the PREVIOUS phase's
+              // assessment to be passed.
+              const prevPhase = pi > 0 ? phases[pi - 1] : null
+              const phaseEligOk = !prevPhase || (phasePassedMap.get(prevPhase.id) ?? false)
 
-              const canAttempt = allModulesDone && scheduleOk && phase2EligOk && !attempt
+              const canAttempt = allModulesDone && scheduleOk && phaseEligOk && !attempt
 
               let lockReason = ''
-              if (!phase2EligOk) lockReason = 'Pass Phase 1 assessment first'
+              if (!phaseEligOk) lockReason = `Pass Phase ${prevPhase?.phase_number} assessment first`
               else if (!allModulesDone) lockReason = `Complete all ${phaseModuleIds.length} modules (${completedCount}/${phaseModuleIds.length} done)`
               else if (!scheduleOk) lockReason = 'Waiting for admin to unlock'
 
@@ -161,7 +162,6 @@ export default async function AssessmentsPage() {
                     </div>
                   )}
 
-                  {/* Progress toward unlock */}
                   {!attempt && (
                     <div style={{ marginBottom: '16px' }}>
                       <div style={{
@@ -179,7 +179,6 @@ export default async function AssessmentsPage() {
                     </div>
                   )}
 
-                  {/* Result if attempted */}
                   {attempt && (
                     <div style={{
                       background: attempt.passed ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.08)',
@@ -199,12 +198,11 @@ export default async function AssessmentsPage() {
                     </div>
                   )}
 
-                  {/* CTA */}
                   {!assessment ? (
                     <div style={{ fontSize: '13px', color: 'var(--muted)' }}>No assessment configured yet.</div>
                   ) : canAttempt ? (
                     <Link
-                      href={`/programs/cloud-launchpad/assessments/${assessment.id}`}
+                      href={`/programs/${slug}/assessments/${assessment.id}`}
                       className="btn btn-primary"
                       style={{ width: '100%', justifyContent: 'center', fontSize: '14px' }}
                     >
@@ -213,7 +211,7 @@ export default async function AssessmentsPage() {
                   ) : attempt ? (
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <Link
-                        href={`/programs/cloud-launchpad/assessments/${assessment.id}`}
+                        href={`/programs/${slug}/assessments/${assessment.id}`}
                         className="btn btn-ghost"
                         style={{ flex: 1, justifyContent: 'center', fontSize: '13px' }}
                       >
@@ -221,7 +219,7 @@ export default async function AssessmentsPage() {
                       </Link>
                       {cert && (
                         <Link
-                          href="/programs/cloud-launchpad/certificate"
+                          href={`/programs/${slug}/certificate`}
                           className="btn btn-primary"
                           style={{ flex: 1, justifyContent: 'center', fontSize: '13px' }}
                         >
@@ -241,7 +239,6 @@ export default async function AssessmentsPage() {
             })}
           </div>
 
-          {/* Certificate eligibility */}
           <div className="card">
             <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>
               Certificate Eligibility

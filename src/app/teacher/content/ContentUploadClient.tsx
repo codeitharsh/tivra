@@ -12,7 +12,7 @@ interface Phase {
   programs: { name: string; slug: string } | null
 }
 
-export default function ContentUploadClient({ phases, userId }: { phases: Phase[]; userId: string }) {
+export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
   const router  = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
 

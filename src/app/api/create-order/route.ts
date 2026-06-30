@@ -109,6 +109,12 @@ export async function POST(req: Request): Promise<Response> {
     })
 
   } catch (err) {
-    return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
+    // Previously returned err.message directly to the client — this
+    // can leak internal details (library error strings, stack traces,
+    // occasionally even partial connection info) in an unexpected
+    // failure. Logged server-side for real debugging; client gets a
+    // generic, safe message.
+    console.error('[create-order] Unexpected error:', err)
+    return Response.json({ error: 'Could not initialise payment. Please try again or contact support.' }, { status: 500 })
   }
 }

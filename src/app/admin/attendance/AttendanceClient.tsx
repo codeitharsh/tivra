@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, Users, Clock, CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Download, Clock, CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
 
 // ── Calls the edge-compatible /api/admin route (migrated off Server Actions) ──
 async function callAdminApi(payload: Record<string, unknown>): Promise<{ error?: string; csv?: string | null }> {
@@ -53,13 +53,6 @@ export default function AttendanceClient({ sessions, attendanceMap, totalStudent
       showToast('✓ CSV downloaded')
     }
     setExporting(null)
-  }
-
-  function getStatusColor(status: string) {
-    if (status === 'present') return 'var(--green)'
-    if (status === 'partial') return 'var(--amber)'
-    if (status === 'late')    return 'var(--cyan)'
-    return 'var(--red)'
   }
 
   function getAttendanceRate(summary: AttendanceSummary | undefined, total: number) {

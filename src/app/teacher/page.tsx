@@ -188,6 +188,50 @@ export default async function TeacherHomePage() {
               </div>
             </div>
           )}
+          {/* Upcoming live sessions — this data was previously fetched
+              and then silently dropped (no widget rendered it at all,
+              triggering an unused-variable lint warning). Wired up here
+              instead of just deleting the query, since a 3-session
+              upcoming-classes preview is a reasonable, low-risk addition
+              consistent with the My Modules / Unanswered Doubts widgets
+              already on this page. */}
+          {sessions.length > 0 && (
+            <div className="card">
+              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'15px',
+                marginBottom:'14px', display:'flex', justifyContent:'space-between' }}>
+                <span>Upcoming Live Sessions</span>
+                <Link href="/teacher/live" style={{ fontSize:'12px', color:'var(--teal)', textDecoration:'none' }}>
+                  Manage all →
+                </Link>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                {sessions.map(s => {
+                  const batch  = s.batches as Record<string,unknown>|null
+                  const isLive = s.is_live as boolean
+                  return (
+                    <Link key={s.id as string} href="/teacher/live" style={{ textDecoration:'none' }}>
+                      <div className="card" style={{ padding:'12px 16px', cursor:'pointer',
+                        borderLeft: `2px solid ${isLive ? 'var(--green)' : 'var(--amber)'}` }}>
+                        <div style={{ fontSize:'13px', marginBottom:'4px', fontWeight:500,
+                          display:'flex', alignItems:'center', gap:'8px' }}>
+                          {String(s.title ?? '')}
+                          {isLive && (
+                            <span style={{ color:'var(--green)', fontWeight:600, fontSize:'11px' }}>● LIVE NOW</span>
+                          )}
+                        </div>
+                        <div style={{ fontSize:'11px', color:'var(--muted)' }}>
+                          {batch ? `${String(batch.name ?? '')} · ` : ''}
+                          {new Date(s.scheduled_at as string).toLocaleString('en-IN', {
+                            day:'numeric', month:'short', hour:'2-digit', minute:'2-digit',
+                          })}
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

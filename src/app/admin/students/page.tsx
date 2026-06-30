@@ -6,7 +6,6 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import type { Profile } from '@/types/database'
-import Link from 'next/link'
 
 export default async function AdminStudentsPage() {
   const supabase = await createClient()
@@ -25,10 +24,6 @@ export default async function AdminStudentsPage() {
 
   const students = (studentsRaw ?? []) as Record<string, unknown>[]
 
-  const { data: batchesRaw } = await admin
-    .from('batches').select('id, name, batch_type').in('status',['active','upcoming']).order('name')
-  const batches = (batchesRaw ?? []) as { id: string; name: string; batch_type: string }[]
-
   // Module progress per student
   const { data: progressRaw } = await admin
     .from('module_progress').select('student_id, status').eq('status', 'completed')
@@ -46,16 +41,63 @@ export default async function AdminStudentsPage() {
     testMap[a.student_id].total += a.score_percent ?? 0
   }
 
+  // Total module count PER STUDENT, based on their actual enrollments —
+  // previously this was a hardcoded literal /24, only ever correct for
+  // a student enrolled in exactly the original single-programme,
+  // 2-phase, 24-module Cloud LaunchPad. Any student enrolled in a
+  // different programme (or a programme with a different module
+  // count) saw a silently wrong progress percentage in this admin
+  // table. Computed dynamically per student here, same approach
+  // already used in dashboard/page.tsx for the student-facing view.
+  const { data: enrollmentsRaw } = await admin
+    .from('enrolled_programs')
+    .select('student_id, program_id')
+  const studentProgramIds: Record<string, string[]> = {}
+  for (const e of (enrollmentsRaw ?? []) as { student_id: string; program_id: string }[]) {
+    (studentProgramIds[e.student_id] ??= []).push(e.program_id)
+  }
+
+  const allProgramIds = Array.from(new Set(Object.values(studentProgramIds).flat()))
+  const { data: phasesForCount } = allProgramIds.length > 0 ? await admin
+    .from('phases').select('id, program_id').in('program_id', allProgramIds) : { data: [] }
+  const phaseIdsByProgram: Record<string, string[]> = {}
+  for (const ph of (phasesForCount ?? []) as { id: string; program_id: string }[]) {
+    (phaseIdsByProgram[ph.program_id] ??= []).push(ph.id)
+  }
+  const allPhaseIds = Object.values(phaseIdsByProgram).flat()
+  const { data: modulesForCount } = allPhaseIds.length > 0 ? await admin
+    .from('modules').select('id, phase_id').in('phase_id', allPhaseIds) : { data: [] }
+  const moduleCountByPhase: Record<string, number> = {}
+  for (const m of (modulesForCount ?? []) as { id: string; phase_id: string }[]) {
+    moduleCountByPhase[m.phase_id] = (moduleCountByPhase[m.phase_id] ?? 0) + 1
+  }
+
+  function totalModulesForStudent(studentId: string): number {
+    const programIds = studentProgramIds[studentId] ?? []
+    let total = 0
+    for (const pid of programIds) {
+      for (const phaseId of (phaseIdsByProgram[pid] ?? [])) {
+        total += moduleCountByPhase[phaseId] ?? 0
+      }
+    }
+    return total
+  }
+
   type EnrichedStudent = Record<string,unknown>
-  const enriched: EnrichedStudent[] = students.map(s => ({
-    ...s,
-    modules_done:     progressMap[s.id as string] ?? 0,
-    progress_percent: Math.round(((progressMap[s.id as string] ?? 0) / 24) * 100),
-    tests_taken:      testMap[s.id as string]?.count ?? 0,
-    avg_score:        testMap[s.id as string]
-      ? Math.round(testMap[s.id as string]!.total / testMap[s.id as string]!.count)
-      : null,
-  }))
+  const enriched: EnrichedStudent[] = students.map(s => {
+    const totalModules = totalModulesForStudent(s.id as string)
+    const done          = progressMap[s.id as string] ?? 0
+    return {
+      ...s,
+      modules_done:     done,
+      modules_total:    totalModules,
+      progress_percent: totalModules > 0 ? Math.round((done / totalModules) * 100) : 0,
+      tests_taken:      testMap[s.id as string]?.count ?? 0,
+      avg_score:        testMap[s.id as string]
+        ? Math.round(testMap[s.id as string]!.total / testMap[s.id as string]!.count)
+        : null,
+    }
+  })
 
   const roleColors: Record<string, string> = {
     student:'var(--cyan)', teacher:'#a78bfa', parent:'#93c5fd', admin:'var(--green)',
@@ -125,7 +167,7 @@ export default async function AdminStudentsPage() {
                       <td>
                         <div style={{minWidth:'80px'}}>
                           <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px'}}>
-                            <span style={{fontSize:'10px',color:'var(--muted)'}}>{s.modules_done as number}/24</span>
+                            <span style={{fontSize:'10px',color:'var(--muted)'}}>{s.modules_done as number}/{s.modules_total as number}</span>
                             <span style={{fontSize:'10px',color:'var(--cyan)'}}>{s.progress_percent as number}%</span>
                           </div>
                           <div className="progress-track">

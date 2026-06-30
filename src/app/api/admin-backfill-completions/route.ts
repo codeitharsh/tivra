@@ -24,45 +24,54 @@ function adminSB() {
 }
 
 export async function POST(): Promise<Response> {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
 
-  const { data: profile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single()
-  if ((profile as { role: string } | null)?.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const sb = adminSB()
-
-  // Every student with at least one enrolled programme is a candidate —
-  // checkAndIssueProgramCompletion itself figures out if they actually qualify.
-  const { data: studentsRaw } = await sb
-    .from('enrolled_programs')
-    .select('student_id')
-
-  const studentIds = Array.from(new Set(
-    ((studentsRaw ?? []) as { student_id: string }[]).map(s => s.student_id)
-  ))
-
-  const results: { studentId: string; issued: boolean; plan?: string }[] = []
-  for (const studentId of studentIds) {
-    const result = await checkAndIssueProgramCompletion(sb, studentId)
-    if (result.issued) {
-      results.push({ studentId, issued: true, plan: result.plan })
+    const { data: profile } = await supabase
+      .from('profiles').select('role').eq('id', user.id).single()
+    if ((profile as { role: string } | null)?.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-  }
 
-  return NextResponse.json({
-    success:          true,
-    studentsChecked:  studentIds.length,
-    certificatesIssued: results.length,
-    issued:           results,
-  })
+    const sb = adminSB()
+
+    // Every student with at least one enrolled programme is a candidate —
+    // checkAndIssueProgramCompletion itself figures out if they actually qualify.
+    const { data: studentsRaw } = await sb
+      .from('enrolled_programs')
+      .select('student_id')
+
+    const studentIds = Array.from(new Set(
+      ((studentsRaw ?? []) as { student_id: string }[]).map(s => s.student_id)
+    ))
+
+    const results: { studentId: string; issued: boolean; plan?: string }[] = []
+    for (const studentId of studentIds) {
+      const result = await checkAndIssueProgramCompletion(sb, studentId)
+      if (result.issued) {
+        results.push({ studentId, issued: true, plan: result.plan })
+      }
+    }
+
+    return NextResponse.json({
+      success:          true,
+      studentsChecked:  studentIds.length,
+      certificatesIssued: results.length,
+      issued:           results,
+    })
+
+  } catch (err) {
+    console.error('[admin-backfill-completions] Unexpected error:', err)
+    return NextResponse.json({
+      error: err instanceof Error ? err.message : 'Unexpected server error',
+    }, { status: 500 })
+  }
 }

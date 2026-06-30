@@ -7,6 +7,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import { requireActiveStudent } from '@/lib/access-gate'
+import { requireProgramAccess } from '@/lib/program-access'
 import type { Profile } from '@/types/database'
 
 // ── Types ────────────────────────────────────────────────────
@@ -31,15 +32,22 @@ interface ProgressRow {
   status: 'not_started' | 'in_progress' | 'completed'
 }
 
+// Cycles through a fixed palette rather than indexing a fixed-length
+// array — works correctly whether a programme has 1 phase or 12.
+const PHASE_PALETTE = [
+  { top: 'linear-gradient(90deg,#ff6b35,#f59e0b)', fill: '#ff6b35' },
+  { top: 'linear-gradient(90deg,var(--teal),var(--blue))',  fill: 'var(--teal)' },
+  { top: 'linear-gradient(90deg,#a78bfa,#7c3aed)',  fill: '#a78bfa' },
+  { top: 'linear-gradient(90deg,#22c55e,#16a34a)',  fill: '#22c55e' },
+]
+
 // ── Helpers ──────────────────────────────────────────────────
 function ModuleItem({
-  mod,
-  status,
-  phaseSlug,
+  mod, status, slug,
 }: {
   mod: ModuleRow
   status: 'not_started' | 'in_progress' | 'completed' | 'locked'
-  phaseSlug: string
+  slug: string
 }) {
   const iconMap = {
     completed:  { cls: 'mod-done',   icon: '✓' },
@@ -80,7 +88,7 @@ function ModuleItem({
   if (isLocked) return inner
   return (
     <Link
-      href={`/programs/cloud-launchpad/content/${mod.id}`}
+      href={`/programs/${slug}/content/${mod.id}`}
       style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
     >
       {inner}
@@ -89,7 +97,12 @@ function ModuleItem({
 }
 
 // ── Page ─────────────────────────────────────────────────────
-export default async function ContentPage() {
+export default async function ContentPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -99,37 +112,37 @@ export default async function ContentPage() {
   const profile = profileData as Profile | null
   if (!profile) redirect('/login')
 
-  // ── Hard access gate — defense in depth ───────────────────
-  // This page previously had NO access_status check at all — only
-  // "are you logged in." A restricted or pending-payment student
-  // could see full study content if middleware was ever bypassed.
+  // Hard access gate — defense in depth (see access-gate.ts)
   requireActiveStudent(profile)
 
   const admin = createAdminClient()
 
-  // Fetch program id first
-  const { data: programData } = await admin
-    .from('programs').select('id').eq('slug','cloud-launchpad').single()
-  const programId = (programData as {id:string}|null)?.id ?? ''
+  // Resolves the programme by slug AND checks this student is actually
+  // entitled to it (404s on unknown slug, redirects to the landing page
+  // if they haven't paid for THIS specific programme) — this single
+  // call replaces what used to be a hardcoded slug + no entitlement
+  // check at all.
+  const program = await requireProgramAccess(admin, profile, slug)
 
-  // Fetch all phases with modules for Cloud LaunchPad
+  // Fetch all phases with modules for this programme — works for any
+  // number of phases, not just exactly 2.
   const { data: phasesRaw } = await admin
     .from('phases')
     .select(`
       id, title, phase_number, description,
       modules (id, title, module_number, notes_url, is_unlocked)
     `)
-    .eq('program_id', programId)
+    .eq('program_id', program.id)
     .order('phase_number')
 
   const phases = (phasesRaw ?? []) as PhaseRow[]
-
-  // Sort modules within each phase
   phases.forEach(p => {
     p.modules = (p.modules ?? []).sort((a, b) => a.module_number - b.module_number)
   })
 
-  // Fetch student's progress
+  // Fetch student's progress across ALL modules (not scoped to this
+  // programme — module IDs are globally unique, so this is safe and
+  // avoids an extra filter; only this programme's modules are rendered).
   const { data: progressRaw } = await supabase
     .from('module_progress')
     .select('module_id, status')
@@ -139,13 +152,6 @@ export default async function ContentPage() {
     (progressRaw as ProgressRow[] ?? []).map(p => [p.module_id, p.status])
   )
 
-  // Check Phase 1 completion (needed to unlock Phase 2)
-  const phase1 = phases.find(p => p.phase_number === 1)
-  const phase1ModuleIds = phase1?.modules.map(m => m.id) ?? []
-  const phase1Completed = phase1ModuleIds.length > 0 &&
-    phase1ModuleIds.every(id => progressMap.get(id) === 'completed')
-
-  // Calculate progress per phase
   const getPhaseStats = (phase: PhaseRow) => {
     const mods = phase.modules
     const completed = mods.filter(m => progressMap.get(m.id) === 'completed').length
@@ -153,28 +159,42 @@ export default async function ContentPage() {
     return { completed, total: mods.length, pct }
   }
 
-  const phase1Stats = getPhaseStats((phases.find(p => p.phase_number === 1) ?? { id:'',title:'',phase_number:1,description:null,modules:[] }) as PhaseRow)
-  const phase2Stats = getPhaseStats((phases.find(p => p.phase_number === 2) ?? { id:'',title:'',phase_number:2,description:null,modules:[] }) as PhaseRow)
+  // Generic sequential unlock: phase N is locked until ALL modules in
+  // phase N-1 are completed. Phase 1 (or whichever has the lowest
+  // phase_number) is always unlocked. Works for any number of phases,
+  // unlike the original which only handled exactly phase 1 → phase 2.
+  const sortedPhases = [...phases].sort((a, b) => a.phase_number - b.phase_number)
+  const phaseLockMap = new Map<string, boolean>()
+  sortedPhases.forEach((phase, idx) => {
+    if (idx === 0) {
+      phaseLockMap.set(phase.id, false)
+      return
+    }
+    const prevPhase = sortedPhases[idx - 1]
+    const prevModuleIds = prevPhase.modules.map(m => m.id)
+    const prevCompleted = prevModuleIds.length > 0 &&
+      prevModuleIds.every(id => progressMap.get(id) === 'completed')
+    phaseLockMap.set(phase.id, !prevCompleted)
+  })
 
-  const phaseColors = [
-    { top: 'linear-gradient(90deg,#ff6b35,#f59e0b)', fill: '#ff6b35' },
-    { top: 'linear-gradient(90deg,var(--teal),var(--blue))', fill: 'var(--teal)' },
-  ]
+  const totalModules = phases.reduce((sum, p) => sum + p.modules.length, 0)
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       <Sidebar profile={profile}/>
       <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar title="Study Content" subtitle="Cloud LaunchPad — 2 phases · 24 modules"/>
+        <Topbar
+          title="Study Content"
+          subtitle={`${program.name} — ${phases.length} phase${phases.length !== 1 ? 's' : ''} · ${totalModules} module${totalModules !== 1 ? 's' : ''}`}
+        />
 
         <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
 
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:'16px' }}>
-            {phases.map((phase, pi) => {
-              const isPhase2 = phase.phase_number === 2
-              const locked   = isPhase2 && !phase1Completed
-              const stats    = pi === 0 ? phase1Stats : phase2Stats
-              const colors   = phaseColors[pi]
+            {sortedPhases.map((phase, pi) => {
+              const locked  = phaseLockMap.get(phase.id) ?? false
+              const stats   = getPhaseStats(phase)
+              const colors  = PHASE_PALETTE[pi % PHASE_PALETTE.length]
 
               return (
                 <div
@@ -185,7 +205,6 @@ export default async function ContentPage() {
                     opacity: locked ? 0.75 : 1,
                   }}
                 >
-                  {/* Top accent bar */}
                   <div style={{ height: '3px', background: colors.top }}/>
 
                   <div style={{ padding: '20px' }}>
@@ -205,13 +224,12 @@ export default async function ContentPage() {
                       {phase.description}
                     </div>
 
-                    {/* Progress */}
                     <div style={{ marginBottom: '16px' }}>
                       <div style={{
                         display: 'flex', justifyContent: 'space-between',
                         fontSize: '11px', color: 'var(--muted)', marginBottom: '5px',
                       }}>
-                        <span>{locked ? 'Unlocks after Phase 1 complete' : `${stats.completed} of ${stats.total} modules complete`}</span>
+                        <span>{locked ? `Unlocks after Phase ${phase.phase_number - 1} complete` : `${stats.completed} of ${stats.total} modules complete`}</span>
                         <span style={{ color: locked ? 'var(--muted)' : colors.fill }}>{stats.pct}%</span>
                       </div>
                       <div className="progress-track">
@@ -222,7 +240,6 @@ export default async function ContentPage() {
                       </div>
                     </div>
 
-                    {/* Module list */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {phase.modules.map(mod => {
                         const rawStatus = progressMap.get(mod.id) ?? 'not_started'
@@ -232,14 +249,13 @@ export default async function ContentPage() {
                             key={mod.id}
                             mod={mod}
                             status={status}
-                            phaseSlug="cloud-launchpad"
+                            slug={slug}
                           />
                         )
                       })}
                     </div>
                   </div>
 
-                  {/* Locked overlay */}
                   {locked && (
                     <div style={{
                       position: 'absolute', inset: 0,
@@ -251,9 +267,9 @@ export default async function ContentPage() {
                       <div style={{
                         fontFamily: 'Syne, sans-serif', fontWeight: 700,
                         fontSize: '14px', color: '#fff',
-                      }}>Phase 2 Locked</div>
+                      }}>Phase {phase.phase_number} Locked</div>
                       <div style={{ fontSize: '12px', color: 'var(--muted)', textAlign: 'center', maxWidth: '200px' }}>
-                        Complete all Phase 1 modules to unlock
+                        Complete all Phase {phase.phase_number - 1} modules to unlock
                       </div>
                     </div>
                   )}

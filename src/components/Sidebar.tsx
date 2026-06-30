@@ -16,13 +16,41 @@ import type { Profile, UserRole } from '@/types/database'
 
 interface SidebarProps { profile: Profile | null }
 
-const NAV_STUDENT = [
-  { href:'/dashboard',                             label:'Dashboard',    icon:LayoutDashboard },
-  { href:'/programs/cloud-launchpad/content',      label:'Study Content',icon:BookOpen },
-  { href:'/programs/cloud-launchpad/tests',        label:'Weekly Tests', icon:ClipboardList },
-  { href:'/programs/cloud-launchpad/assessments',  label:'Assessments',  icon:Target },
-  { href:'/programs/cloud-launchpad/certificate',  label:'Certificate',  icon:Award },
-]
+// Previously hardcoded to a single cloud-launchpad nav block — this
+// only worked because exactly one programme existed. Now generated
+// dynamically per enrolled programme (see Sidebar's enrolledPrograms
+// state below), so a student enrolled in 2+ programmes sees a nav
+// section for each, and a student in exactly 1 still sees the same
+// flat structure as before.
+function buildStudentNav(enrolledPrograms: { name: string; slug: string }[]) {
+  const dashboard = { href:'/dashboard', label:'Dashboard', icon:LayoutDashboard }
+  if (enrolledPrograms.length === 0) return [dashboard]
+  if (enrolledPrograms.length === 1) {
+    const p = enrolledPrograms[0]
+    return [
+      dashboard,
+      { href:`/programs/${p.slug}/content`,     label:'Study Content', icon:BookOpen },
+      { href:`/programs/${p.slug}/tests`,       label:'Weekly Tests',  icon:ClipboardList },
+      { href:`/programs/${p.slug}/assessments`, label:'Assessments',   icon:Target },
+      { href:`/programs/${p.slug}/certificate`, label:'Certificate',   icon:Award },
+    ]
+  }
+  // Multiple programmes — flatten into one list with the programme
+  // name prefixed, since the sidebar has no nested-section UI today.
+  // (A future enhancement could group these visually; this is the
+  // minimum correct behavior for "don't silently hide programme #2.")
+  const items = [dashboard]
+  for (const p of enrolledPrograms) {
+    items.push(
+      { href:`/programs/${p.slug}/content`,     label:`${p.name} · Content`,     icon:BookOpen },
+      { href:`/programs/${p.slug}/tests`,       label:`${p.name} · Tests`,       icon:ClipboardList },
+      { href:`/programs/${p.slug}/assessments`, label:`${p.name} · Assessments`, icon:Target },
+      { href:`/programs/${p.slug}/certificate`, label:`${p.name} · Certificate`, icon:Award },
+    )
+  }
+  return items
+}
+
 const NAV_COMMUNITY = [
   { href:'/leaderboard', label:'Leaderboard',   icon:Trophy },
   { href:'/doubts',      label:'Doubt Corner',  icon:MessageCircle },
@@ -112,10 +140,42 @@ export default function Sidebar({ profile }: SidebarProps) {
   const router      = useRouter()
   const [busy, setBusy]       = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [enrolledPrograms, setEnrolledPrograms] = useState<{ name: string; slug: string }[]>([])
   const role = profile?.role ?? 'student'
   const rm   = getRoleMeta(role)
 
-  // Close mobile menu on navigation
+  // Fetch the student's real enrollments client-side — Sidebar is a
+  // 'use client' component rendered from 41 different server pages,
+  // none of which currently pass enrollment data as a prop. Rather
+  // than thread a new prop through every call site (large blast
+  // radius for this change), Sidebar fetches its own data here. Fails
+  // safe: an error or empty result just shows the Dashboard link with
+  // no programme-specific nav, never crashes the sidebar.
+  useEffect(() => {
+    if (role !== 'student') return
+    fetch('/api/my-programs')
+      .then(res => res.ok ? res.json() : { programs: [] })
+      .then((data: { programs?: { name: string; slug: string }[] }) => {
+        setEnrolledPrograms(data.programs ?? [])
+      })
+      .catch(() => setEnrolledPrograms([]))
+  }, [role])
+
+  const navStudent = buildStudentNav(enrolledPrograms)
+
+  // Close mobile menu on navigation. This trips react-hooks/set-state-in-effect
+  // (synchronous setState in an effect), but the "fix" the rule suggests
+  // for this exact pattern — resetting state on prop change — is to
+  // remount the component via a `key` prop tied to the changing value.
+  // Doing that here would force the ENTIRE sidebar (including the
+  // enrolled-programmes fetch above) to remount and re-fetch on every
+  // single route change, not just reset the mobile-menu flag — a real
+  // behavioral regression to satisfy a lint rule. This specific
+  // false-positive pattern is also an open, acknowledged issue against
+  // eslint-plugin-react-hooks itself (react/react#34743). Disabling
+  // narrowly here, scoped to this one line, with this justification on
+  // record, rather than silencing the rule project-wide.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   // Close on ESC
@@ -155,7 +215,18 @@ export default function Sidebar({ profile }: SidebarProps) {
   }
 
   // ── Sidebar content (shared between desktop and mobile) ──
-  const SidebarContent = () => (
+  // Previously declared as `const SidebarContent = () => (...)` — a
+  // function defined inside the component body, which React treats as
+  // a brand-new component TYPE on every single render (since function
+  // identity changes each time). That's exactly what ESLint's
+  // react-hooks/static-components rule flags, and it's a real concern:
+  // it can cause unnecessary remounts of everything inside. Since this
+  // content holds no state of its own and is just JSX built from
+  // values already in scope, storing it as a plain JSX expression
+  // (not a function) avoids creating a new component type each render
+  // while still keeping the exact same "write once, use twice" structure
+  // for the desktop and mobile renders below.
+  const sidebarContent = (
     <>
       {/* Brand */}
       <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
@@ -215,7 +286,7 @@ export default function Sidebar({ profile }: SidebarProps) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0', overflowX: 'hidden' }}>
         {role === 'student' && (
           <>
-            <NavSection items={NAV_STUDENT} isActive={isActive}/>
+            <NavSection items={navStudent} isActive={isActive}/>
             <NavSection label="Community" items={NAV_COMMUNITY} isActive={isActive}/>
           </>
         )}
@@ -226,7 +297,7 @@ export default function Sidebar({ profile }: SidebarProps) {
           <NavSection items={NAV_ADMIN} isActive={isActive}/>
         )}
         {role === 'parent' && (
-          <NavSection items={NAV_STUDENT.filter(n => n.href !== '/programs/cloud-launchpad/certificate')} isActive={isActive}/>
+          <NavSection items={navStudent.filter(n => !n.label.includes('Certificate'))} isActive={isActive}/>
         )}
       </div>
 
@@ -257,7 +328,7 @@ export default function Sidebar({ profile }: SidebarProps) {
       }}
         className="sidebar-desktop"
       >
-        <SidebarContent/>
+        {sidebarContent}
       </aside>
 
       {/* ── Mobile hamburger button ──────────────────────── */}
@@ -304,7 +375,7 @@ export default function Sidebar({ profile }: SidebarProps) {
         }}
         className="sidebar-mobile"
       >
-        <SidebarContent/>
+        {sidebarContent}
       </aside>
 
       {/* ── Responsive CSS ───────────────────────────────── */}

@@ -7,9 +7,15 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import { requireActiveStudent } from '@/lib/access-gate'
+import { requireProgramAccess } from '@/lib/program-access'
 import type { Profile } from '@/types/database'
 
-export default async function CertificatePage() {
+export default async function CertificatePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -19,19 +25,32 @@ export default async function CertificatePage() {
   const profile = profileData as Profile | null
   if (!profile) redirect('/login')
 
-  // Defense-in-depth — see src/lib/access-gate.ts for why this exists
-  // alongside proxy.ts middleware.
   requireActiveStudent(profile)
 
   const admin = createAdminClient()
+  const program = await requireProgramAccess(admin, profile, slug)
 
-  // Fetch all certificates for this student
-  const { data: certsRaw } = await supabase
+  // Fetch certificates for THIS programme only — previously this page
+  // fetched every certificate the student had ever earned, across all
+  // programmes, with no filter at all. That was fine when only one
+  // programme existed; now that students can be entitled to several,
+  // each programme's certificate page should show only its own
+  // certificates, consistent with how every other [slug] page scopes
+  // its data to the resolved programme.
+  const { data: phaseIdsRaw } = await admin
+    .from('phases')
+    .select('id')
+    .eq('program_id', program.id)
+
+  const phaseIds = ((phaseIdsRaw ?? []) as { id: string }[]).map(p => p.id)
+
+  const { data: certsRaw } = phaseIds.length > 0 ? await supabase
     .from('certificates')
     .select('*, phases(title, phase_number)')
     .eq('student_id', user.id)
     .eq('is_revoked', false)
-    .order('issued_at')
+    .in('phase_id', phaseIds)
+    .order('issued_at') : { data: [] }
 
   const certs = (certsRaw ?? []) as {
     id: string; score_percent: number; issued_at: string
@@ -39,8 +58,13 @@ export default async function CertificatePage() {
     phases: { title: string; phase_number: number } | null
   }[]
 
-  // Fetch any programme completion certificate(s) — separate from, and
-  // in addition to, the per-phase certificates above.
+  // The programme completion certificate is keyed by `plan`, not
+  // `program_id` directly (a Bundle spans 2 programmes under one
+  // completion cert) — so this still needs the plan-name lookup, but
+  // now only shows a completion certificate whose underlying
+  // programme(s) include THIS resolved programme. Simplest correct
+  // check: does this student have a completion cert whose plan maps
+  // to a set of programmes including this one?
   const { data: completionsRaw } = await supabase
     .from('program_completions')
     .select('*')
@@ -54,9 +78,19 @@ export default async function CertificatePage() {
     bundle:          'Cloud LaunchPad + Cloud Architect (Bundle)',
   }
 
-  const completions = (completionsRaw ?? []) as {
-    id: string; plan: string; issued_at: string; verification_code: string
+  // A completion cert is relevant to this page if its program_id
+  // matches directly (single-programme plan) OR its phase_ids_completed
+  // includes any phase belonging to this programme (covers the Bundle
+  // case, where program_id is null but phase_ids_completed spans both).
+  const allCompletions = (completionsRaw ?? []) as {
+    id: string; plan: string; program_id: string | null
+    phase_ids_completed: string[]; issued_at: string; verification_code: string
   }[]
+
+  const completions = allCompletions.filter(c =>
+    c.program_id === program.id ||
+    c.phase_ids_completed.some(id => phaseIds.includes(id))
+  )
 
   const hasCerts = certs.length > 0 || completions.length > 0
 
@@ -64,10 +98,9 @@ export default async function CertificatePage() {
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       <Sidebar profile={profile}/>
       <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar title="My Certificates" subtitle="Earned by passing phase assessments with ≥75%"/>
+        <Topbar title="My Certificates" subtitle={`${program.name} — earned by passing phase assessments with ≥75%`}/>
         <div style={{ padding: '28px', maxWidth: '800px' }}>
 
-          {/* Programme completion certificate(s) — shown above phase certs */}
           {completions.map(comp => (
             <div key={comp.id} style={{ marginBottom: '32px' }}>
               <div style={{
@@ -170,7 +203,6 @@ export default async function CertificatePage() {
             </div>
           ))}
 
-          {/* No certificates yet */}
           {!hasCerts && (
             <div style={{ textAlign: 'center', padding: '60px 40px' }}>
               <div style={{
@@ -188,16 +220,14 @@ export default async function CertificatePage() {
               <div style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
                 Complete all modules in a phase and pass the assessment with a score of 75% or higher to earn your certificate.
               </div>
-              <Link href="/programs/cloud-launchpad/assessments" className="btn btn-primary" style={{ fontSize: '13px' }}>
+              <Link href={`/programs/${slug}/assessments`} className="btn btn-primary" style={{ fontSize: '13px' }}>
                 View Assessments →
               </Link>
             </div>
           )}
 
-          {/* Certificate cards */}
           {certs.map(cert => (
             <div key={cert.id} style={{ marginBottom: '24px' }}>
-              {/* Certificate visual */}
               <div style={{
                 background: 'linear-gradient(135deg, #0a0f1e 0%, #111827 50%, #0d1a3a 100%)',
                 border: '1px solid rgba(59,91,219,0.35)',
@@ -205,7 +235,6 @@ export default async function CertificatePage() {
                 position: 'relative', overflow: 'hidden',
                 marginBottom: '16px',
               }}>
-                {/* Background glow */}
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%',
                   transform: 'translate(-50%,-50%)',
@@ -214,7 +243,6 @@ export default async function CertificatePage() {
                   pointerEvents: 'none',
                 }}/>
 
-                {/* Trophy */}
                 <div style={{
                   width: '72px', height: '72px', borderRadius: '50%',
                   background: 'linear-gradient(135deg, #3b5bdb, #7c3aed)',
@@ -242,7 +270,7 @@ export default async function CertificatePage() {
                   fontSize: '14px', color: 'var(--muted)', marginBottom: '20px',
                   position: 'relative', zIndex: 1,
                 }}>
-                  {cert.phases?.title} · Cloud LaunchPad 2026
+                  {cert.phases?.title} · {program.name}
                 </div>
                 <div style={{
                   fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '52px',
@@ -258,7 +286,6 @@ export default async function CertificatePage() {
                   Issued {new Date(cert.issued_at).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })}
                 </div>
 
-                {/* Action buttons */}
                 <div style={{
                   display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap',
                   position: 'relative', zIndex: 1,
@@ -284,7 +311,6 @@ export default async function CertificatePage() {
                 </div>
               </div>
 
-              {/* Verification */}
               <div className="card" style={{ padding: '16px 20px' }}>
                 <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>
                   Verification code — shareable link

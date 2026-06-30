@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, Clock, Menu, X, ChevronDown } from 'lucide-react'
+import { ArrowRight, Clock, Menu, X } from 'lucide-react'
 
 // ─────────────────────────────────────────────────────────────
 // UTILS
@@ -169,7 +169,7 @@ function CloudLaunchpadAnim() {
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return
     const ctx = canvas.getContext('2d'); if (!ctx) return
-    let W = 600, H = 340
+    const W = 600, H = 340
     canvas.width = W * 2; canvas.height = H * 2
     ctx.scale(2, 2)
     let raf = 0; let t = 0
@@ -303,7 +303,7 @@ function CloudArchitectAnim() {
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return
     const ctx = canvas.getContext('2d'); if (!ctx) return
-    let W = 600, H = 340
+    const W = 600, H = 340
     canvas.width = W * 2; canvas.height = H * 2
     ctx.scale(2, 2)
     let raf = 0; let t = 0
@@ -1096,13 +1096,13 @@ export default function HomePage() {
               <div style={{borderRadius:'20px',overflow:'hidden',aspectRatio:'438/280',border:'1px solid rgba(255,255,255,0.07)'}}>
                 <img
                   src="https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260516_090123_74be96d4-9c1b-40cf-932a-96f4f4babed3.png&w=1280&q=85"
-                  alt="Tivra learning" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}
+                  alt="Tivra learning" loading="lazy" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}
                 />
               </div>
               <div style={{borderRadius:'20px',overflow:'hidden',aspectRatio:'900/420',border:'1px solid rgba(255,255,255,0.07)'}}>
                 <img
                   src="https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260516_090133_c157d30b-a99a-4477-bec1-a446149ec3f2.png&w=1280&q=85"
-                  alt="Tech education" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}
+                  alt="Tech education" loading="lazy" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}
                 />
               </div>
             </div>
@@ -1655,6 +1655,9 @@ export default function HomePage() {
           transform: translateY(-2px);
         }
 
+        @media (max-width: 1023px) {
+          .price-grid { grid-template-columns: 1fr 1fr !important; }
+        }
         @media (max-width: 767px) {
           .nav-links { display: none !important; }
           .mobile-btn { display: flex !important; }
@@ -1662,9 +1665,6 @@ export default function HomePage() {
           .price-grid { grid-template-columns: 1fr !important; }
           .footer-grid { grid-template-columns: 1fr !important; }
           .cta-banner { grid-template-columns: 1fr !important; }
-        }
-        @media (max-width: 1023px) {
-          .price-grid { grid-template-columns: 1fr 1fr !important; }
         }
         nav a:hover { color: rgba(255,255,255,0.9) !important; }
       `}</style>

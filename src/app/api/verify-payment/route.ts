@@ -192,6 +192,11 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ success: true, activated: true })
 
   } catch (err) {
-    return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
+    // Same fix as create-order — never return raw err.message to the
+    // client for an unexpected failure in the payment-verification
+    // path specifically; this is the highest-stakes route in the app
+    // and the last place that should leak internal error detail.
+    console.error('[verify-payment] Unexpected error:', err)
+    return Response.json({ error: 'Could not verify payment. Please contact support with your payment ID.' }, { status: 500 })
   }
 }

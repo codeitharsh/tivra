@@ -5,10 +5,14 @@ import { createClient as createSBClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import {
   Plus, Trash2, Loader2, Lock, Unlock,
-  ChevronDown, ChevronUp, Settings,
+  ChevronDown, ChevronUp,
 } from 'lucide-react'
 
-interface Phase { id: string; title: string; phase_number: number }
+interface Phase {
+  id: string; title: string; phase_number: number
+  program_id?: string
+  programs?: { name: string; slug: string } | null
+}
 
 const BLANK_Q = {
   question_text: '',
@@ -213,7 +217,7 @@ export default function TeacherAssessmentsClient({
 
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '15px' }}>
-                  Phase {phase.phase_number}: {phase.title}
+                  {phase.programs?.name ? `${phase.programs.name} — ` : ''}Phase {phase.phase_number}: {phase.title}
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
                   {assessment
@@ -275,14 +279,14 @@ export default function TeacherAssessmentsClient({
                       <div>
                         <label className="form-label">Total Questions</label>
                         <input className="form-input" type="number"
-                          placeholder={phase.phase_number === 1 ? '60' : '75'}
+                          placeholder="e.g. 60"
                           value={cf.totalQ}
                           onChange={e => setCreateForm(p => ({ ...p, [phase.id]: { ...cf, totalQ: e.target.value } }))}/>
                       </div>
                       <div>
                         <label className="form-label">Duration (mins)</label>
                         <input className="form-input" type="number"
-                          placeholder={phase.phase_number === 1 ? '90' : '120'}
+                          placeholder="e.g. 90"
                           value={cf.duration}
                           onChange={e => setCreateForm(p => ({ ...p, [phase.id]: { ...cf, duration: e.target.value } }))}/>
                       </div>

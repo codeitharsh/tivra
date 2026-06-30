@@ -17,6 +17,17 @@ export default async function AdminAnalyticsPage() {
 
   const admin = createAdminClient()
 
+  // Single timestamp for this render — established once, up front,
+  // rather than calling Date.now() inline further down. Two reasons:
+  // (1) React's purity rules flag calling an impure function like
+  // Date.now() directly during a render pass, since the result could
+  // differ between an initial render and any later one; (2) even
+  // setting that rule aside, this also guards against subtle drift if
+  // more "relative to now" calculations are ever added to this page —
+  // they'll all anchor to the same instant instead of each grabbing a
+  // slightly different one.
+  const now = new Date()
+
   // ── Core counts ───────────────────────────────────────────
   const [
     { count: totalStudents },
@@ -82,7 +93,7 @@ export default async function AdminAnalyticsPage() {
     : 0
 
   // ── Recent signups (last 7 days) ──────────────────────────
-  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString()
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString()
   const { count: recentSignups } = await admin
     .from('profiles')
     .select('*', { count: 'exact', head: true })

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useTransition, useEffect, Suspense } from 'react'
+import { useState, useTransition, useMemo, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -11,7 +11,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [error, setError] = useState<string|null>(null)
+  const [submitError, setSubmitError] = useState<string|null>(null)
   const [isPending, start] = useTransition()
 
   // Picks up ?error=... set by proxy.ts middleware when it redirects a
@@ -21,16 +21,25 @@ function LoginForm() {
   // explanation, so a restricted user who re-entered correct credentials
   // would silently bounce back here in a confusing loop with zero
   // feedback about why.
-  useEffect(() => {
-    const urlError = searchParams.get('error')
-    if (urlError && ERROR_MESSAGES[urlError]) {
-      setError(ERROR_MESSAGES[urlError])
-    }
+  //
+  // Derived directly during render with useMemo rather than copied
+  // into state via a useEffect — searchParams is already available
+  // synchronously on first render, so pushing it into a separate
+  // setState call inside an effect just causes an extra, unnecessary
+  // render pass (React's react-hooks/set-state-in-effect rule flags
+  // exactly this pattern). submitError stays as real local state since
+  // it genuinely originates from a user action (form submission), not
+  // from a value already available during render.
+  const urlError = useMemo(() => {
+    const code = searchParams.get('error')
+    return code ? ERROR_MESSAGES[code] ?? null : null
   }, [searchParams])
+
+  const error = submitError ?? urlError
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setError(null)
+    setSubmitError(null)
     const fd = new FormData(e.currentTarget)
     start(async () => {
       const res = await fetch('/api/auth/login', {
@@ -38,7 +47,7 @@ function LoginForm() {
         body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') }),
       })
       const data = await res.json() as { error?: string; success?: boolean }
-      if (data.error) { setError(data.error); return }
+      if (data.error) { setSubmitError(data.error); return }
       router.push('/dashboard')
       router.refresh()
     })

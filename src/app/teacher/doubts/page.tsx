@@ -47,7 +47,6 @@ export default async function TeacherDoubtsPage() {
           <DoubtsClient
             doubts={doubts}
             modules={modules}
-            userId={user.id}
             userRole={profile.role ?? 'teacher'}
           />
         </div>

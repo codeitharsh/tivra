@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createClient as createSB } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import {
   Plus, Trash2, Loader2, Edit2, Check, X,
@@ -15,13 +14,6 @@ interface Module {
 interface Phase {
   id: string; title: string; phase_number: number
   description: string | null; modules: Module[]
-}
-
-function sb() {
-  return createSB(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
 }
 
 // All writes go through the API route to bypass RLS

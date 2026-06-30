@@ -13,7 +13,6 @@ interface Props {
   sessions: Record<string, unknown>[]
   phases:   Record<string, unknown>[]
   batches:  Batch[]
-  userId:   string
 }
 
 const BATCH_COLOR: Record<string, string> = {
@@ -30,7 +29,7 @@ async function callDaily(action: string, sessionId: string, extra?: Record<strin
   return res
 }
 
-export default function LiveSessionsClient({ sessions, phases, batches, userId }: Props) {
+export default function LiveSessionsClient({ sessions, phases, batches }: Props) {
   const router = useRouter()
   const [isPending, start] = useTransition()
   const [showForm,    setShowForm]    = useState(false)

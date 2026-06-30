@@ -7,14 +7,15 @@ import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import AssessmentTaker from './AssessmentTaker'
 import { requireActiveStudent } from '@/lib/access-gate'
+import { requireProgramAccess } from '@/lib/program-access'
 import type { Profile } from '@/types/database'
 
 export default async function TakeAssessmentPage({
   params,
 }: {
-  params: Promise<{ assessmentId: string }>
+  params: Promise<{ slug: string; assessmentId: string }>
 }) {
-  const { assessmentId } = await params
+  const { slug, assessmentId } = await params
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -25,17 +26,18 @@ export default async function TakeAssessmentPage({
   const profile = profileData as Profile | null
   if (!profile) redirect('/login')
 
-  // Defense-in-depth — see src/lib/access-gate.ts. This is the actual
-  // PAID CONTENT itself (a single module/test/assessment) — the most
-  // important place for this check to exist, and it previously had none.
+  // Defense-in-depth — see src/lib/access-gate.ts.
   requireActiveStudent(profile)
 
   const admin = createAdminClient()
 
-  // Fetch assessment
+  // Resolve programme + check entitlement (previously MISSING on this
+  // page entirely — see the equivalent fix in content/[moduleId]).
+  const program = await requireProgramAccess(admin, profile, slug)
+
   const { data: assessmentData } = await admin
     .from('assessments')
-    .select('*, phases!phase_id(title, phase_number)')
+    .select('*, phases!phase_id(title, phase_number, program_id)')
     .eq('id', assessmentId)
     .single()
 
@@ -49,15 +51,19 @@ export default async function TakeAssessmentPage({
     passing_percent: number
     unlock_datetime: string | null
     is_manually_unlocked: boolean
-    phases: { title: string; phase_number: number } | null
+    phases: { title: string; phase_number: number; program_id: string } | null
   }
 
-  // Check if assessment is unlocked
+  // Cross-check the assessment actually belongs to the resolved
+  // programme — without this, a student entitled to Programme A could
+  // still load Programme B's assessment by guessing its UUID and
+  // substituting Programme A's slug in the URL.
+  if (assessment.phases?.program_id !== program.id) notFound()
+
   const now = new Date()
   const isUnlocked = assessment.is_manually_unlocked ||
     (assessment.unlock_datetime ? now >= new Date(assessment.unlock_datetime) : false)
 
-  // Fetch ALL attempts by this student — ordered latest first
   const { data: attemptsRaw } = await supabase
     .from('assessment_attempts')
     .select('id, score_percent, passed, answers, submitted_at')
@@ -76,7 +82,15 @@ export default async function TakeAssessmentPage({
   const latestAttempt = allAttempts[0] ?? null
   const attemptCount  = allAttempts.length
 
-  // 24-hour cooldown check (only applies when last attempt was a FAIL)
+  // 24-hour cooldown — this initial calculation is still done
+  // server-side (correct, timezone-safe epoch math, unchanged), but
+  // the CLIENT now independently re-checks this every second and
+  // flips its own local state when the cooldown expires, instead of
+  // being stuck with whatever was true at the moment this page was
+  // rendered. See AssessmentTaker's onUnlock handling for the actual
+  // fix — this was the root cause of "can't retake even after 24
+  // hours": the timer counted down correctly but never told the
+  // Retake button to re-enable itself.
   let canRetake      = true
   let retakeUnlocksAt: Date | null = null
 
@@ -89,10 +103,8 @@ export default async function TakeAssessmentPage({
     }
   }
 
-  // Already passed — no need to retake
   const alreadyPassed = latestAttempt?.passed === true
 
-  // Fetch questions
   const { data: questionsRaw } = await admin
     .from('assessment_questions')
     .select('id, question_text, options')
@@ -128,6 +140,7 @@ export default async function TakeAssessmentPage({
             alreadyPassed={alreadyPassed}
             studentId={user.id}
             studentName={profile.full_name ?? 'Student'}
+            slug={slug}
           />
         </div>
       </main>

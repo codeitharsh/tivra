@@ -49,7 +49,7 @@ export default async function TeacherContentPage() {
       <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
         <Topbar title="Upload Notes" subtitle={`${uploadedCount}/${totalModules} modules have notes uploaded`}/>
         <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
-          <ContentUploadClient phases={phases} userId={user.id}/>
+          <ContentUploadClient phases={phases}/>
         </div>
       </main>
     </div>

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useCallback, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react'
+import { Loader2, Clock } from 'lucide-react'
 
 interface Question {
   id: string
@@ -28,9 +28,10 @@ interface Props {
   isUnlocked: boolean
   existingAttempt: { score_percent: number; answers: Record<string,string>; submitted_at: string } | null
   studentId: string
+  slug: string
 }
 
-export default function TestTaker({ test, questions, isUnlocked, existingAttempt }: Props) {
+export default function TestTaker({ test, questions, isUnlocked, existingAttempt, slug }: Props) {
   const [answers, setAnswers]       = useState<Record<string, string>>({})
   const [submitted, setSubmitted]   = useState(!!existingAttempt)
   const [result, setResult]         = useState<ServerResult | null>(
@@ -46,23 +47,11 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
   const [error, setError]           = useState<string | null>(null)
   const router                      = useRouter()
 
-  // Timer
-  useEffect(() => {
-    if (!started || submitted) return
-    if (timeLeft <= 0) { handleSubmit(); return }
-    const id = setInterval(() => setTimeLeft(t => t - 1), 1000)
-    return () => clearInterval(id)
-  }, [started, submitted, timeLeft])
-
-  const formatTime = (s: number) => {
-    const m = Math.floor(s / 60)
-    const sec = s % 60
-    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
-  }
-
-  const timerColor = timeLeft < 60 ? 'var(--red)' : timeLeft < 300 ? 'var(--amber)' : 'var(--green)'
-
-  async function handleSubmit() {
+  // Wrapped in useCallback (was a plain function) — same fix as
+  // AssessmentTaker.tsx's identical pattern: needed a stable identity
+  // to correctly include it in the timer effect's dependency array
+  // without the effect re-running every render.
+  const handleSubmit = useCallback(async () => {
     if (submitted) return
     setError(null)
 
@@ -87,7 +76,30 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
         setError('Network error. Check your connection and try again.')
       }
     })
+  }, [submitted, test.id, answers, questions.length, router])
+
+  // Timer
+  useEffect(() => {
+    if (!started || submitted) return
+    if (timeLeft <= 0) {
+      // Same genuinely-unavoidable case as AssessmentTaker.tsx: a
+      // countdown reaching zero must trigger submission synchronously
+      // within this effect — there's no user event to defer to.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      handleSubmit()
+      return
+    }
+    const id = setInterval(() => setTimeLeft(t => t - 1), 1000)
+    return () => clearInterval(id)
+  }, [started, submitted, timeLeft, handleSubmit])
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60)
+    const sec = s % 60
+    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
   }
+
+  const timerColor = timeLeft < 60 ? 'var(--red)' : timeLeft < 300 ? 'var(--amber)' : 'var(--green)'
 
   const answeredCount = Object.keys(answers).length
 
@@ -102,7 +114,7 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
         <div style={{ fontSize:'14px', color:'var(--muted)', maxWidth:'360px', margin:'0 auto 24px' }}>
           This test will unlock on the scheduled date. Check the tests page for the countdown.
         </div>
-        <a href="/programs/cloud-launchpad/tests" className="btn btn-ghost" style={{ fontSize:'13px', display:'inline-flex' }}>
+        <a href={`/programs/${slug}/tests`} className="btn btn-ghost" style={{ fontSize:'13px', display:'inline-flex' }}>
           ← Back to Tests
         </a>
       </div>
@@ -172,7 +184,7 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
           </div>
         </div>
         <div style={{ marginTop:'20px' }}>
-          <a href="/programs/cloud-launchpad/tests" className="btn btn-ghost" style={{ fontSize:'13px' }}>
+          <a href={`/programs/${slug}/tests`} className="btn btn-ghost" style={{ fontSize:'13px' }}>
             ← Back to Tests
           </a>
         </div>

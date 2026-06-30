@@ -18,14 +18,25 @@ export default async function AdminContentPage() {
 
   const admin = createAdminClient()
 
+  // Fetch every programme's phases/modules — this page is a separate,
+  // admin-only duplicate of teacher/content/page.tsx and had the exact
+  // same hardcoded cloud-launchpad bug, just never caught until a real
+  // `tsc --noEmit` type-check surfaced the mismatch against
+  // ContentUploadClient's Phase type (which already expects programme
+  // info, since the teacher-facing copy was fixed first).
   const { data: phasesRaw } = await admin
     .from('phases')
-    .select('id, title, phase_number, modules(id, title, module_number, notes_url)')
-    .eq('program_id', ((await admin.from('programs').select('id').eq('slug','cloud-launchpad').single()).data as {id:string}|null)?.id ?? '')
+    .select(`
+      id, title, phase_number, program_id,
+      programs!program_id (name, slug),
+      modules (id, title, module_number, notes_url)
+    `)
+    .order('program_id')
     .order('phase_number')
 
   const phases = (phasesRaw ?? []) as {
-    id: string; title: string; phase_number: number
+    id: string; title: string; phase_number: number; program_id: string
+    programs: { name: string; slug: string } | null
     modules: { id: string; title: string; module_number: number; notes_url: string|null }[]
   }[]
   phases.forEach(p => { p.modules = (p.modules??[]).sort((a,b)=>a.module_number-b.module_number) })
@@ -39,7 +50,7 @@ export default async function AdminContentPage() {
       <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
         <Topbar title="Content Management" subtitle={`${uploaded}/${total} modules have notes uploaded`}/>
         <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
-          <ContentUploadClient phases={phases} userId={user.id}/>
+          <ContentUploadClient phases={phases}/>
         </div>
       </main>
     </div>

@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import {
-  Plus, X, Loader2, Users, Lock, Unlock,
+  Plus, X, Loader2, Lock, Unlock,
   ChevronDown, ChevronUp, Edit2, Check, Archive,
 } from 'lucide-react'
 
@@ -163,98 +163,15 @@ export default function BatchManagerClient({
     })
   }
 
-  // ── Form section renderer ─────────────────────────────────
-  function FormFields({
-    f, set,
-  }: {
-    f: typeof BLANK_FORM
-    set: (u: Partial<typeof BLANK_FORM>) => void
-  }) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
-          <div>
-            <label className="form-label">Batch Name *</label>
-            <input className="form-input" placeholder="e.g. Cloud LaunchPad — Jan 2026"
-              value={f.name} onChange={e => set({ name: e.target.value })}/>
-          </div>
-          <div>
-            <label className="form-label">Type *</label>
-            <select className="form-select" value={f.batch_type}
-              onChange={e => set({ batch_type: e.target.value as BatchType })}>
-              <option value="open">Open (public)</option>
-              <option value="college">College (hidden)</option>
-              <option value="corporate">Corporate (hidden)</option>
-              <option value="custom">Custom (hidden)</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Type explanation */}
-        <div className="banner banner-info" style={{ margin: 0 }}>
-          <span style={{ flexShrink: 0 }}>ℹ️</span>
-          <span style={{ fontSize: '12px' }}>
-            <strong style={{ color: '#fff' }}>{TYPE_CFG[f.batch_type].label}:</strong>{' '}
-            {TYPE_CFG[f.batch_type].note}
-          </span>
-        </div>
-
-        <div>
-          <label className="form-label">Programme *</label>
-          <select className="form-select" value={f.program_id}
-            onChange={e => set({ program_id: e.target.value })}>
-            <option value="">Select programme…</option>
-            {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </div>
-
-        <div>
-          <label className="form-label">Description</label>
-          <textarea className="form-input" rows={2}
-            placeholder="Brief description of this batch…"
-            value={f.description}
-            onChange={e => set({ description: e.target.value })}
-            style={{ resize: 'vertical' }}/>
-        </div>
-
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr' }}>
-          <div>
-            <label className="form-label">Max Students (blank = unlimited)</label>
-            <input className="form-input" type="number" placeholder="e.g. 50"
-              value={f.max_students} onChange={e => set({ max_students: e.target.value })}/>
-          </div>
-          <div>
-            <label className="form-label">Price (₹, blank = contact)</label>
-            <input className="form-input" type="number" placeholder="e.g. 5999"
-              value={f.price_inr} onChange={e => set({ price_inr: e.target.value })}/>
-          </div>
-        </div>
-
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr' }}>
-          <div>
-            <label className="form-label">Registration Opens</label>
-            <input className="form-input" type="datetime-local"
-              value={f.reg_opens} onChange={e => set({ reg_opens: e.target.value })}/>
-          </div>
-          <div>
-            <label className="form-label">Registration Closes</label>
-            <input className="form-input" type="datetime-local"
-              value={f.reg_closes} onChange={e => set({ reg_closes: e.target.value })}/>
-          </div>
-          <div>
-            <label className="form-label">Batch Starts</label>
-            <input className="form-input" type="datetime-local"
-              value={f.starts_at} onChange={e => set({ starts_at: e.target.value })}/>
-          </div>
-          <div>
-            <label className="form-label">Batch Ends</label>
-            <input className="form-input" type="datetime-local"
-              value={f.ends_at} onChange={e => set({ ends_at: e.target.value })}/>
-          </div>
-        </div>
-      </div>
-    )
-  }
+// ── Form section renderer ─────────────────────────────────
+// Previously declared as a nested function INSIDE BatchManagerClient's
+// body — React treats that as a brand-new component type on every
+// render (ESLint's react-hooks/static-components rule flags this).
+// Moved to module scope, which is the correct fix since this component
+// is genuinely parameterized and reused at two different call sites
+// with different `set` callbacks — it needed real props anyway, just
+// not a fresh function identity every render. `programs` is now an
+// explicit prop instead of a closure-captured value from the parent.
 
   const fmtDate = (d: unknown) => d
     ? new Date(d as string).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })
@@ -278,7 +195,7 @@ export default function BatchManagerClient({
             fontSize: '16px', marginBottom: '18px' }}>
             New Batch
           </div>
-          <FormFields f={form} set={u => setForm(p => ({ ...p, ...u }))}/>
+          <FormFields f={form} set={u => setForm(p => ({ ...p, ...u }))} programs={programs}/>
           <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
             <button className="btn btn-primary" onClick={createBatch}
               disabled={creating} style={{ fontSize: '13px', padding: '10px 22px' }}>
@@ -425,6 +342,7 @@ export default function BatchManagerClient({
                         <FormFields
                           f={editForm}
                           set={u => setEditForm(p => ({ ...p, ...u }))}
+                          programs={programs}
                         />
                         <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
                           <button className="btn btn-primary" onClick={() => saveEdit(bid)}
@@ -494,6 +412,99 @@ export default function BatchManagerClient({
         </div>
       )}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}
+
+function FormFields({
+  f, set, programs,
+}: {
+  f: typeof BLANK_FORM
+  set: (u: Partial<typeof BLANK_FORM>) => void
+  programs: Program[]
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+        <div>
+          <label className="form-label">Batch Name *</label>
+          <input className="form-input" placeholder="e.g. Cloud LaunchPad — Jan 2026"
+            value={f.name} onChange={e => set({ name: e.target.value })}/>
+        </div>
+        <div>
+          <label className="form-label">Type *</label>
+          <select className="form-select" value={f.batch_type}
+            onChange={e => set({ batch_type: e.target.value as BatchType })}>
+            <option value="open">Open (public)</option>
+            <option value="college">College (hidden)</option>
+            <option value="corporate">Corporate (hidden)</option>
+            <option value="custom">Custom (hidden)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Type explanation */}
+      <div className="banner banner-info" style={{ margin: 0 }}>
+        <span style={{ flexShrink: 0 }}>ℹ️</span>
+        <span style={{ fontSize: '12px' }}>
+          <strong style={{ color: '#fff' }}>{TYPE_CFG[f.batch_type].label}:</strong>{' '}
+          {TYPE_CFG[f.batch_type].note}
+        </span>
+      </div>
+
+      <div>
+        <label className="form-label">Programme *</label>
+        <select className="form-select" value={f.program_id}
+          onChange={e => set({ program_id: e.target.value })}>
+          <option value="">Select programme…</option>
+          {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      </div>
+
+      <div>
+        <label className="form-label">Description</label>
+        <textarea className="form-input" rows={2}
+          placeholder="Brief description of this batch…"
+          value={f.description}
+          onChange={e => set({ description: e.target.value })}
+          style={{ resize: 'vertical' }}/>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr' }}>
+        <div>
+          <label className="form-label">Max Students (blank = unlimited)</label>
+          <input className="form-input" type="number" placeholder="e.g. 50"
+            value={f.max_students} onChange={e => set({ max_students: e.target.value })}/>
+        </div>
+        <div>
+          <label className="form-label">Price (₹, blank = contact)</label>
+          <input className="form-input" type="number" placeholder="e.g. 5999"
+            value={f.price_inr} onChange={e => set({ price_inr: e.target.value })}/>
+        </div>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr' }}>
+        <div>
+          <label className="form-label">Registration Opens</label>
+          <input className="form-input" type="datetime-local"
+            value={f.reg_opens} onChange={e => set({ reg_opens: e.target.value })}/>
+        </div>
+        <div>
+          <label className="form-label">Registration Closes</label>
+          <input className="form-input" type="datetime-local"
+            value={f.reg_closes} onChange={e => set({ reg_closes: e.target.value })}/>
+        </div>
+        <div>
+          <label className="form-label">Batch Starts</label>
+          <input className="form-input" type="datetime-local"
+            value={f.starts_at} onChange={e => set({ starts_at: e.target.value })}/>
+        </div>
+        <div>
+          <label className="form-label">Batch Ends</label>
+          <input className="form-input" type="datetime-local"
+            value={f.ends_at} onChange={e => set({ ends_at: e.target.value })}/>
+        </div>
+      </div>
     </div>
   )
 }

@@ -18,7 +18,7 @@ async function callAdminApi(payload: Record<string, unknown>): Promise<{ error?:
 
 type FilterStatus = 'all' | 'pending' | 'approved' | 'rejected'
 
-export default function PaymentsClient({ rows, adminId }: { rows: Record<string,unknown>[]; adminId: string }) {
+export default function PaymentsClient({ rows }: { rows: Record<string,unknown>[] }) {
   const router = useRouter()
   const [isPending, start] = useTransition()
   const [search,  setSearch]  = useState('')
@@ -47,6 +47,12 @@ export default function PaymentsClient({ rows, adminId }: { rows: Record<string,
         student_id: row.student_id as string,
         notes:      `Payment approved — ${row.payment_method} ref: ${row.transaction_ref ?? 'N/A'}`,
         role:       'student',
+        // Previously this call never passed the plan at all, meaning
+        // grant_access had no way to know which programme(s) to
+        // enrol the student in — see the comment in admin/route.ts
+        // for why that left manually-approved students with an
+        // active account but zero enrolled_programs rows.
+        plan:       row.plan as string | undefined,
       })
       if (r?.error) showToast(r.error, 'error')
       else { showToast('✓ Payment approved — student activated', 'success'); router.refresh() }

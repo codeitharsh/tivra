@@ -2,11 +2,10 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { MessageCircle, ThumbsUp, CheckCircle2, Plus, X, Loader2, Filter } from 'lucide-react'
+import { MessageCircle, ThumbsUp, CheckCircle2, Plus, X, Loader2 } from 'lucide-react'
 
 interface Props {
   doubts:   Record<string, unknown>[]
-  userId:   string
   userRole: string
   modules:  { id: string; title: string }[]
 }
@@ -20,7 +19,7 @@ async function apiDoubts(action: string, body: Record<string, unknown>) {
   return res.json() as Promise<{ error?: string; success?: boolean }>
 }
 
-export default function DoubtsClient({ doubts, userId, userRole, modules }: Props) {
+export default function DoubtsClient({ doubts, userRole, modules }: Props) {
   const router = useRouter()
   const [isPending, start] = useTransition()
   const [showNew,    setShowNew]    = useState(false)

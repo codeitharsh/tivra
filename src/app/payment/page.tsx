@@ -100,9 +100,15 @@ export default function PaymentPage() {
 
   // Load Razorpay script + fetch current user
   useEffect(() => {
-    // Load Razorpay checkout.js
+    // Load Razorpay checkout.js. The "already loaded" branch previously
+    // called setScriptLoaded(true) synchronously within the effect body
+    // itself — React's react-hooks/set-state-in-effect rule flags this
+    // because it can trigger an immediate extra render pass on mount.
+    // queueMicrotask defers it by one tick, putting it on the same
+    // footing as the onload/onerror callbacks below (which are already
+    // correctly async) rather than firing inline during the effect.
     if (document.getElementById('razorpay-script')) {
-      setScriptLoaded(true)
+      queueMicrotask(() => setScriptLoaded(true))
     } else {
       const script    = document.createElement('script')
       script.id       = 'razorpay-script'

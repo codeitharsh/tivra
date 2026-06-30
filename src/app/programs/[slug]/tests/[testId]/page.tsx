@@ -7,14 +7,15 @@ import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import TestTaker from './TestTaker'
 import { requireActiveStudent } from '@/lib/access-gate'
+import { requireProgramAccess } from '@/lib/program-access'
 import type { Profile } from '@/types/database'
 
 export default async function TakeTestPage({
   params,
 }: {
-  params: Promise<{ testId: string }>
+  params: Promise<{ slug: string; testId: string }>
 }) {
-  const { testId } = await params
+  const { slug, testId } = await params
   const supabase   = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -24,14 +25,15 @@ export default async function TakeTestPage({
   const profile = profileData as Profile | null
   if (!profile) redirect('/login')
 
-  // Defense-in-depth — see src/lib/access-gate.ts. This is the actual
-  // PAID CONTENT itself (a single module/test/assessment) — the most
-  // important place for this check to exist, and it previously had none.
+  // Defense-in-depth — see src/lib/access-gate.ts.
   requireActiveStudent(profile)
 
   const admin = createAdminClient()
 
-  // Fetch test
+  // Resolve programme + check entitlement (previously MISSING entirely
+  // on this page).
+  const program = await requireProgramAccess(admin, profile, slug)
+
   const { data: testData } = await admin
     .from('weekly_tests')
     .select('*')
@@ -44,14 +46,19 @@ export default async function TakeTestPage({
     id: string; title: string; topic: string | null
     unlock_datetime: string | null; duration_minutes: number
     is_manually_unlocked: boolean; week_number: number
+    program_id: string
   }
 
-  // Check if unlocked
+  // Cross-check: this test must belong to the resolved programme.
+  // weekly_tests has program_id directly, so this is a simple equality
+  // check rather than a join — without it, a student entitled to
+  // Programme A could load Programme B's test by guessing its UUID.
+  if (test.program_id !== program.id) notFound()
+
   const now       = new Date()
   const isUnlocked = test.is_manually_unlocked ||
     (test.unlock_datetime ? now >= new Date(test.unlock_datetime) : false)
 
-  // Check if already attempted
   const { data: attempt } = await supabase
     .from('test_attempts')
     .select('score_percent, answers, submitted_at')
@@ -63,7 +70,6 @@ export default async function TakeTestPage({
     score_percent: number; answers: Record<string, string>; submitted_at: string
   } | null
 
-  // Fetch questions
   const { data: questionsRaw } = await admin
     .from('test_questions')
     .select('id, question_text, options')
@@ -89,6 +95,7 @@ export default async function TakeTestPage({
             isUnlocked={isUnlocked}
             existingAttempt={existingAttempt}
             studentId={user.id}
+            slug={slug}
           />
         </div>
       </main>
