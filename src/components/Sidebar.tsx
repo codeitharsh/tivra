@@ -9,7 +9,7 @@ import {
   Trophy, MessageCircle, CalendarCheck, Video, LogOut,
   Upload, Settings2, ShieldCheck, UserCheck,
   BarChart3, Users, Home, TrendingUp, Layers, BookMarked,
-  Target, Menu, X, ChevronRight,
+  Target, Menu, X, ChevronRight, Gift,
 } from 'lucide-react'
 
 import type { Profile, UserRole } from '@/types/database'
@@ -74,6 +74,7 @@ const NAV_ADMIN = [
   { href:'/admin/students',     label:'All Users',     icon:Users },
   { href:'/admin/access',       label:'Grant Access',  icon:UserCheck },
   { href:'/admin/payments',     label:'Payments',      icon:ShieldCheck },
+  { href:'/admin/referrals',    label:'Referrals',     icon:Gift },
   { href:'/admin/assessments',  label:'Assessments',   icon:Target },
   { href:'/admin/content',      label:'Content',       icon:Upload },
   { href:'/admin/tests',        label:'Tests',         icon:ClipboardList },

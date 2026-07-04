@@ -228,6 +228,58 @@ export async function POST(req: Request): Promise<Response> {
       return Response.json({ csv, error: null })
     }
 
+    // ── Referral code management ──────────────────────────────
+    if (action === 'create_referral') {
+      const caller = await requireAdmin()
+      if (!caller) return Response.json({ error: 'Forbidden' }, { status: 403 })
+
+      const sb = adminSB()
+      const code = (body.referral_code as string)?.toUpperCase().trim()
+      if (!code) return Response.json({ error: 'referral_code is required' }, { status: 400 })
+
+      const { error } = await sb.from('faculty_referrals').insert({
+        faculty_name:    body.faculty_name as string,
+        faculty_email:   (body.faculty_email as string) || null,
+        referral_code:   code,
+        discount_amount: Number(body.discount_amount) || 600,
+        is_active:       true,
+        created_by:      caller.id,
+      })
+      if (error) return Response.json({ error: error.message.includes('unique') ? 'This referral code already exists.' : error.message }, { status: 400 })
+      return Response.json({ success: true })
+    }
+
+    if (action === 'update_referral') {
+      const caller = await requireAdmin()
+      if (!caller) return Response.json({ error: 'Forbidden' }, { status: 403 })
+
+      const sb = adminSB()
+      const id   = body.id as string
+      const code = (body.referral_code as string)?.toUpperCase().trim()
+      if (!id || !code) return Response.json({ error: 'id and referral_code are required' }, { status: 400 })
+
+      const { error } = await sb.from('faculty_referrals').update({
+        faculty_name:    body.faculty_name as string,
+        faculty_email:   (body.faculty_email as string) || null,
+        referral_code:   code,
+        discount_amount: Number(body.discount_amount) || 600,
+      }).eq('id', id)
+      if (error) return Response.json({ error: error.message.includes('unique') ? 'This referral code already exists.' : error.message }, { status: 400 })
+      return Response.json({ success: true })
+    }
+
+    if (action === 'toggle_referral') {
+      const caller = await requireAdmin()
+      if (!caller) return Response.json({ error: 'Forbidden' }, { status: 403 })
+
+      const sb = adminSB()
+      const { error } = await sb.from('faculty_referrals')
+        .update({ is_active: body.is_active as boolean })
+        .eq('id', body.id as string)
+      if (error) return Response.json({ error: error.message }, { status: 500 })
+      return Response.json({ success: true })
+    }
+
     return Response.json({ error: 'Unknown action' }, { status: 400 })
 
   } catch (err) {

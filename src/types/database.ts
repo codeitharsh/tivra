@@ -61,6 +61,11 @@ export interface Database {
         Insert: Partial<Database['public']['Tables']['profiles']['Row']> & { id:string }
         Update: Partial<Database['public']['Tables']['profiles']['Row']>
       }
+      faculty_referrals: {
+        Row: { id:string; faculty_name:string; faculty_email:string|null; referral_code:string; discount_amount:number; is_active:boolean; created_at:string; created_by:string|null }
+        Insert: Omit<Database['public']['Tables']['faculty_referrals']['Row'],'id'|'created_at'>
+        Update: Partial<Database['public']['Tables']['faculty_referrals']['Insert']>
+      }
       payment_requests: {
         Row: {
           id:string; student_id:string; program_id:string|null
@@ -68,6 +73,7 @@ export interface Database {
           razorpay_order_id:string|null; plan:string|null
           screenshot_url:string|null; status:PaymentStatus
           reviewed_by:string|null; reviewed_at:string|null; rejection_note:string|null
+          referral_code:string|null; referral_id:string|null; discount_amount:number|null
           created_at:string
         }
         Insert: Omit<Database['public']['Tables']['payment_requests']['Row'],'id'|'created_at'>

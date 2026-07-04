@@ -33,8 +33,10 @@ export async function POST(req: Request): Promise<Response> {
       return Response.json({ error: 'Unauthorized — please log in again.' }, { status: 401 })
     }
 
-    const body = await req.json() as { plan?: string }
-    const plan = body.plan ?? 'cloud_launchpad'
+    const body = await req.json() as { plan?: string; referral_code?: string; referral_id?: string }
+    const plan        = body.plan ?? 'cloud_launchpad'
+    const referralId  = body.referral_id ?? null
+    const referralCode = body.referral_code?.toUpperCase().trim() ?? null
 
     if (!PLANS[plan]) {
       return Response.json({ error: `Invalid plan: ${plan}` }, { status: 400 })
@@ -88,11 +90,14 @@ export async function POST(req: Request): Promise<Response> {
     const sb = adminSB()
     const { error: insertError } = await sb.from('payment_requests').insert({
       student_id:        user.id,
-      amount:            amount / 100, // store in rupees, Razorpay amount is paise
+      amount:            amount / 100,
       payment_method:    'razorpay',
       razorpay_order_id: data.id,
       status:            'pending',
       plan,
+      referral_code:     referralCode,
+      referral_id:       referralId,
+      discount_amount:   null, // actual discount stored via referral_id → faculty_referrals.discount_amount
     })
 
     if (insertError) {

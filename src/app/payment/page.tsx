@@ -97,6 +97,10 @@ export default function PaymentPage() {
   const [userId,      setUserId]        = useState<string | null>(null)
   const [userName,    setUserName]      = useState('')
   const [userEmail,   setUserEmail]     = useState('')
+  // Referral code
+  const [referralCode,   setReferralCode]   = useState('')
+  const [referralStatus, setReferralStatus] = useState<'idle'|'checking'|'valid'|'invalid'>('idle')
+  const [referralData,   setReferralData]   = useState<{ referral_id: string; faculty_name: string; discount: number } | null>(null)
 
   // Load Razorpay script + fetch current user
   useEffect(() => {
@@ -141,6 +145,37 @@ export default function PaymentPage() {
   }, [])
 
   const plan = PLANS.find(p => p.id === selectedPlan)!
+  const discount      = referralData?.discount ?? 0
+  const effectivePrice = Math.max(0, plan.price - discount)
+
+  async function validateReferral() {
+    const code = referralCode.trim()
+    if (!code) return
+    setReferralStatus('checking')
+    try {
+      const res  = await fetch('/api/validate-referral', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+      const data = await res.json() as { valid: boolean; referral_id?: string; faculty_name?: string; discount?: number; error?: string }
+      if (data.valid && data.referral_id) {
+        setReferralStatus('valid')
+        setReferralData({ referral_id: data.referral_id, faculty_name: data.faculty_name!, discount: data.discount! })
+      } else {
+        setReferralStatus('invalid')
+        setReferralData(null)
+      }
+    } catch {
+      setReferralStatus('invalid')
+      setReferralData(null)
+    }
+  }
+
+  function clearReferral() {
+    setReferralCode('')
+    setReferralStatus('idle')
+    setReferralData(null)
+  }
 
   async function handlePay() {
     if (!scriptLoaded) { setErrorMsg('Payment gateway not loaded yet. Try again.'); return }
@@ -153,7 +188,7 @@ export default function PaymentPage() {
       const orderRes = await fetch('/api/create-order', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ plan: selectedPlan }),
+        body:    JSON.stringify({ plan: selectedPlan, referral_code: referralData ? referralCode.trim() : undefined, referral_id: referralData?.referral_id }),
       })
       const orderData = await orderRes.json() as {
         error?: string; order_id?: string; amount?: number; currency?: string
@@ -407,7 +442,7 @@ export default function PaymentPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between',
               fontSize: '14px', marginBottom: '10px' }}>
               <span style={{ color: 'rgba(255,255,255,0.55)' }}>{plan.name}</span>
-              <span>₹{plan.price.toLocaleString('en-IN')}</span>
+              <span>₹{effectivePrice.toLocaleString('en-IN')}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between',
               fontSize: '13px', marginBottom: '16px' }}>
@@ -425,8 +460,52 @@ export default function PaymentPage() {
               </span>
               <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800,
                 fontSize: '24px', color: plan.color }}>
-                ₹{plan.price.toLocaleString('en-IN')}
+                ₹{effectivePrice.toLocaleString('en-IN')}
               </span>
+            </div>
+
+            {/* Referral code */}
+            <div style={{ marginBottom:'12px' }}>
+              <label style={{ display:'block', fontSize:'12px', color:'rgba(255,255,255,0.5)', marginBottom:'6px', fontWeight:600 }}>
+                Referral Code <span style={{ fontWeight:400, opacity:0.6 }}>(optional)</span>
+              </label>
+              {referralStatus !== 'valid' ? (
+                <div style={{ display:'flex', gap:'8px' }}>
+                  <input
+                    value={referralCode}
+                    onChange={e => { setReferralCode(e.target.value.toUpperCase()); setReferralStatus('idle'); setReferralData(null) }}
+                    onKeyDown={e => e.key === 'Enter' && validateReferral()}
+                    placeholder="e.g. LAKSHIKA100"
+                    style={{ flex:1, padding:'11px 14px', borderRadius:'10px', background:'rgba(255,255,255,0.05)', border:`1px solid ${referralStatus === 'invalid' ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.1)'}`, color:'#fff', fontSize:'13px', outline:'none', letterSpacing:'0.05em' }}
+                  />
+                  <button
+                    onClick={validateReferral}
+                    disabled={!referralCode.trim() || referralStatus === 'checking'}
+                    style={{ padding:'11px 16px', borderRadius:'10px', background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', fontSize:'12px', fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', opacity: !referralCode.trim() ? 0.5 : 1 }}>
+                    {referralStatus === 'checking' ? 'Checking…' : 'Apply'}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderRadius:'10px', background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.25)' }}>
+                  <div>
+                    <div style={{ fontSize:'12px', color:'var(--green)', fontWeight:700 }}>
+                      ✓ Referral by {referralData!.faculty_name} — ₹{referralData!.discount} off applied
+                    </div>
+                    <div style={{ fontSize:'11px', color:'rgba(255,255,255,0.4)', marginTop:'2px' }}>
+                      Code: <code style={{ letterSpacing:'0.05em' }}>{referralCode}</code>
+                    </div>
+                  </div>
+                  <button onClick={clearReferral} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.3)', fontSize:'13px' }}>✕</button>
+                </div>
+              )}
+              {referralStatus === 'invalid' && (
+                <div style={{ fontSize:'12px', color:'var(--red)', marginTop:'5px' }}>Invalid or inactive referral code.</div>
+              )}
+              {discount > 0 && (
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', color:'rgba(255,255,255,0.5)', marginTop:'8px', padding:'8px 0', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+                  <span>Original price</span><span style={{ textDecoration:'line-through' }}>₹{plan.price.toLocaleString('en-IN')}</span>
+                </div>
+              )}
             </div>
 
             {/* Pay button */}
@@ -449,7 +528,7 @@ export default function PaymentPage() {
               {payState === 'verifying' && <><Loader2 size={16} style={{ animation:'spin 1s linear infinite' }}/> Verifying payment…</>}
               {payState === 'open'      && <><Loader2 size={16} style={{ animation:'spin 1s linear infinite' }}/> Complete payment in popup…</>}
               {(payState === 'idle' || payState === 'error') && (
-                <><Zap size={15}/> Pay ₹{plan.price.toLocaleString('en-IN')} Securely</>
+                <><Zap size={15}/> Pay ₹{effectivePrice.toLocaleString('en-IN')} Securely</>
               )}
             </button>
 
