@@ -2,17 +2,24 @@ export const runtime = 'edge'
 
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
-// Read-only — returns the logged-in user's own enrolled programmes
-// (name + slug only, nothing sensitive). Used by Sidebar.tsx to render
-// programme-scoped nav links (Study Content / Tests / Assessments /
-// Certificate) for whichever programme(s) the student actually paid
-// for, instead of a single hardcoded cloud-launchpad link. Returns an
-// empty list for anyone not logged in or with no enrollments — never
-// errors out in a way that would break sidebar rendering.
+// Uses the service-role client for the enrolled_programs→programs join
+// because RLS policies on these tables silently return empty results
+// when queried through the anon client — the join to programs comes
+// back null even when the enrollment row exists, causing the sidebar
+// to show no programme nav links for a legitimately enrolled student.
+function adminSB() {
+  return createSB(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
 export async function GET() {
   const cookieStore = await cookies()
+  // Use anon client ONLY for auth — to verify who this user is
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,19 +29,15 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ programs: [] })
 
-  const { data, error } = await supabase
+  // Use admin client for data — bypasses RLS on enrolled_programs/programs
+  const sb = adminSB()
+  const { data, error } = await sb
     .from('enrolled_programs')
     .select('programs!program_id(name, slug)')
     .eq('student_id', user.id)
 
   if (error) return NextResponse.json({ programs: [] })
 
-  // Supabase's generated types for a to-one foreign-key join
-  // (programs!program_id) can come back shaped as either a single
-  // object or a single-element array depending on the inferred
-  // relationship cardinality — handled defensively here rather than
-  // force-casting, since a forced cast would silently produce wrong
-  // data if the actual runtime shape ever differs from the assumption.
   type JoinedRow = { programs: { name: string; slug: string } | { name: string; slug: string }[] | null }
   const programs = ((data ?? []) as unknown as JoinedRow[])
     .map(row => Array.isArray(row.programs) ? row.programs[0] : row.programs)

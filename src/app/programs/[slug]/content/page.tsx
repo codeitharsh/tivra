@@ -140,10 +140,9 @@ export default async function ContentPage({
     p.modules = (p.modules ?? []).sort((a, b) => a.module_number - b.module_number)
   })
 
-  // Fetch student's progress across ALL modules (not scoped to this
-  // programme — module IDs are globally unique, so this is safe and
-  // avoids an extra filter; only this programme's modules are rendered).
-  const { data: progressRaw } = await supabase
+  // Uses admin client (not the anon supabase client) to bypass RLS —
+  // same fix applied to dashboard/page.tsx and my-programs/route.ts.
+  const { data: progressRaw } = await admin
     .from('module_progress')
     .select('module_id, status')
     .eq('student_id', user.id)

@@ -16,9 +16,10 @@ export default async function ProfilePage() {
   const profile = p as Profile | null
   if (!profile) redirect('/login')
 
-  // Defense-in-depth — see src/lib/access-gate.ts for why this exists
-  // alongside proxy.ts middleware.
-  requireActiveStudent(profile)
+  // Profile is intentionally accessible to ALL authenticated users
+  // regardless of enrollment status — the brief explicitly lists it
+  // as one of the pages available before enrollment. We still need
+  // login (above) but NOT requireActiveStudent here.
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>

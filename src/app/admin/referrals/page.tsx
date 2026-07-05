@@ -47,13 +47,33 @@ export default async function AdminReferralsPage() {
     }
   }
 
+  // Fetch detailed enrollments for all referrals (the admin table view)
+  const { data: enrollmentsRaw } = await admin
+    .from('payment_requests')
+    .select(`
+      id, status, amount, plan, created_at, referral_code, discount_amount,
+      referral_id,
+      profiles!student_id (full_name, email, phone),
+      faculty_referrals!referral_id (faculty_name)
+    `)
+    .not('referral_id', 'is', null)
+    .order('created_at', { ascending: false })
+
+  type EnrollmentRow = {
+    id: string; status: string; amount: number | null; plan: string | null
+    created_at: string; referral_code: string | null; discount_amount: number | null
+    profiles: { full_name: string; email: string; phone: string | null } | null
+    faculty_referrals: { faculty_name: string } | null
+  }
+  const enrollments = ((enrollmentsRaw ?? []) as unknown as EnrollmentRow[])
+
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
       <Sidebar profile={profile}/>
       <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
         <Topbar title="Faculty Referrals" subtitle="Create referral codes, track enrollments and revenue per faculty"/>
         <div style={{ padding:'28px', maxWidth:'1100px', margin:'0 auto', width:'100%' }}>
-          <ReferralClient referrals={referrals} stats={stats} adminId={user.id}/>
+          <ReferralClient referrals={referrals} stats={stats} adminId={user.id} enrollments={enrollments}/>
         </div>
       </main>
     </div>

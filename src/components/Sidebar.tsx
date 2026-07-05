@@ -136,6 +136,39 @@ function NavSection({
   )
 }
 
+// Shows nav items greyed out with a lock icon — used for unenrolled
+// students who can see community features exist but can't access them.
+function LockedNavSection({ label, items }: {
+  label?: string
+  items: { label: string; icon: React.ComponentType<{ size?: number }> }[]
+}) {
+  return (
+    <div style={{ marginBottom: '6px' }}>
+      {label && (
+        <div style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.15)',
+          letterSpacing: '0.12em', textTransform: 'uppercase', padding: '10px 16px 4px' }}>
+          {label}
+        </div>
+      )}
+      {items.map(({ label: lbl, icon: Icon }) => (
+        <div key={lbl} style={{
+          display: 'flex', alignItems: 'center', gap: '10px',
+          padding: '9px 16px', borderRadius: '8px', margin: '1px 8px',
+          color: 'rgba(255,255,255,0.2)',
+          fontFamily: 'DM Sans,sans-serif', fontSize: '13px',
+          cursor: 'not-allowed',
+          borderLeft: '2px solid transparent',
+        }}>
+          <Icon size={15}/>
+          <span style={{ flex: 1 }}>{lbl}</span>
+          <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.15)' }}>🔒</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+
 export default function Sidebar({ profile }: SidebarProps) {
   const pathname    = usePathname()
   const router      = useRouter()
@@ -288,7 +321,11 @@ export default function Sidebar({ profile }: SidebarProps) {
         {role === 'student' && (
           <>
             <NavSection items={navStudent} isActive={isActive}/>
-            <NavSection label="Community" items={NAV_COMMUNITY} isActive={isActive}/>
+            {enrolledPrograms.length > 0 ? (
+              <NavSection label="Community" items={NAV_COMMUNITY} isActive={isActive}/>
+            ) : (
+              <LockedNavSection label="Community — Enrol to unlock" items={NAV_COMMUNITY}/>
+            )}
           </>
         )}
         {role === 'teacher' && (

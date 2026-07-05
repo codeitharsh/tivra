@@ -696,7 +696,7 @@ const PROGRAMMES = [
     name:'Cloud LaunchPad',
     tag:'AWS Cloud Certifications',
     duration:'4 months', modules:11,
-    price:'₹6,999',
+    price:'₹7,599',
     color:'#00d4ff', colorRgb:'0,212,255',
     status:'enrolling',
     href:'/programs/cloud-launchpad',
@@ -710,7 +710,7 @@ const PROGRAMMES = [
     duration:'6 months', modules:12,
     price:'₹9,999',
     color:'#7c3aed', colorRgb:'124,58,237',
-    status:'enrolling',
+    status:'coming_soon',
     href:'/programs/cloud-architect',
     desc:'Advanced cloud architecture, AWS Solutions Architect Associate certification — for engineers who want to design scalable production systems.',
     features:['AWS SAA-C03 prep','12 advanced modules','Live weekly classes','Architecture labs & projects','Verified certificate on passing'],
@@ -1268,36 +1268,6 @@ export default function HomePage() {
               </Link>
             ))}
           </div>
-
-          {/* Bundle row */}
-          <div style={{
-            marginTop:'16px',
-            background:'linear-gradient(135deg,rgba(0,212,255,0.06),rgba(124,58,237,0.06))',
-            border:'1px solid rgba(59,91,219,0.2)',borderRadius:'20px',
-            padding:'22px 28px',
-            display:'flex',alignItems:'center',justifyContent:'space-between',
-            flexWrap:'wrap',gap:'16px',
-          }}>
-            <div>
-              <div style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'15px',marginBottom:'4px'}}>
-                🎯 Cloud Bundle — LaunchPad + Architect
-              </div>
-              <div style={{fontSize:'13px',color:'rgba(255,255,255,0.4)'}}>
-                Both cloud programmes · 10 months total · Save ₹1,999
-              </div>
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:'16px',flexWrap:'wrap'}}>
-              <div>
-                <div style={{
-                  fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'22px',
-                  background:'linear-gradient(135deg,#00d4ff,#7c3aed)',
-                  WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
-                }}>₹14,999</div>
-                <div style={{fontSize:'10px',color:'rgba(255,255,255,0.25)'}}>one-time payment</div>
-              </div>
-              <Btn text="Enrol in bundle" href="/register" size="sm"/>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -1378,7 +1348,8 @@ export default function HomePage() {
             sub="One-time payment. Full access for the programme duration. No subscriptions, no hidden fees."
           />
           <div style={{
-            display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'16px',
+            display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'16px',
+            maxWidth:'820px',margin:'0 auto',
           }} className="price-grid">
 
             {/* Cloud LaunchPad */}
@@ -1394,7 +1365,7 @@ export default function HomePage() {
                 background:'linear-gradient(135deg,#00d4ff,#3b5bdb)',
                 WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
                 marginBottom:'4px',
-              }}>₹6,999</div>
+              }}>₹7,599</div>
               <div style={{fontSize:'12px',color:'rgba(255,255,255,0.35)',marginBottom:'20px'}}>
                 One-time · 4 months access
               </div>
@@ -1409,67 +1380,40 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Cloud Architect */}
+            {/* Cloud Architect — Coming Soon */}
             <div style={{
-              background:'rgba(124,58,237,0.06)',border:'1px solid rgba(124,58,237,0.25)',
-              borderRadius:'20px',padding:'28px',position:'relative',overflow:'hidden',
+              background:'rgba(124,58,237,0.04)',border:'1px solid rgba(124,58,237,0.15)',
+              borderRadius:'20px',padding:'28px',position:'relative',overflow:'hidden',opacity:0.7,
             }}>
               <div style={{position:'absolute',top:0,left:0,right:0,height:'2px',background:'linear-gradient(90deg,#7c3aed,#3b5bdb)'}}/>
-              <div style={{fontSize:'11px',color:'#a78bfa',fontFamily:'Space Mono,monospace',
-                letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:'10px'}}>Cloud Architect</div>
-              <div style={{
-                fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'36px',lineHeight:1,
-                background:'linear-gradient(135deg,#a78bfa,#7c3aed)',
-                WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
-                marginBottom:'4px',
-              }}>₹9,999</div>
-              <div style={{fontSize:'12px',color:'rgba(255,255,255,0.35)',marginBottom:'20px'}}>
-                One-time · 6 months access
-              </div>
-              {['AWS Solutions Architect prep','12 modules + live classes','Advanced architecture labs',
-                'Doubt Corner access','Verified certificate'].map(t=>(
-                <div key={t} style={{display:'flex',gap:'8px',fontSize:'13px',color:'rgba(255,255,255,0.6)',marginBottom:'8px'}}>
-                  <span style={{color:'#a78bfa',flexShrink:0}}>✓</span>{t}
-                </div>
-              ))}
-              <div style={{marginTop:'24px'}}>
-                <Btn text="Enrol Now" href="/register" size="sm"/>
-              </div>
-            </div>
-
-            {/* Bundle — featured */}
-            <div style={{
-              background:'rgba(59,91,219,0.12)',border:'1px solid rgba(59,91,219,0.4)',
-              borderRadius:'20px',padding:'28px',position:'relative',overflow:'hidden',
-              boxShadow:'0 20px 60px rgba(59,91,219,0.2)',
-            }}>
-              <div style={{position:'absolute',top:0,left:0,right:0,height:'2px',background:'linear-gradient(90deg,#00d4ff,#3b5bdb,#7c3aed)'}}/>
               <div style={{
                 position:'absolute',top:'16px',right:'16px',
                 padding:'3px 10px',borderRadius:'100px',fontSize:'9px',fontWeight:800,
                 letterSpacing:'0.08em',textTransform:'uppercase',
-                background:'rgba(59,91,219,0.3)',color:'#93c5fd',
-              }}>Best Value</div>
-              <div style={{fontSize:'11px',color:'#93c5fd',fontFamily:'Space Mono,monospace',
-                letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:'10px'}}>Full Bundle</div>
+                background:'rgba(124,58,237,0.2)',color:'#a78bfa',border:'1px solid rgba(124,58,237,0.35)',
+              }}>Coming Soon</div>
+              <div style={{fontSize:'11px',color:'#a78bfa',fontFamily:'Space Mono,monospace',
+                letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:'10px'}}>Cloud Architect</div>
               <div style={{
                 fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'36px',lineHeight:1,
-                background:'linear-gradient(135deg,#00d4ff,#7c3aed)',
-                WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
-                marginBottom:'4px',
-              }}>₹14,999</div>
-              <div style={{fontSize:'12px',color:'rgba(255,255,255,0.35)',marginBottom:'20px'}}>
-                One-time · 10 months · Save ₹1,999
+                color:'rgba(167,139,250,0.35)',marginBottom:'4px',
+              }}>—</div>
+              <div style={{fontSize:'12px',color:'rgba(255,255,255,0.25)',marginBottom:'20px'}}>
+                Pricing revealed at launch
               </div>
-              {['Both cloud programmes','All 23 modules + live classes',
-                '2 certification preps','Priority doubt resolution',
-                '2 verified certificates'].map(t=>(
-                <div key={t} style={{display:'flex',gap:'8px',fontSize:'13px',color:'rgba(255,255,255,0.7)',marginBottom:'8px'}}>
-                  <span style={{color:'#22c55e',flexShrink:0}}>✓</span>{t}
+              {['AWS Solutions Architect prep','12 modules + live classes','Advanced architecture labs',
+                'Doubt Corner access','Verified certificate'].map(t=>(
+                <div key={t} style={{display:'flex',gap:'8px',fontSize:'13px',color:'rgba(255,255,255,0.3)',marginBottom:'8px'}}>
+                  <span style={{color:'rgba(167,139,250,0.35)',flexShrink:0}}>✓</span>{t}
                 </div>
               ))}
               <div style={{marginTop:'24px'}}>
-                <Btn text="Enrol in Bundle" href="/register" size="sm"/>
+                <button disabled style={{
+                  padding:'10px 24px',borderRadius:'100px',
+                  background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',
+                  color:'rgba(255,255,255,0.25)',fontSize:'13px',fontWeight:700,
+                  cursor:'not-allowed',fontFamily:'Syne,sans-serif',
+                }}>Coming Soon</button>
               </div>
             </div>
           </div>

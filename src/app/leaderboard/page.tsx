@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
+import LockedFeature from '@/components/LockedFeature'
 
 export default async function LeaderboardPage() {
   const supabase = await createClient()
@@ -16,11 +17,20 @@ export default async function LeaderboardPage() {
   const profile = p as Profile | null
   if (!profile) redirect('/login')
 
-  // Defense-in-depth — see src/lib/access-gate.ts for why this exists
-  // alongside proxy.ts middleware. This page previously had NO
-  // access_status check at all, and didn't even guard against a
-  // null profile before using it.
-  requireActiveStudent(profile)
+  // For unenrolled students, show a locked screen rather than redirecting —
+  // brief says these features are visible but locked, not hidden entirely.
+  const isEnrolled = profile.access_status === 'active'
+  if (!isEnrolled) {
+    return (
+      <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
+        <Sidebar profile={profile}/>
+        <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
+          <Topbar title="Leaderboard"/>
+          <LockedFeature feature="Leaderboard" description="See your ranking among peers — available after enrolment."/>
+        </main>
+      </div>
+    )
+  }
 
   const admin = createAdminClient()
 

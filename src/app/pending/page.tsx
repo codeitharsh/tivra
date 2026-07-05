@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import Image from 'next/image'
 import SignOutButton from './SignOutButton'
+import WhatsAppBanner from '@/components/WhatsAppBanner'
 
 import type { Profile, Program } from '@/types/database'
 
@@ -296,6 +297,8 @@ export default async function PendingPage() {
             </Link>
           )}
         </div>
+
+        <WhatsAppBanner/>
 
         <p style={{ textAlign: 'center', marginTop: '28px', fontSize: '12px', color: 'rgba(255,255,255,0.2)' }}>
           Questions?{' '}

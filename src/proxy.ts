@@ -121,9 +121,11 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── STEP 8: PENDING PAYMENT ────────────────────────────────
-  // Student hasn't paid → they see NOTHING except /pending and /payment
-  // Every single other route is blocked
+  // Student hasn't paid → they can only access /pending, /payment,
+  // and /profile (profile is always accessible per the product brief).
+  // Every other route is blocked.
   if (status === 'pending_payment') {
+    if (pathname.startsWith('/profile')) return response
     return NextResponse.redirect(new URL('/pending', request.url))
   }
 

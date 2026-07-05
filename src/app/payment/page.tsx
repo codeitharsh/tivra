@@ -31,14 +31,15 @@ interface RazorpayInstance { open(): void }
 // ── Plan config ───────────────────────────────────────────
 const PLANS = [
   {
-    id:       'cloud_launchpad',
-    name:     'Cloud LaunchPad',
-    subtitle: 'AWS Cloud Practitioner',
-    duration: '2 months',
-    price:    6999,
-    modules:  11,
-    color:    '#00d4ff',
-    popular:  false,
+    id:         'cloud_launchpad',
+    name:       'Cloud LaunchPad',
+    subtitle:   'AWS Cloud Practitioner',
+    duration:   '4 months',
+    price:      7599,
+    modules:    11,
+    color:      '#00d4ff',
+    popular:    false,
+    coming_soon: false,
     features: [
       '11 modules with live classes',
       'AWS Cloud Practitioner prep',
@@ -49,14 +50,15 @@ const PLANS = [
     ],
   },
   {
-    id:       'cloud_architect',
-    name:     'Cloud Architect',
-    subtitle: 'AWS Solutions Architect',
-    duration: '4 months',
-    price:    9999,
-    modules:  12,
-    color:    '#7c3aed',
-    popular:  false,
+    id:         'cloud_architect',
+    name:       'Cloud Architect',
+    subtitle:   'AWS Solutions Architect',
+    duration:   '6 months',
+    price:      9999,
+    modules:    12,
+    color:      '#7c3aed',
+    popular:    false,
+    coming_soon: true,
     features: [
       '12 modules with live classes',
       'AWS Solutions Architect prep',
@@ -66,24 +68,7 @@ const PLANS = [
       'Verified certificate',
     ],
   },
-  {
-    id:       'bundle',
-    name:     'Full Bundle',
-    subtitle: 'Cloud LaunchPad + Architect',
-    duration: '6 months',
-    price:    14999,
-    modules:  23,
-    color:    '#3b5bdb',
-    popular:  true,
-    features: [
-      'All 23 modules across both programmes',
-      'AWS Cloud Practitioner + SAA-C03',
-      'Priority doubt resolution',
-      'Study notes & all recordings',
-      '2 verified certificates',
-      'Best value — save ₹1,999',
-    ],
-  },
+  // bundle removed — no longer offered
 ]
 
 type PayState = 'idle' | 'creating' | 'open' | 'verifying' | 'done' | 'error'
@@ -295,6 +280,31 @@ export default function PaymentPage() {
             style={{ fontSize: '15px', padding: '14px 36px', justifyContent: 'center', width: '100%' }}>
             Go to Dashboard →
           </button>
+
+          {/* WhatsApp community */}
+          <div style={{ textAlign:'left', marginTop:'16px' }}>
+            <div style={{
+              display:'flex', alignItems:'center', justifyContent:'space-between',
+              gap:'12px', flexWrap:'wrap',
+              background:'rgba(37,211,102,0.08)',
+              border:'1px solid rgba(37,211,102,0.25)',
+              borderRadius:'14px', padding:'16px 18px',
+            }}>
+              <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
+                <div style={{ width:'36px', height:'36px', borderRadius:'50%', flexShrink:0, background:'#25d366', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                </div>
+                <div>
+                  <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'13px', color:'#fff' }}>Join our WhatsApp Community</div>
+                  <div style={{ fontSize:'11px', color:'rgba(255,255,255,0.4)', marginTop:'2px' }}>Updates, resources & community discussions.</div>
+                </div>
+              </div>
+              <a href="https://chat.whatsapp.com/FrYS4BBduCmDFXKFohTijq?mode=gi_t" target="_blank" rel="noopener noreferrer"
+                style={{ flexShrink:0, padding:'8px 16px', borderRadius:'100px', background:'#25d366', color:'#fff', fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'12px', textDecoration:'none', whiteSpace:'nowrap' }}>
+                Join →
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -346,21 +356,34 @@ export default function PaymentPage() {
           display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '16px', marginBottom: '32px',
         }}>
           {PLANS.map(p => (
-            <div key={p.id} onClick={() => setSelectedPlan(p.id)}
+            <div key={p.id} onClick={() => !p.coming_soon && setSelectedPlan(p.id)}
               style={{
                 borderRadius: '16px', padding: '24px 20px',
-                cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                cursor: p.coming_soon ? 'not-allowed' : 'pointer', position: 'relative', overflow: 'hidden',
                 border: selectedPlan === p.id
                   ? `1.5px solid ${p.color}`
                   : '1.5px solid rgba(255,255,255,0.08)',
-                background: selectedPlan === p.id
+                background: p.coming_soon
+                  ? 'rgba(255,255,255,0.015)'
+                  : selectedPlan === p.id
                   ? `linear-gradient(135deg,${p.color}12,${p.color}06)`
                   : 'rgba(255,255,255,0.025)',
                 transition: 'all 0.2s',
+                opacity: p.coming_soon ? 0.6 : 1,
               }}>
 
+              {/* Coming Soon badge */}
+              {p.coming_soon && (
+                <div style={{
+                  position: 'absolute', top: '12px', right: '12px',
+                  background: 'rgba(124,58,237,0.25)', border: '1px solid rgba(124,58,237,0.4)',
+                  borderRadius: '20px', padding: '3px 10px',
+                  fontSize: '10px', fontWeight: 700, color: '#a78bfa', letterSpacing: '0.06em',
+                }}>COMING SOON</div>
+              )}
+
               {/* Popular badge */}
-              {p.popular && (
+              {p.popular && !p.coming_soon && (
                 <div style={{
                   position: 'absolute', top: '12px', right: '12px',
                   background: 'linear-gradient(135deg,#00d4ff,#7c3aed)',
@@ -370,16 +393,19 @@ export default function PaymentPage() {
               )}
 
               {/* Selected indicator */}
-              <div style={{
-                width: '18px', height: '18px', borderRadius: '50%', marginBottom: '14px',
-                border: `2px solid ${selectedPlan === p.id ? p.color : 'rgba(255,255,255,0.2)'}`,
-                background: selectedPlan === p.id ? p.color : 'transparent',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {selectedPlan === p.id && (
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }}/>
-                )}
-              </div>
+              {!p.coming_soon && (
+                <div style={{
+                  width: '18px', height: '18px', borderRadius: '50%', marginBottom: '14px',
+                  border: `2px solid ${selectedPlan === p.id ? p.color : 'rgba(255,255,255,0.2)'}`,
+                  background: selectedPlan === p.id ? p.color : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {selectedPlan === p.id && (
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }}/>
+                  )}
+                </div>
+              )}
+              {p.coming_soon && <div style={{ height: '32px' }}/>}
 
               <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800,
                 fontSize: '16px', color: '#fff', marginBottom: '3px' }}>
@@ -392,7 +418,7 @@ export default function PaymentPage() {
                 fontFamily: 'Syne,sans-serif', fontWeight: 800,
                 fontSize: '28px', color: p.color, lineHeight: 1,
               }}>
-                ₹{p.price.toLocaleString('en-IN')}
+                {p.coming_soon ? '—' : `₹${p.price.toLocaleString('en-IN')}`}
               </div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>
                 {p.modules} modules

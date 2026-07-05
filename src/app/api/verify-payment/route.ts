@@ -14,7 +14,7 @@ function adminSB() {
 const PLAN_SLUGS: Record<string, string[]> = {
   cloud_launchpad: ['cloud-launchpad'],
   cloud_architect: ['cloud-architect'],
-  bundle:          ['cloud-launchpad', 'cloud-architect'],
+  // bundle removed — no longer offered
 }
 
 // Web Crypto HMAC-SHA256 — works on Cloudflare edge (no Node.js needed)

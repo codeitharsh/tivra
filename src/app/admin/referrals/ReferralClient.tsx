@@ -11,10 +11,18 @@ interface Referral {
 }
 interface Stat { total: number; approved: number; revenue: number }
 
+interface Enrollment {
+  id: string; status: string; amount: number | null; plan: string | null
+  created_at: string; referral_code: string | null
+  profiles: { full_name: string; email: string; phone: string | null } | null
+  faculty_referrals: { faculty_name: string } | null
+}
+
 interface Props {
   referrals: Referral[]
   stats: Record<string, Stat>
   adminId: string
+  enrollments: Enrollment[]
 }
 
 const BLANK = { faculty_name: '', faculty_email: '', referral_code: '', discount_amount: 600 }
@@ -33,7 +41,7 @@ function generateCode(name: string) {
   return `${base}${num}`
 }
 
-export default function ReferralClient({ referrals, stats }: Props) {
+export default function ReferralClient({ referrals, stats, enrollments }: Props) {
   const router = useRouter()
   const [isPending, start] = useTransition()
   const [toast, setToast]  = useState<{ msg: string; type: 'success'|'error' } | null>(null)
@@ -246,6 +254,68 @@ export default function ReferralClient({ referrals, stats }: Props) {
           <div className={`toast toast-${toast.type}`}>{toast.msg}</div>
         </div>
       )}
+
+      {/* Enrollments detail table */}
+      <div style={{ marginTop:'32px' }}>
+        <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'16px', marginBottom:'14px' }}>
+          All Referral Enrollments
+        </div>
+        <div className="card" style={{ padding:0, overflow:'hidden' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Contact</th>
+                <th>Course</th>
+                <th>Amount Paid</th>
+                <th>Referral Code</th>
+                <th>Faculty</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {enrollments.length === 0 && (
+                <tr><td colSpan={8} style={{ textAlign:'center', color:'var(--muted)', padding:'32px' }}>No referral enrollments yet.</td></tr>
+              )}
+              {enrollments.map(e => {
+                const profile = e.profiles
+                const plan = e.plan?.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? '—'
+                const date  = new Date(e.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
+                return (
+                  <tr key={e.id}>
+                    <td style={{ fontWeight:600, fontSize:'13px' }}>{profile?.full_name ?? '—'}</td>
+                    <td>
+                      <div style={{ fontSize:'12px' }}>{profile?.email ?? '—'}</div>
+                      {profile?.phone && <div style={{ fontSize:'11px', color:'var(--muted)' }}>{profile.phone}</div>}
+                    </td>
+                    <td style={{ fontSize:'13px' }}>{plan}</td>
+                    <td style={{ fontFamily:'Syne,sans-serif', fontWeight:700, color:'var(--green)', fontSize:'13px' }}>
+                      {e.amount ? `₹${e.amount.toLocaleString('en-IN')}` : '—'}
+                    </td>
+                    <td>
+                      <code style={{ fontFamily:'monospace', fontSize:'12px', fontWeight:700, color:'var(--cyan)', background:'rgba(0,212,255,0.08)', padding:'2px 7px', borderRadius:'4px' }}>
+                        {e.referral_code ?? '—'}
+                      </code>
+                    </td>
+                    <td style={{ fontSize:'13px' }}>{e.faculty_referrals?.faculty_name ?? '—'}</td>
+                    <td style={{ fontSize:'12px', color:'var(--muted)' }}>{date}</td>
+                    <td>
+                      <span style={{
+                        padding:'3px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:600,
+                        background: e.status === 'approved' ? 'rgba(34,197,94,0.12)' : e.status === 'pending' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.1)',
+                        color: e.status === 'approved' ? 'var(--green)' : e.status === 'pending' ? 'var(--amber)' : 'var(--red)',
+                      }}>
+                        {e.status.charAt(0).toUpperCase() + e.status.slice(1)}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }

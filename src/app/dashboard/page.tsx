@@ -7,6 +7,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import { requireActiveStudent } from '@/lib/access-gate'
+import WhatsAppBanner from '@/components/WhatsAppBanner'
 import type { Profile } from '@/types/database'
 
 export default async function DashboardPage({
@@ -38,14 +39,15 @@ export default async function DashboardPage({
   const admin = createAdminClient()
 
   // ── Resolve the student's actual enrolled programmes ──────
-  // Previously every query below was hardcoded to a single
-  // 'cloud-launchpad' slug — a student enrolled in a DIFFERENT or
-  // ADDITIONAL programme would see wrong, missing, or mixed-together
-  // data (e.g. phase assessment cards from a programme they never
-  // enrolled in, since the phases/assessments queries had no
-  // program_id filter at all). This is now the single source of truth
-  // for which programmes' data should appear anywhere on this page.
-  const { data: enrolledRaw } = await supabase
+  // Uses adminClient (service role) instead of the anon supabase client
+  // because RLS policies on enrolled_programs or the programs join can
+  // silently return empty results for a valid student — the service
+  // role bypasses RLS entirely, which is safe here since we already
+  // verified the user's identity and are only reading their own rows
+  // (filtered by user.id). Without this, the join to programs returns
+  // null even when the enrolled_programs row exists, causing the
+  // "No programme enrollment found" banner to show incorrectly.
+  const { data: enrolledRaw } = await admin
     .from('enrolled_programs')
     .select('programs!program_id(id, name, slug)')
     .eq('student_id', user.id)
@@ -71,12 +73,12 @@ export default async function DashboardPage({
     { data: assessAttemptsRaw },
     { data: certsRaw },
   ] = await Promise.all([
-    supabase.from('module_progress').select('*',{count:'exact',head:true})
+    admin.from('module_progress').select('*',{count:'exact',head:true})
       .eq('student_id', user.id).eq('status','completed'),
-    supabase.from('test_attempts').select('score_percent').eq('student_id', user.id),
-    supabase.from('assessment_attempts').select('score_percent,passed,assessment_id')
+    admin.from('test_attempts').select('score_percent').eq('student_id', user.id),
+    admin.from('assessment_attempts').select('score_percent,passed,assessment_id')
       .eq('student_id', user.id).order('submitted_at',{ascending:false}),
-    supabase.from('certificates').select('phase_id').eq('student_id', user.id).eq('is_revoked',false),
+    admin.from('certificates').select('phase_id').eq('student_id', user.id).eq('is_revoked',false),
   ])
 
   const attempts   = (attemptsRaw ?? []) as { score_percent: number }[]
@@ -133,7 +135,7 @@ export default async function DashboardPage({
       .order('unlock_datetime')
       .limit(20)
 
-    const { data: attemptsWithId } = await supabase
+    const { data: attemptsWithId } = await admin
       .from('test_attempts').select('test_id').eq('student_id', user.id)
     const takenIds = new Set(((attemptsWithId??[]) as {test_id:string}[]).map(a => a.test_id))
 
@@ -194,7 +196,7 @@ export default async function DashboardPage({
       .in('phase_id', phases.map(ph=>ph.id))
     const assessments = (assessmentsRaw ?? []) as Record<string,unknown>[]
 
-    const { data: progressRows } = await supabase
+    const { data: progressRows } = await admin
       .from('module_progress').select('module_id').eq('student_id',user.id).eq('status','completed')
     const completedModuleIds = new Set(
       ((progressRows ?? []) as Record<string,unknown>[]).map(m => m.module_id as string)
@@ -270,6 +272,47 @@ export default async function DashboardPage({
                 No programme enrollment found on this account yet.
                 If you believe this is a mistake, contact support.
               </div>
+            </div>
+          )}
+
+          {/* Programme access cards — the primary navigation for enrolled students.
+              Previously the dashboard had no Study Content link at all, only Tests
+              and Assessments. This is the main entry point to the course. */}
+          {enrolledProgramsList.length > 0 && (
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:'14px', marginBottom:'24px' }}>
+              {enrolledProgramsList.map((prog, i) => {
+                const colors = ['#00d4ff','#7c3aed','#22c55e','#f59e0b']
+                const color  = colors[i % colors.length]
+                return (
+                  <div key={prog.id} className="card" style={{ borderTop:`2px solid ${color}`, padding:'20px' }}>
+                    <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'15px', marginBottom:'14px', color:'#fff' }}>
+                      {prog.name}
+                    </div>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
+                      {[
+                        { label:'Study Content', href:`/programs/${prog.slug}/content`,     emoji:'📚' },
+                        { label:'Weekly Tests',  href:`/programs/${prog.slug}/tests`,        emoji:'📝' },
+                        { label:'Assessments',   href:`/programs/${prog.slug}/assessments`,  emoji:'🎯' },
+                        { label:'Certificate',   href:`/programs/${prog.slug}/certificate`,  emoji:'🏆' },
+                      ].map(link => (
+                        <Link key={link.label} href={link.href} style={{ textDecoration:'none' }}>
+                          <div style={{
+                            padding:'10px 12px', borderRadius:'10px',
+                            background:'rgba(255,255,255,0.04)',
+                            border:'1px solid rgba(255,255,255,0.07)',
+                            fontSize:'12px', color:'rgba(255,255,255,0.7)',
+                            fontWeight:500, display:'flex', alignItems:'center', gap:'8px',
+                            transition:'all 0.15s',
+                          }}>
+                            <span>{link.emoji}</span>
+                            {link.label}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
 
@@ -502,6 +545,7 @@ export default async function DashboardPage({
             )}
           </div>
 
+          <WhatsAppBanner/>
         </div>
       </main>
     </div>

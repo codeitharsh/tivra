@@ -12,9 +12,9 @@ function adminSB() {
 }
 
 const PLANS: Record<string, { amount: number; label: string }> = {
-  cloud_launchpad: { amount: 699900,  label: 'Cloud LaunchPad'             },
-  cloud_architect: { amount: 999900,  label: 'Cloud Architect'             },
-  bundle:          { amount: 1499900, label: 'Cloud LaunchPad + Architect' },
+  cloud_launchpad: { amount: 759900,  label: 'Cloud LaunchPad'  },
+  cloud_architect: { amount: 999900,  label: 'Cloud Architect'  },
+  // bundle removed — no longer offered
 }
 
 export async function POST(req: Request): Promise<Response> {

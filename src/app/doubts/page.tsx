@@ -8,6 +8,7 @@ import Topbar from '@/components/Topbar'
 import DoubtsClient from './DoubtsClient'
 import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
+import LockedFeature from '@/components/LockedFeature'
 
 export default async function DoubtsPage() {
   const supabase = await createClient()
@@ -17,9 +18,20 @@ export default async function DoubtsPage() {
   const profile = pd as Profile | null
   if (!profile) redirect('/login')
 
-  // Defense-in-depth — see src/lib/access-gate.ts for why this exists
-  // alongside proxy.ts middleware.
-  requireActiveStudent(profile)
+  // For unenrolled students, show a locked screen rather than redirecting —
+  // brief says these features are visible but locked, not hidden entirely.
+  const isEnrolled = profile.access_status === 'active'
+  if (!isEnrolled) {
+    return (
+      <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
+        <Sidebar profile={profile}/>
+        <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
+          <Topbar title="Doubt Corner"/>
+          <LockedFeature feature="Doubt Corner" description="Ask questions and get answers from teachers — available after enrolment."/>
+        </main>
+      </div>
+    )
+  }
 
   const admin = createAdminClient()
 
