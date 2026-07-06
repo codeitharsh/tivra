@@ -61,6 +61,16 @@ export interface Database {
         Insert: Partial<Database['public']['Tables']['profiles']['Row']> & { id:string }
         Update: Partial<Database['public']['Tables']['profiles']['Row']>
       }
+      email_logs: {
+        Row: {
+          id:string; recipient:string; email_type:string; subject:string|null
+          status:'pending'|'sent'|'failed'; provider:string|null; provider_id:string|null
+          attempt_count:number; last_error:string|null; metadata:Record<string,unknown>
+          created_at:string; sent_at:string|null; user_id:string|null
+        }
+        Insert: Omit<Database['public']['Tables']['email_logs']['Row'],'id'|'created_at'>
+        Update: Partial<Database['public']['Tables']['email_logs']['Insert']>
+      }
       faculty_referrals: {
         Row: { id:string; faculty_name:string; faculty_email:string|null; referral_code:string; discount_amount:number; is_active:boolean; created_at:string; created_by:string|null }
         Insert: Omit<Database['public']['Tables']['faculty_referrals']['Row'],'id'|'created_at'>

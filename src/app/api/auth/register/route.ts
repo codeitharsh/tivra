@@ -2,6 +2,8 @@ export const runtime = 'edge'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { sendEmailFireAndForget } from '@/lib/email'
+import { renderWelcomeEmail } from '@/lib/email-templates/welcome'
 
 // ── Basic in-memory rate limit (per edge isolate). Not a substitute for a
 //    shared store like Cloudflare KV/Durable Objects under heavy load, but
@@ -44,7 +46,10 @@ export async function POST(req: Request): Promise<Response> {
     if (!full_name || full_name.trim().length < 2 || full_name.trim().length > 100) {
       return Response.json({ error: 'Please enter a valid full name.' }, { status: 400 })
     }
-    if (phone && !PHONE_RE.test(phone.trim())) {
+    if (!phone || phone.trim().length < 7) {
+      return Response.json({ error: 'Phone number is required.' }, { status: 400 })
+    }
+    if (!PHONE_RE.test(phone.trim())) {
       return Response.json({ error: 'Please enter a valid phone number.' }, { status: 400 })
     }
 
@@ -76,6 +81,24 @@ export async function POST(req: Request): Promise<Response> {
       id: authData.user.id, email: cleanEmail, full_name: cleanName,
       phone: cleanPhone, role: 'student', access_status: 'pending_payment',
     }, { onConflict: 'id' })
+
+    // ── Welcome email — fire-and-forget ─────────────────────────
+    // Registration must succeed regardless of email delivery outcome.
+    // sendEmailFireAndForget() never throws and is not awaited here,
+    // so a slow or failing email provider cannot delay or break the
+    // response the user is waiting for. Every attempt (success or
+    // failure) is still logged to email_logs for auditing — see
+    // src/lib/email.ts for the full retry/logging behavior.
+    const { subject, html, text } = renderWelcomeEmail({ fullName: cleanName, email: cleanEmail })
+    sendEmailFireAndForget({
+      to: cleanEmail,
+      subject,
+      html,
+      text,
+      emailType: 'welcome',
+      userId: authData.user.id,
+      metadata: { full_name: cleanName },
+    })
 
     return Response.json({ success: true })
   } catch (e) { return Response.json({ error: String(e) }, { status: 500 }) }
