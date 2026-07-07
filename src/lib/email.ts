@@ -188,14 +188,46 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
 // ── Fire-and-forget wrapper for use in request handlers ────────────
 // Registration (and anything else calling this) should NEVER wait on
 // email delivery or fail because of it. This wrapper swallows every
-// possible error path so it is always safe to call without awaiting
-// or wrapping in try/catch at the call site.
-export function sendEmailFireAndForget(input: SendEmailInput): void {
-  sendEmail(input).catch(err => {
+// possible error path so it is always safe to call without a
+// try/catch at the call site.
+//
+// IMPORTANT — history of this function, for whoever reads this next:
+// An earlier version of this tried to use Cloudflare's ctx.waitUntil()
+// (via a dynamic `await import('@cloudflare/next-on-pages')`) to keep
+// the request alive long enough for the email to send in the
+// background after the response was returned. That approach caused
+// registration to hang indefinitely on the real deployed Cloudflare
+// environment — dynamic-importing that package at request time is not
+// how it's designed to be used; its request-context mechanism is
+// wired in by the next-on-pages BUILD process, not available to pull
+// in dynamically at runtime. It worked in local tests (plain Node) but
+// hung in production, which is worse than the original problem.
+//
+// The fix that follows works identically in every environment — local
+// dev, tests, and real Cloudflare — because it uses no platform-
+// specific API at all: a plain timeout race. sendEmail() is genuinely
+// awaited, but only for up to EMAIL_SEND_BUDGET_MS. If it hasn't
+// finished by then, this function returns anyway so registration is
+// never blocked — the send may still complete in the background if
+// the runtime happens to keep it alive, and either way email_logs
+// will have the real outcome recorded once it does finish.
+const EMAIL_SEND_BUDGET_MS = 4000
+
+export async function sendEmailFireAndForget(input: SendEmailInput): Promise<void> {
+  const sendPromise = sendEmail(input).catch(err => {
     // sendEmail() itself never throws (every path returns a result
     // object) — this .catch is a final safety net in case something
     // truly unexpected happens (e.g. adminSB() throws due to missing
     // env vars). Logged, never propagated.
     console.error('[email] Unexpected error in fire-and-forget send:', err)
   })
+
+  const timeout = new Promise<void>(resolve => setTimeout(resolve, EMAIL_SEND_BUDGET_MS))
+
+  // Whichever finishes first wins — if sendPromise finishes within
+  // budget, great, we return right after. If it's still running after
+  // EMAIL_SEND_BUDGET_MS, we stop waiting and let the caller continue;
+  // the underlying send keeps running and will still log its real
+  // outcome to email_logs whenever it does finish.
+  await Promise.race([sendPromise, timeout])
 }

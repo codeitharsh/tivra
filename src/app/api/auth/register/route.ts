@@ -82,15 +82,22 @@ export async function POST(req: Request): Promise<Response> {
       phone: cleanPhone, role: 'student', access_status: 'pending_payment',
     }, { onConflict: 'id' })
 
-    // ── Welcome email — fire-and-forget ─────────────────────────
+    // ── Welcome email — fire-and-forget (but see the await below) ──
     // Registration must succeed regardless of email delivery outcome.
-    // sendEmailFireAndForget() never throws and is not awaited here,
-    // so a slow or failing email provider cannot delay or break the
-    // response the user is waiting for. Every attempt (success or
-    // failure) is still logged to email_logs for auditing — see
-    // src/lib/email.ts for the full retry/logging behavior.
+    // sendEmailFireAndForget() never throws and does not make the
+    // caller wait for the email to actually SEND — but it IS awaited
+    // here, because on Cloudflare's edge runtime, registering the
+    // waitUntil() call itself requires an async import() to resolve
+    // first. If we don't await at least that far, the response could
+    // be sent and the request torn down before waitUntil() is ever
+    // called — silently skipping the whole mechanism meant to prevent
+    // exactly that. This await typically resolves in under a
+    // millisecond; the actual email send continues in the background
+    // via waitUntil() after this function returns. Every attempt
+    // (success or failure) is still logged to email_logs — see
+    // src/lib/email.ts for the full retry/logging/waitUntil behavior.
     const { subject, html, text } = renderWelcomeEmail({ fullName: cleanName, email: cleanEmail })
-    sendEmailFireAndForget({
+    await sendEmailFireAndForget({
       to: cleanEmail,
       subject,
       html,

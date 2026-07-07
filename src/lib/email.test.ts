@@ -198,38 +198,84 @@ describe('sendEmailFireAndForget', () => {
     mockEq.mockResolvedValue({ data: null, error: null })
   })
 
-  it('returns immediately without waiting for the send to complete', () => {
-    let resolved = false
-    global.fetch = vi.fn().mockImplementation(() =>
-      new Promise(resolve => setTimeout(() => {
-        resolved = true
-        resolve({ ok: true, json: async () => ({ id: 'x' }) })
-      }, 100))
-    ) as unknown as typeof fetch
+  it('completes normally and resolves once the send finishes, well within the timeout budget', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true, json: async () => ({ id: 'msg-id' }),
+    }) as unknown as typeof fetch
 
-    sendEmailFireAndForget({
-      to: 'student@example.com',
-      subject: 'Welcome!',
-      html: '<p>Hi</p>',
-      emailType: 'welcome',
-    })
-
-    // The function call itself returns synchronously — the send
-    // hasn't had time to resolve yet. This is the core guarantee:
-    // registration can call this and move on immediately.
-    expect(resolved).toBe(false)
-  })
-
-  it('never throws even when the provider is completely unreachable', () => {
-    global.fetch = vi.fn().mockRejectedValue(new Error('DNS resolution failed')) as unknown as typeof fetch
-
-    expect(() => {
+    await expect(
       sendEmailFireAndForget({
         to: 'student@example.com',
         subject: 'Welcome!',
         html: '<p>Hi</p>',
         emailType: 'welcome',
       })
-    }).not.toThrow()
+    ).resolves.not.toThrow()
+  })
+
+  it('gives up waiting after the timeout budget if the send is still in flight, without throwing', async () => {
+    // This is the actual bug fix being verified: a previous version of
+    // this function relied on Cloudflare's ctx.waitUntil(), which
+    // required dynamically importing @cloudflare/next-on-pages at
+    // request time — that import hung indefinitely on the real
+    // deployed Cloudflare environment, freezing registration entirely.
+    // The fix removes any platform-specific API and instead races the
+    // real send against a plain timeout, so registration can NEVER
+    // hang no matter how slow or stuck the email provider is.
+    global.fetch = vi.fn().mockImplementation(() =>
+      new Promise(() => { /* never resolves — simulates a stuck request */ })
+    ) as unknown as typeof fetch
+
+    const start = Date.now()
+    await sendEmailFireAndForget({
+      to: 'student@example.com',
+      subject: 'Welcome!',
+      html: '<p>Hi</p>',
+      emailType: 'welcome',
+    })
+    const elapsed = Date.now() - start
+
+    // Must return at (approximately) the timeout budget, not hang forever.
+    expect(elapsed).toBeLessThan(5000)
+    expect(elapsed).toBeGreaterThanOrEqual(3900) // allow small timing slack
+  }, 10000)
+
+  it('waits for a normal-speed send to genuinely complete, since it easily fits the timeout budget', async () => {
+    // Distinguishing this from the previous Cloudflare-teardown risk:
+    // this implementation genuinely awaits the real send when it's
+    // fast (the overwhelmingly common case for a healthy email
+    // provider) — it only stops waiting if the send is abnormally
+    // slow or stuck, per the timeout test above.
+    let fetchResolved = false
+    global.fetch = vi.fn().mockImplementation(() =>
+      new Promise(resolve => setTimeout(() => {
+        fetchResolved = true
+        resolve({ ok: true, json: async () => ({ id: 'x' }) })
+      }, 200))
+    ) as unknown as typeof fetch
+
+    await sendEmailFireAndForget({
+      to: 'student@example.com',
+      subject: 'Welcome!',
+      html: '<p>Hi</p>',
+      emailType: 'welcome',
+    })
+
+    // 200ms comfortably fits within the 4-second budget, so the real
+    // send genuinely finished — this is NOT a fire-and-hope pattern.
+    expect(fetchResolved).toBe(true)
+  })
+
+  it('never throws even when the provider is completely unreachable', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error('DNS resolution failed')) as unknown as typeof fetch
+
+    await expect(
+      sendEmailFireAndForget({
+        to: 'student@example.com',
+        subject: 'Welcome!',
+        html: '<p>Hi</p>',
+        emailType: 'welcome',
+      })
+    ).resolves.not.toThrow()
   })
 })
