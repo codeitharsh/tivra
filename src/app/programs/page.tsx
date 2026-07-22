@@ -76,7 +76,7 @@ export default function ProgramsPage() {
                     Live classes, hands-on labs, weekly tests, and a verified certificate.
                   </p>
                   <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
-                    {['4 Months','11 Modules','AWS Certification','Live Classes','₹6,999'].map(t => (
+                    {['4 Months','11 Modules','AWS Certification','Live Classes','Revealing Soon'].map(t => (
                       <span key={t} style={{padding:'4px 12px',borderRadius:'20px',fontSize:'11px',fontWeight:600,
                         background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.6)'}}>{t}</span>
                     ))}
@@ -122,7 +122,7 @@ export default function ProgramsPage() {
                     For engineers who want to design scalable, production-grade systems.
                   </p>
                   <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
-                    {['6 Months','12 Modules','AWS SAA-C03','Live Classes','₹9,999'].map(t => (
+                    {['6 Months','12 Modules','AWS SAA-C03','Live Classes','Revealing Soon'].map(t => (
                       <span key={t} style={{padding:'4px 12px',borderRadius:'20px',fontSize:'11px',fontWeight:600,
                         background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.6)'}}>{t}</span>
                     ))}
@@ -159,10 +159,10 @@ export default function ProgramsPage() {
             <div style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'24px',
               background:'linear-gradient(135deg,#00d4ff,#7c3aed)',
               WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
-              ₹14,999
+              Revealing Soon
             </div>
             <div style={{fontSize:'11px',color:'rgba(255,255,255,0.35)',marginTop:'2px'}}>
-              Save ₹1,999 vs separate
+              Bundle pricing coming soon
             </div>
           </div>
         </div>
