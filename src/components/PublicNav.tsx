@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
 export default function PublicNav() {
   return (
@@ -30,9 +31,15 @@ export default function PublicNav() {
         <Link href="/login" style={{ fontSize: '13px', color: 'var(--muted)',
           textDecoration: 'none', padding: '7px 16px', borderRadius: '100px',
           border: '1px solid rgba(255,255,255,0.1)' }}>Login</Link>
-        <Link href="/register" style={{ fontSize: '13px', fontWeight: 700, color: '#fff',
-          textDecoration: 'none', padding: '8px 20px', borderRadius: '100px',
-          background: 'linear-gradient(135deg,#00c8f8,#3b5bdb,#7c3aed)' }}>Enrol</Link>
+        {ENROLLMENT_OPEN ? (
+          <Link href="/register" style={{ fontSize: '13px', fontWeight: 700, color: '#fff',
+            textDecoration: 'none', padding: '8px 20px', borderRadius: '100px',
+            background: 'linear-gradient(135deg,#00c8f8,#3b5bdb,#7c3aed)' }}>Enrol</Link>
+        ) : (
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.3)',
+            padding: '8px 20px', borderRadius: '100px', cursor: 'not-allowed',
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>Enrollments Will Start Soon</span>
+        )}
       </div>
     </nav>
   )

@@ -1,15 +1,27 @@
 'use client'
-import { useState, useTransition } from 'react'
+import { useMemo, useState, Suspense, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Same-origin-only guard as login/page.tsx — `next` is attacker
+  // controllable via the URL, never follow an absolute/external one.
+  const safeNext = useMemo(() => {
+    const next = searchParams.get('next')
+    if (!next) return null
+    if (!next.startsWith('/') || next.startsWith('//') || next.includes('://')) return null
+    return next
+  }, [searchParams])
+  const loginHref = safeNext ? `/login?next=${encodeURIComponent(safeNext)}` : '/login'
   const [error, setError] = useState<string|null>(null)
   const [referralCode,    setReferralCode]    = useState('')
   const [referralStatus,  setReferralStatus]  = useState<'idle'|'checking'|'valid'|'invalid'>('idle')
   const [referralFaculty, setReferralFaculty] = useState('')
+  const [registeredEmail, setRegisteredEmail] = useState<string|null>(null)
   const [isPending, start] = useTransition()
 
   async function validateReferral(code: string) {
@@ -34,20 +46,70 @@ export default function RegisterPage() {
     if (!phone || phone.trim().length < 7) { setError('Phone number is required.'); return }
     const password = fd.get('password') as string
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    const cleanEmail = (fd.get('email') as string).trim()
     start(async () => {
       const res = await fetch('/api/auth/register', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: fd.get('email'), password,
+          email: cleanEmail, password,
           full_name: fd.get('full_name'), phone: phone.trim(),
           referral_code: referralStatus === 'valid' ? referralCode.trim() : undefined,
         }),
       })
       const data = await res.json() as { error?: string; success?: boolean }
       if (data.error) { setError(data.error); return }
-      router.push('/pending')
-      router.refresh()
+      setRegisteredEmail(cleanEmail) // shows the "check your email" confirmation screen
     })
+  }
+
+  if (registeredEmail) {
+    return (
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', background: '#07080c', padding: '24px',
+      }}>
+        <div style={{
+          maxWidth: '440px', width: '100%', textAlign: 'center',
+          background: '#0d0f14', border: '1px solid #1c1f28',
+          borderRadius: '20px', padding: '44px 36px',
+        }}>
+          <div style={{
+            width: '64px', height: '64px', borderRadius: '50%',
+            background: '#12151d', border: '1px solid rgba(0,212,255,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 24px', fontSize: '26px',
+          }}>
+            ✉️
+          </div>
+          <h1 style={{
+            fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '22px',
+            color: '#fff', marginBottom: '12px',
+          }}>
+            Check your email
+          </h1>
+          <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: '8px' }}>
+            We&apos;ve sent a verification link to
+          </p>
+          <p style={{ fontSize: '14px', color: '#00d4ff', fontWeight: 600, marginBottom: '20px' }}>
+            {registeredEmail}
+          </p>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, marginBottom: '28px' }}>
+            Click the link in that email to verify your account. Didn&apos;t get it? Check your spam folder — it can take a minute to arrive.
+          </p>
+          <button
+            onClick={() => router.push(loginHref)}
+            style={{
+              padding: '12px 28px', borderRadius: '100px', border: 'none',
+              background: 'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)',
+              color: '#fff', fontFamily: 'Syne, sans-serif', fontWeight: 700,
+              fontSize: '14px', cursor: 'pointer',
+            }}
+          >
+            Go to Login →
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -92,7 +154,18 @@ export default function RegisterPage() {
                     onChange={e => { setReferralCode(e.target.value.toUpperCase()); setReferralStatus('idle'); setReferralFaculty('') }}
                     onBlur={e => validateReferral(e.target.value)}
                     placeholder="e.g. LAKSHIKA100"
-                    style={{ flex:1, padding:'12px 16px', borderRadius:'10px', background:'rgba(255,255,255,0.05)', border:`1px solid ${referralStatus==='invalid' ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`, color:'#fff', fontSize:'13px', outline:'none', letterSpacing:'0.04em', boxSizing:'border-box' as const }}
+                    style={{
+                      flex:1,
+                      padding:'12px 16px',
+                      borderRadius:'10px',
+                      background:'rgba(255,255,255,0.05)',
+                      border: `1px solid ${referralStatus==='invalid' ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                      color:'#fff',
+                      fontSize:'13px',
+                      outline:'none',
+                      letterSpacing:'0.04em',
+                      boxSizing:'border-box' as const,
+                    }}
                   />
                   <button type="button" onClick={() => validateReferral(referralCode)}
                     disabled={!referralCode.trim() || referralStatus==='checking'}
@@ -119,10 +192,18 @@ export default function RegisterPage() {
 
           <p style={{ textAlign:'center', marginTop:'20px', fontSize:'13px', color:'rgba(255,255,255,0.35)' }}>
             Already have an account?{' '}
-            <Link href="/login" style={{ color:'#00d4ff', textDecoration:'none', fontWeight:600 }}>Sign In</Link>
+            <Link href={loginHref} style={{ color:'#00d4ff', textDecoration:'none', fontWeight:600 }}>Sign In</Link>
           </p>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm/>
+    </Suspense>
   )
 }

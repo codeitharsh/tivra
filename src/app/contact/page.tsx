@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import PublicNav from '@/components/PublicNav'
+import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
 export const metadata: Metadata = {
   title: 'Contact Tivra',
@@ -96,10 +97,17 @@ export default function ContactPage() {
         </div>
 
         <div style={{ marginTop: '32px', textAlign: 'center' }}>
-          <Link href="/register" className="btn btn-primary"
-            style={{ fontSize: '14px', padding: '12px 28px' }}>
-            Enrol Now →
-          </Link>
+          {ENROLLMENT_OPEN ? (
+            <Link href="/register" className="btn btn-primary"
+              style={{ fontSize: '14px', padding: '12px 28px' }}>
+              Enrol Now →
+            </Link>
+          ) : (
+            <button disabled className="btn btn-primary"
+              style={{ fontSize: '14px', padding: '12px 28px', opacity: 0.4, cursor: 'not-allowed' }}>
+              Enrollments Will Start Soon
+            </button>
+          )}
         </div>
       </div>
     </div>

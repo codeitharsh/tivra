@@ -64,8 +64,11 @@ export default async function AdminPage() {
           {/* Action cards */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' }}>
             {[
+              { title:'Programmes',         desc:'Manage pricing, duration, and curriculum PDFs', href:'/admin/programs',    icon:'📘' },
               { title:'Grant Access',       desc:'Approve students, assign batches, set roles', href:'/admin/access',      icon:'🔑' },
               { title:'Payment Requests',   desc:'Review and approve submitted payment proofs', href:'/admin/payments',    icon:'💰' },
+              { title:'Enrollments',        desc:'View all programme enrollments and revenue',   href:'/admin/enrollments', icon:'🎓' },
+              { title:'Curriculum Leads',   desc:'View curriculum download requests',            href:'/admin/curriculum-leads', icon:'📄' },
               { title:'Batch Management',   desc:'Create batches, open/close enrolment windows',href:'/admin/batches',     icon:'📦' },
               { title:'Add Student to Batch',desc:'Assign activated students to specific batches',href:'/admin/students',  icon:'👤' },
               { title:'Live Sessions',      desc:'Schedule classes, track attendance',           href:'/admin/live',        icon:'🎥' },

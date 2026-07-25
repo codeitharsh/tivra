@@ -1,16 +1,40 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// This file was previously named src/proxy.ts, exporting a function
+// named `proxy` — Next.js only ever picks up route-gating middleware
+// from a file named exactly `middleware.ts` (or .js) at the project/src
+// root, exporting a function named `middleware`. Under the old name
+// this logic silently never ran at all; every route below was
+// completely ungated by it. The reason it wasn't obviously broken:
+// every other protected page (admin/*, teacher/*, dashboard, pending,
+// profile, programs/[slug]/content, etc.) already has its own
+// independent server-side `redirect('/login')` check, so this file was
+// only ever meant to be a second, defense-in-depth layer for those —
+// except for /payment, a client component with no page-level check of
+// its own, which is what actually let unauthenticated visitors reach
+// checkout. Renaming this file is the real fix, not just the
+// PUBLIC_ROUTES/STEP 8/STEP 2 edits below.
+
 // ─────────────────────────────────────────────────────────────
 //  ROUTE DEFINITIONS
 // ─────────────────────────────────────────────────────────────
 
 // 1. Anyone can access — no login needed
+//
+// '/payment' is deliberately NOT in this list — checkout must always
+// require a session (see STEP 2). It used to be listed here, which let
+// anyone reach and interact with the payment page while logged out.
+// The backend (create-order/verify-payment) already independently
+// rejects unauthenticated requests, so no unauthenticated order could
+// ever actually be created — but the page itself being reachable
+// pre-login was still the wrong UX/security posture, so it's gated
+// like every other student route now. STEP 8 below explicitly still
+// allows a logged-in pending_payment student through to /payment.
 const PUBLIC_ROUTES = [
   '/', '/login', '/register', '/verify',
   '/about', '/contact', '/terms', '/privacy',
   '/pending',   // pending/explore page is public so redirect works
-  '/payment',   // payment submission page
 ]
 
 // Programme LANDING pages (e.g. /programs/cloud-launchpad) are public
@@ -32,7 +56,7 @@ function matches(path: string, routes: string[]) {
   return routes.some(r => path === r || path.startsWith(r + '/'))
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   let response = NextResponse.next({ request })
 
@@ -87,7 +111,10 @@ export async function proxy(request: NextRequest) {
   // ── STEP 2: Must be logged in ──────────────────────────────
   if (!user) {
     const url = new URL('/login', request.url)
-    url.searchParams.set('next', pathname)
+    // Preserve the querystring (e.g. /payment?plan=data-launchpad) —
+    // pathname alone would drop which plan the visitor picked, so
+    // after login they'd land on checkout with no plan selected.
+    url.searchParams.set('next', pathname + request.nextUrl.search)
     return NextResponse.redirect(url)
   }
 
@@ -125,7 +152,7 @@ export async function proxy(request: NextRequest) {
   // and /profile (profile is always accessible per the product brief).
   // Every other route is blocked.
   if (status === 'pending_payment') {
-    if (pathname.startsWith('/profile')) return response
+    if (pathname.startsWith('/profile') || pathname.startsWith('/payment')) return response
     return NextResponse.redirect(new URL('/pending', request.url))
   }
 

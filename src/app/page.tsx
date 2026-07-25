@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, Clock, Menu, X } from 'lucide-react'
+import { ENROLLMENT_OPEN } from '@/lib/enrollment'
+import { PROGRAM_META, DEFAULT_PROGRAM_META as DEFAULT_META } from '@/lib/program-meta'
 
 // ─────────────────────────────────────────────────────────────
 // UTILS
@@ -32,8 +34,8 @@ function StarIcon({ size = 20 }: { size?: number }) {
 }
 
 // Pill button with text-roll + rotating arrow
-function Btn({ text, href = '#', variant = 'primary', size = 'md', onClick }:{
-  text:string; href?:string; variant?:'primary'|'outline'|'ghost'; size?:'sm'|'md'|'lg'; onClick?:()=>void
+function Btn({ text, href = '#', variant = 'primary', size = 'md', onClick, disabled = false }:{
+  text:string; href?:string; variant?:'primary'|'outline'|'ghost'; size?:'sm'|'md'|'lg'; onClick?:()=>void; disabled?:boolean
 }) {
   const bg: Record<string,string> = {
     primary:'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)',
@@ -81,6 +83,14 @@ function Btn({ text, href = '#', variant = 'primary', size = 'md', onClick }:{
     fontSize:fs, fontWeight:700, letterSpacing:'0.02em',
     background:bg[variant], border:border[variant], color:'#fff',
     boxShadow:sh, transition:'all 0.3s', outline:'none',
+  }
+  if (disabled) {
+    return (
+      <button disabled className="tivra-btn" style={{
+        ...baseStyle, cursor:'not-allowed', background:'rgba(255,255,255,0.05)',
+        border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.3)', boxShadow:'none',
+      }}>{inner}</button>
+    )
   }
   if (href === '#') {
     return <button onClick={onClick} className="tivra-btn" style={baseStyle}>{inner}</button>
@@ -433,246 +443,19 @@ function CloudArchitectAnim() {
 }
 
 
-
-// Full Stack Dev — code editor with typing animation
-function FullStackAnim() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas) return
-    const ctx = canvas.getContext('2d'); if (!ctx) return
-    canvas.width = 1200; canvas.height = 680
-    ctx.scale(2, 2)
-    const W = 600, H = 340
-    let raf = 0, t = 0
-
-    const lines = [
-      { indent: 0, text: 'import React from "react"',         color: '#f59e0b' },
-      { indent: 0, text: 'import { useState } from "react"',  color: '#f59e0b' },
-      { indent: 0, text: '',                                    color: '#fff' },
-      { indent: 0, text: 'function App() {',                   color: '#22c55e' },
-      { indent: 1, text: 'const [count, setCount] = useState(0)', color: '#60a5fa' },
-      { indent: 1, text: '',                                    color: '#fff' },
-      { indent: 1, text: 'return (',                            color: '#c084fc' },
-      { indent: 2, text: '<div className="app">',              color: '#f97316' },
-      { indent: 3, text: '<h1>Hello Tivra</h1>',               color: '#fbbf24' },
-      { indent: 3, text: '<button onClick={() =>',             color: '#60a5fa' },
-      { indent: 4, text: 'setCount(c => c + 1)}',              color: '#60a5fa' },
-      { indent: 3, text: '>',                                   color: '#f97316' },
-      { indent: 4, text: 'Count: {count}',                     color: '#34d399' },
-      { indent: 3, text: '</button>',                           color: '#f97316' },
-      { indent: 2, text: '</div>',                              color: '#f97316' },
-      { indent: 1, text: ')',                                    color: '#c084fc' },
-      { indent: 0, text: '}',                                   color: '#22c55e' },
-    ]
-
-    const draw = () => {
-      t += 0.012
-      ctx.clearRect(0, 0, W, H)
-
-      // BG
-      const bg = ctx.createLinearGradient(0, 0, W, H)
-      bg.addColorStop(0, 'rgba(30, 20, 10, 0.8)')
-      bg.addColorStop(1, 'rgba(7, 8, 12, 0.95)')
-      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
-
-      // Editor chrome
-      ctx.fillStyle = 'rgba(255,255,255,0.04)'
-      ctx.fillRect(0, 0, W, 22)
-      ctx.fillStyle = 'rgba(255,255,255,0.07)'
-      ctx.beginPath(); ctx.arc(14, 11, 4, 0, Math.PI * 2); ctx.fill()
-      ctx.fillStyle = 'rgba(255,255,255,0.05)'
-      ctx.beginPath(); ctx.arc(28, 11, 4, 0, Math.PI * 2); ctx.fill()
-      ctx.beginPath(); ctx.arc(42, 11, 4, 0, Math.PI * 2); ctx.fill()
-
-      // Line numbers gutter
-      ctx.fillStyle = 'rgba(255,255,255,0.025)'
-      ctx.fillRect(0, 22, 36, H)
-
-      // Code lines with typing animation
-      const charSpeed = 80
-      const totalChars = t * charSpeed
-      let charCount = 0
-
-      lines.forEach((line, i) => {
-        const y = 40 + i * 17
-        if (y > H) return
-
-        // Line number
-        ctx.font = '500 9px "Space Mono", monospace'
-        ctx.fillStyle = 'rgba(255,255,255,0.15)'
-        ctx.fillText(String(i + 1).padStart(2, ' '), 8, y)
-
-        // Code text with progressive reveal
-        const x = 44 + line.indent * 16
-        const charsToShow = Math.max(0, Math.min(line.text.length, totalChars - charCount))
-        charCount += line.text.length
-
-        if (charsToShow > 0) {
-          const visibleText = line.text.slice(0, charsToShow)
-          ctx.font = '500 9.5px "Space Mono", monospace'
-          ctx.fillStyle = line.color + '90'
-          ctx.fillText(visibleText, x, y)
-
-          // Cursor at end of current typing line
-          if (charsToShow < line.text.length && charsToShow === Math.floor(totalChars - (charCount - line.text.length))) {
-            const cursorX = x + ctx.measureText(visibleText).width
-            const blink = Math.sin(t * 8) > 0
-            if (blink) {
-              ctx.fillStyle = '#f59e0b'
-              ctx.fillRect(cursorX, y - 9, 1.5, 12)
-            }
-          }
-        }
-      })
-
-      // Reset typing loop
-      if (totalChars > lines.reduce((s, l) => s + l.text.length, 0) + 100) {
-        t = 0
-      }
-
-      raf = requestAnimationFrame(draw)
-    }
-    draw()
-    return () => cancelAnimationFrame(raf)
-  }, [])
-  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }}/>
-}
-
-// DevOps — CI/CD pipeline with flowing nodes
-function DevOpsAnim() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas) return
-    const ctx = canvas.getContext('2d'); if (!ctx) return
-    canvas.width = 1200; canvas.height = 680
-    ctx.scale(2, 2)
-    const W = 600, H = 340
-    let raf = 0, t = 0
-
-    const stages = [
-      { x: 60,  label: 'Code',    icon: '{ }',   color: '34,197,94' },
-      { x: 160, label: 'Build',   icon: '⚙',     color: '59,91,219' },
-      { x: 260, label: 'Test',    icon: '✓',      color: '0,212,255' },
-      { x: 360, label: 'Deploy',  icon: '▶',      color: '124,58,237' },
-      { x: 460, label: 'Monitor', icon: '📊',     color: '34,197,94' },
-    ]
-
-    const draw = () => {
-      t += 0.008
-      ctx.clearRect(0, 0, W, H)
-
-      // BG
-      const bg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.7)
-      bg.addColorStop(0, 'rgba(10, 20, 15, 0.7)')
-      bg.addColorStop(1, 'rgba(7, 8, 12, 0.95)')
-      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
-
-      // Pipeline track
-      const trackY = H / 2
-      ctx.strokeStyle = 'rgba(34, 197, 94, 0.1)'
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      ctx.moveTo(40, trackY); ctx.lineTo(W - 40, trackY)
-      ctx.stroke()
-
-      // Dashed secondary tracks
-      ctx.setLineDash([4, 6])
-      ctx.strokeStyle = 'rgba(34, 197, 94, 0.05)'
-      ctx.beginPath(); ctx.moveTo(40, trackY - 50); ctx.lineTo(W - 40, trackY - 50); ctx.stroke()
-      ctx.beginPath(); ctx.moveTo(40, trackY + 50); ctx.lineTo(W - 40, trackY + 50); ctx.stroke()
-      ctx.setLineDash([])
-
-      // Draw stages
-      stages.forEach((stage, i) => {
-        const progress = (t * 0.5 + i * 0.4) % (stages.length * 0.4)
-        const active = progress >= i * 0.4 && progress < (i + 1) * 0.4
-        const pulse = Math.sin(t * 3 + i * 1.2) * 0.5 + 0.5
-        const baseAlpha = active ? 0.8 : 0.4 + pulse * 0.2
-
-        // Glow
-        ctx.save()
-        ctx.globalAlpha = baseAlpha * 0.15
-        ctx.fillStyle = `rgba(${stage.color}, 1)`
-        ctx.beginPath()
-        ctx.arc(stage.x, trackY, 28, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.restore()
-
-        // Node circle
-        ctx.save()
-        ctx.globalAlpha = baseAlpha
-        ctx.fillStyle = `rgba(${stage.color}, 0.12)`
-        ctx.strokeStyle = `rgba(${stage.color}, 0.4)`
-        ctx.lineWidth = 1.2
-        ctx.beginPath()
-        ctx.arc(stage.x, trackY, 20, 0, Math.PI * 2)
-        ctx.fill(); ctx.stroke()
-
-        // Icon
-        ctx.font = '600 11px "DM Sans", sans-serif'
-        ctx.fillStyle = `rgba(${stage.color}, 0.8)`
-        ctx.textAlign = 'center'
-        ctx.fillText(stage.icon, stage.x, trackY + 4)
-
-        // Label below
-        ctx.font = '600 8px "DM Sans", sans-serif'
-        ctx.fillStyle = `rgba(${stage.color}, 0.5)`
-        ctx.fillText(stage.label, stage.x, trackY + 38)
-        ctx.textAlign = 'start'
-        ctx.restore()
-
-        // Connection arrows between stages
-        if (i < stages.length - 1) {
-          const next = stages[i + 1]
-          ctx.save()
-          ctx.globalAlpha = 0.3
-          ctx.strokeStyle = `rgba(${stage.color}, 0.3)`
-          ctx.lineWidth = 1
-          ctx.beginPath()
-          ctx.moveTo(stage.x + 22, trackY)
-          ctx.lineTo(next.x - 22, trackY)
-          ctx.stroke()
-
-          // Flowing packet
-          const packetT = (t * 1.5 + i * 0.5) % 1
-          const px = stage.x + 22 + (next.x - 22 - stage.x - 22) * packetT
-          ctx.fillStyle = `rgba(${stage.color}, 0.7)`
-          ctx.beginPath(); ctx.arc(px, trackY, 2.5, 0, Math.PI * 2); ctx.fill()
-          ctx.restore()
-        }
-      })
-
-      // Container icons floating
-      const containers = [
-        { x: 100, y: trackY - 60, label: '🐳', speed: 0.7 },
-        { x: 250, y: trackY + 65, label: 'K8s', speed: 0.5 },
-        { x: 420, y: trackY - 55, label: 'Git', speed: 0.9 },
-        { x: 520, y: trackY + 60, label: 'AWS', speed: 0.6 },
-      ]
-      containers.forEach((c2, i) => {
-        const yOff = Math.sin(t + i * 1.5) * 5
-        ctx.save()
-        ctx.globalAlpha = 0.25
-        ctx.font = '600 10px "DM Sans", sans-serif'
-        ctx.fillStyle = 'rgba(34, 197, 94, 0.5)'
-        ctx.fillText(c2.label, c2.x, c2.y + yOff)
-        ctx.restore()
-      })
-
-      // "CI/CD" watermark
-      ctx.save()
-      ctx.globalAlpha = 0.08
-      ctx.font = '800 60px "Syne", sans-serif'
-      ctx.fillStyle = 'rgba(34, 197, 94, 0.4)'
-      ctx.fillText('CI/CD', W - 200, 60)
-      ctx.restore()
-
-      raf = requestAnimationFrame(draw)
-    }
-    draw()
-    return () => cancelAnimationFrame(raf)
-  }, [])
-  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }}/>
+// Neutral fallback header for programmes without a dedicated animation
+// (new programmes ship with real pricing before dedicated art exists) —
+// a soft pulsing glow behind the programme's icon, no fabricated
+// curriculum-specific visuals.
+function GenericProgramAnim({ icon, colorRgb }: { icon: string; colorRgb: string }) {
+  return (
+    <div style={{
+      width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center',
+      position:'relative', background:`radial-gradient(circle,rgba(${colorRgb},0.14) 0%,transparent 70%)`,
+    }}>
+      <span style={{ fontSize:'56px', opacity:0.5 }}>{icon}</span>
+    </div>
+  )
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -690,70 +473,10 @@ const FEATURES = [
   {icon:'👨‍👩‍👧', title:'Parent Access',            desc:'Dedicated read-only accounts for parents to track their child\'s progress, test scores, and attendance.'},
 ]
 
-const PROGRAMMES = [
-  {
-    id:'cloud-launchpad', num:'01',
-    name:'Cloud LaunchPad',
-    tag:'AWS Cloud Certifications',
-    duration:'4 months', modules:11,
-    price:'₹7,599',
-    color:'#00d4ff', colorRgb:'0,212,255',
-    status:'enrolling',
-    href:'/programs/cloud-launchpad',
-    desc:'From zero cloud knowledge to AWS Cloud Practitioner certified — live classes, hands-on labs, weekly tests, and a verified certificate.',
-    features:['AWS Cloud Practitioner prep','11 structured modules','Live weekly classes','Weekly tests & phase assessment','Verified certificate on passing'],
-  },
-  {
-    id:'cloud-architect', num:'02',
-    name:'Cloud Architect',
-    tag:'AWS Solutions Architect',
-    duration:'6 months', modules:12,
-    price:'₹9,999',
-    color:'#7c3aed', colorRgb:'124,58,237',
-    status:'coming_soon',
-    href:'/programs/cloud-architect',
-    desc:'Advanced cloud architecture, AWS Solutions Architect Associate certification — for engineers who want to design scalable production systems.',
-    features:['AWS SAA-C03 prep','12 advanced modules','Live weekly classes','Architecture labs & projects','Verified certificate on passing'],
-  },
-  {
-    id:'fullstack', num:'03',
-    name:'Full Stack Dev',
-    tag:'Web Development',
-    duration:'4 months', modules:14,
-    price:'Coming 2026',
-    color:'#f59e0b', colorRgb:'245,158,11',
-    status:'planned',
-    href:'/programs',
-    desc:'Modern full-stack web development — React, Node.js, databases, deployment — from building your first component to shipping real products.',
-    features:['React & Node.js from scratch','14 project-based modules','Portfolio-worthy capstone','Industry code reviews','Completion certificate'],
-  },
-  {
-    id:'devops', num:'04',
-    name:'DevOps & CI/CD',
-    tag:'Infrastructure & Automation',
-    duration:'3 months', modules:10,
-    price:'Coming 2026',
-    color:'#22c55e', colorRgb:'34,197,94',
-    status:'planned',
-    href:'/programs',
-    desc:'Containers, pipelines, and deployment automation — Docker, Kubernetes, GitHub Actions, and production-grade infrastructure practices.',
-    features:['Docker & Kubernetes','CI/CD pipelines','Infrastructure as Code','10 hands-on modules','Completion certificate'],
-  },
-]
-
-const CLOUD_MODULES = [
-  ['01','Intro to Cloud & Computing Concepts','Cloud models, history, IaaS/PaaS/SaaS, economics'],
-  ['02','AWS Global Infrastructure',          'Regions, AZs, edge locations, global backbone'],
-  ['03','IAM & Security Fundamentals',        'Users, groups, roles, policies, MFA, shared responsibility'],
-  ['04','Compute — EC2 & Pricing Models',     'Instance types, AMIs, purchase options, security groups'],
-  ['05','Storage — S3, EBS & Glacier',        'Storage classes, lifecycle, versioning, encryption'],
-  ['06','Databases — RDS & DynamoDB',         'Relational vs NoSQL, read replicas, DynamoDB basics'],
-  ['07','Networking & VPC Fundamentals',      'Subnets, route tables, IGW, NAT, VPC peering'],
-  ['08','Monitoring, Logging & Alerting',     'CloudWatch, CloudTrail, GuardDuty, Security Hub'],
-  ['09','Billing, Pricing & Cost Management', 'Cost Explorer, Budgets, Savings Plans, TCO Calculator'],
-  ['10','Cost Optimisation Strategies',       'Reserved instances, Spot, rightsizing, Trusted Advisor'],
-  ['11','Certification Prep & Mock Tests',    'Full mock exam, exam tips, certification registration guide'],
-]
+interface ProgramCard {
+  id: string; slug: string; name: string; tagline: string | null; description: string | null
+  price_inr: number | null; duration_label: string | null; learning_outcomes: string[]
+}
 
 const FAQS = [
   ['Who are these programmes for?',
@@ -780,10 +503,14 @@ export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled,   setScrolled]   = useState(false)
   const [openFaq,    setOpenFaq]    = useState<number|null>(null)
+  const [programmes, setProgrammes] = useState<ProgramCard[]>([])
 
   useEffect(()=>{
     const h=()=>setScrolled(window.scrollY>30)
     window.addEventListener('scroll',h); return()=>window.removeEventListener('scroll',h)
+  },[])
+  useEffect(()=>{
+    fetch('/api/programs').then(r=>r.json()).then(d=>setProgrammes(d.programs ?? [])).catch(()=>{})
   },[])
   useEffect(()=>{
     document.body.style.overflow=mobileOpen?'hidden':''; return()=>{document.body.style.overflow=''}
@@ -831,7 +558,7 @@ export default function HomePage() {
           </Link>
 
           <div className="nav-links" style={{display:'flex',alignItems:'center',gap:'2px'}}>
-            {[['Programs','#programs'],['Curriculum','#curriculum'],['Pricing','#pricing'],['FAQ','#faq']].map(([l,h])=>(
+            {[['Programs','#programs'],['Pricing','#pricing'],['FAQ','#faq']].map(([l,h])=>(
               <a key={l} href={h} style={{
                 fontSize:'13px',fontWeight:500,color:'rgba(255,255,255,0.5)',
                 textDecoration:'none',padding:'7px 13px',borderRadius:'100px',
@@ -849,7 +576,9 @@ export default function HomePage() {
               textDecoration:'none',padding:'7px 16px',borderRadius:'100px',
               border:'1px solid rgba(255,255,255,0.1)',
             }}>Login</Link>
-            <Btn text="Enrol Now" href="/register" size="sm"/>
+            {ENROLLMENT_OPEN
+              ? <Btn text="Enrol Now" href="/register" size="sm"/>
+              : <Btn text="Enrollments Will Start Soon" disabled size="sm"/>}
           </div>
 
           <button onClick={()=>setMobileOpen(v=>!v)} className="mobile-btn" style={{
@@ -875,7 +604,7 @@ export default function HomePage() {
         <div style={{fontSize:'11px',color:'rgba(255,255,255,0.3)',display:'flex',alignItems:'center',gap:'5px',marginBottom:'24px'}}>
           <Clock size={11}/><LiveClock/>
         </div>
-        {[['Programs','#programs'],['Curriculum','#curriculum'],['Pricing','#pricing'],['FAQ','#faq']].map(([l,h])=>(
+        {[['Programs','#programs'],['Pricing','#pricing'],['FAQ','#faq']].map(([l,h])=>(
           <a key={l} href={h} onClick={()=>setMobileOpen(false)} style={{
             display:'block',fontSize:'26px',fontFamily:'Syne,sans-serif',fontWeight:700,
             color:'#fff',textDecoration:'none',padding:'9px 0',
@@ -883,7 +612,9 @@ export default function HomePage() {
           }}>{l}</a>
         ))}
         <div style={{marginTop:'22px',display:'flex',gap:'10px'}}>
-          <Btn text="Enrol Now" href="/register"/>
+          {ENROLLMENT_OPEN
+            ? <Btn text="Enrol Now" href="/register"/>
+            : <Btn text="Enrollments Will Start Soon" disabled/>}
           <Link href="/login" style={{
             padding:'10px 20px',borderRadius:'100px',border:'1px solid rgba(255,255,255,0.12)',
             color:'rgba(255,255,255,0.5)',textDecoration:'none',fontSize:'14px',fontWeight:600,
@@ -977,7 +708,9 @@ export default function HomePage() {
 
           {/* CTAs */}
           <div style={{display:'flex',flexWrap:'wrap',gap:'12px',alignItems:'center',marginBottom:'72px'}}>
-            <Btn text="Start a programme" href="/register" size="lg"/>
+            {ENROLLMENT_OPEN
+              ? <Btn text="Enrol Now" href="/register" size="lg"/>
+              : <Btn text="Enrollments Will Start Soon" disabled size="lg"/>}
             <Btn text="Explore programmes" href="#programs" variant="outline" size="lg"/>
 
             {/* Partner pill */}
@@ -1171,29 +904,29 @@ export default function HomePage() {
           <div style={{
             display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'16px',
           }} className="r-grid-2">
-            {PROGRAMMES.map(p=>(
-              <Link key={p.id} href={p.href} style={{textDecoration:'none',display:'block'}}>
+            {programmes.map(p=>{
+              const meta = PROGRAM_META[p.slug] ?? DEFAULT_META
+              const hasCustomAnim = p.slug==='cloud-launchpad' || p.slug==='cloud-architect'
+              const priceLabel = p.price_inr ? `₹${p.price_inr.toLocaleString('en-IN')}` : 'Revealing Soon'
+              return (
+              <Link key={p.id} href={`/programs/${p.slug}`} style={{textDecoration:'none',display:'block'}}>
               <div style={{
                 borderRadius:'20px',overflow:'hidden',
-                background:`rgba(${p.colorRgb},0.04)`,
-                border:`1px solid rgba(${p.colorRgb},0.14)`,
+                background:`rgba(${meta.colorRgb},0.04)`,
+                border:`1px solid rgba(${meta.colorRgb},0.14)`,
                 position:'relative',cursor:'pointer',
                 transition:'all 0.3s cubic-bezier(0.25,0.1,0.25,1)',
               }} className="prog-card">
                 {/* Video / header */}
                 <div style={{
-                  aspectRatio:'16/9',background:`rgba(${p.colorRgb},0.06)`,
+                  aspectRatio:'16/9',background:`rgba(${meta.colorRgb},0.06)`,
                   position:'relative',overflow:'hidden',
                 }}>
-                  {(p.id==='cloud-launchpad'||p.id==='cloud-architect') ? (
-                    <div style={{position:'absolute',inset:0}}>
-                      {p.id==='cloud-launchpad' ? <CloudLaunchpadAnim/> : <CloudArchitectAnim/>}
-                    </div>
-                  ) : (
-                    <div style={{position:'absolute',inset:0}}>
-                      {p.id==='fullstack' ? <FullStackAnim/> : <DevOpsAnim/>}
-                    </div>
-                  )}
+                  <div style={{position:'absolute',inset:0}}>
+                    {hasCustomAnim
+                      ? (p.slug==='cloud-launchpad' ? <CloudLaunchpadAnim/> : <CloudArchitectAnim/>)
+                      : <GenericProgramAnim icon={meta.icon} colorRgb={meta.colorRgb}/>}
+                  </div>
                   <div style={{
                     position:'absolute',inset:0,
                     background:`linear-gradient(to bottom,transparent 40%,rgba(7,8,12,0.7))`,
@@ -1203,22 +936,18 @@ export default function HomePage() {
                     position:'absolute',top:'12px',left:'12px',
                     padding:'3px 10px',borderRadius:'100px',fontSize:'10px',fontWeight:700,
                     letterSpacing:'0.06em',textTransform:'uppercase',
-                    background: p.status==='enrolling' ? `rgba(${p.colorRgb},0.25)`
-                              : p.status==='soon'      ? 'rgba(245,158,11,0.2)'
-                              : 'rgba(255,255,255,0.1)',
-                    color: p.status==='enrolling' ? p.color
-                         : p.status==='soon'      ? '#f59e0b'
-                         : 'rgba(255,255,255,0.4)',
-                    border:`1px solid ${p.status==='enrolling'?`rgba(${p.colorRgb},0.4)`:p.status==='soon'?'rgba(245,158,11,0.3)':'rgba(255,255,255,0.15)'}`,
+                    background: ENROLLMENT_OPEN ? `rgba(${meta.colorRgb},0.25)` : 'rgba(255,255,255,0.1)',
+                    color: ENROLLMENT_OPEN ? meta.color : 'rgba(255,255,255,0.4)',
+                    border:`1px solid ${ENROLLMENT_OPEN?`rgba(${meta.colorRgb},0.4)`:'rgba(255,255,255,0.15)'}`,
                   }}>
-                    {p.status==='enrolling'?'● Enrolling':p.status==='soon'?'Coming Soon':'Planned 2026'}
+                    {ENROLLMENT_OPEN ? '● Enrolling' : 'Enrollments Will Start Soon'}
                   </div>
                   {/* Hover button */}
                   <div className="card-hover-btn" style={{
                     position:'absolute',bottom:'12px',left:'12px',
                     height:'34px',width:'34px',borderRadius:'100px',
-                    background:`rgba(${p.colorRgb},0.3)`,backdropFilter:'blur(8px)',
-                    border:`1px solid rgba(${p.colorRgb},0.4)`,
+                    background:`rgba(${meta.colorRgb},0.3)`,backdropFilter:'blur(8px)',
+                    border:`1px solid rgba(${meta.colorRgb},0.4)`,
                     display:'flex',alignItems:'center',overflow:'hidden',
                     transition:'all 0.3s cubic-bezier(0.25,0.1,0.25,1)',
                     paddingLeft:'10px',gap:'8px',
@@ -1239,12 +968,12 @@ export default function HomePage() {
                 {/* Card body */}
                 <div style={{padding:'20px 22px 24px'}}>
                   <div style={{display:'flex',gap:'6px',flexWrap:'wrap',marginBottom:'12px'}}>
-                    {[p.duration,`${p.modules} modules`,p.price].map(t=>(
+                    {[p.duration_label, priceLabel].filter(Boolean).map(t=>(
                       <span key={t} style={{
                         fontSize:'11px',fontWeight:600,padding:'3px 10px',borderRadius:'100px',
-                        background:`rgba(${p.colorRgb},0.09)`,
-                        border:`1px solid rgba(${p.colorRgb},0.18)`,
-                        color:p.color,
+                        background:`rgba(${meta.colorRgb},0.09)`,
+                        border:`1px solid rgba(${meta.colorRgb},0.18)`,
+                        color:meta.color,
                       }}>{t}</span>
                     ))}
                   </div>
@@ -1253,89 +982,31 @@ export default function HomePage() {
                     marginBottom:'8px',letterSpacing:'-0.01em',
                   }}>
                     {p.name}
-                    <span style={{fontSize:'12px',fontWeight:500,color:'rgba(255,255,255,0.35)',marginLeft:'8px'}}>{p.tag}</span>
+                    {p.tagline && (
+                      <span style={{fontSize:'12px',fontWeight:500,color:'rgba(255,255,255,0.35)',marginLeft:'8px'}}>{p.tagline}</span>
+                    )}
                   </div>
-                  <p style={{fontSize:'13px',color:'rgba(255,255,255,0.44)',lineHeight:1.62,marginBottom:'14px'}}>{p.desc}</p>
+                  {p.description && (
+                    <p style={{fontSize:'13px',color:'rgba(255,255,255,0.44)',lineHeight:1.62,marginBottom:'14px'}}>{p.description}</p>
+                  )}
                   <div style={{display:'flex',flexDirection:'column',gap:'6px'}}>
-                    {p.features.map(f=>(
+                    {p.learning_outcomes.slice(0,5).map(f=>(
                       <div key={f} style={{display:'flex',gap:'8px',fontSize:'12px',color:'rgba(255,255,255,0.5)'}}>
-                        <span style={{color:p.color,flexShrink:0,marginTop:'1px'}}>✓</span>{f}
+                        <span style={{color:meta.color,flexShrink:0,marginTop:'1px'}}>✓</span>{f}
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
               </Link>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════
-          SECTION 4 — CURRICULUM (Cloud LaunchPad)
-      ══════════════════════════════════════════════════ */}
-      <section id="curriculum" style={{
-        padding:'clamp(64px,8vw,120px) clamp(20px,4vw,48px)',
-        position:'relative',
-      }}>
-        <div style={{maxWidth:'1200px',margin:'0 auto'}}>
-          <SH n="4" eyebrow="Sample Curriculum"
-            title={<>Cloud LaunchPad <span style={{background:'linear-gradient(135deg,#00d4ff,#7c3aed)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>Module List</span></>}
-            sub="11 modules across 4 months — starting from zero cloud knowledge, ending at AWS Cloud Practitioner certified."
-          />
-
-          <div style={{
-            border:'1px solid rgba(255,255,255,0.08)',borderRadius:'16px',overflow:'hidden',
-          }}>
-            {/* Phase header */}
-            <div style={{
-              display:'flex',alignItems:'center',gap:'12px',
-              padding:'14px 22px',
-              background:'rgba(0,212,255,0.07)',
-              borderBottom:'1px solid rgba(0,212,255,0.15)',
-            }}>
-              <span style={{
-                fontFamily:'Space Mono,monospace',fontSize:'10px',color:'#00d4ff',
-                letterSpacing:'0.14em',textTransform:'uppercase',
-              }}>Cloud LaunchPad</span>
-              <span style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'14px',color:'#fff'}}>
-                AWS Cloud Practitioner
-              </span>
-              <span style={{marginLeft:'auto',fontSize:'12px',color:'rgba(255,255,255,0.3)'}}>
-                11 modules · 4 months
-              </span>
-            </div>
-            {CLOUD_MODULES.map(([num,title,topics],i)=>(
-              <div key={num} style={{
-                display:'flex',gap:'16px',alignItems:'flex-start',
-                padding:'14px 22px',
-                background:i%2===0?'transparent':'rgba(255,255,255,0.018)',
-                borderBottom:i<CLOUD_MODULES.length-1?'1px solid rgba(255,255,255,0.04)':'none',
-              }}>
-                <div style={{
-                  width:'28px',height:'28px',borderRadius:'8px',flexShrink:0,
-                  background:'rgba(0,212,255,0.1)',
-                  display:'flex',alignItems:'center',justifyContent:'center',
-                  fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',color:'#00d4ff',
-                }}>{num}</div>
-                <div>
-                  <div style={{fontSize:'13px',fontWeight:600,color:'#fff',marginBottom:'3px'}}>{title}</div>
-                  <div style={{fontSize:'12px',color:'rgba(255,255,255,0.36)'}}>{topics}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{marginTop:'20px',textAlign:'center'}}>
-            <span style={{fontSize:'13px',color:'rgba(255,255,255,0.3)'}}>
-              Cloud Architect, Full Stack, DevOps curricula published when programmes open.
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════
-          SECTION 5 — PRICING
+          SECTION 4 — PRICING
       ══════════════════════════════════════════════════ */}
       <section id="pricing" style={{
         background:'rgba(255,255,255,0.018)',
@@ -1343,7 +1014,7 @@ export default function HomePage() {
         padding:'clamp(64px,8vw,120px) clamp(20px,4vw,48px)',
       }}>
         <div style={{maxWidth:'1200px',margin:'0 auto'}}>
-          <SH n="5" eyebrow="Pricing"
+          <SH n="4" eyebrow="Pricing"
             title="Simple, fair pricing"
             sub="One-time payment. Full access for the programme duration. No subscriptions, no hidden fees."
           />
@@ -1351,83 +1022,53 @@ export default function HomePage() {
             display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'16px',
             maxWidth:'820px',margin:'0 auto',
           }} className="price-grid">
-
-            {/* Cloud LaunchPad */}
-            <div style={{
-              background:'rgba(0,212,255,0.05)',border:'1px solid rgba(0,212,255,0.2)',
-              borderRadius:'20px',padding:'28px',position:'relative',overflow:'hidden',
-            }}>
-              <div style={{position:'absolute',top:0,left:0,right:0,height:'2px',background:'linear-gradient(90deg,#00d4ff,#3b5bdb)'}}/>
-              <div style={{fontSize:'11px',color:'#00d4ff',fontFamily:'Space Mono,monospace',
-                letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:'10px'}}>Cloud LaunchPad</div>
-              <div style={{
-                fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'36px',lineHeight:1,
-                background:'linear-gradient(135deg,#00d4ff,#3b5bdb)',
-                WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
-                marginBottom:'4px',
-              }}>₹7,599</div>
-              <div style={{fontSize:'12px',color:'rgba(255,255,255,0.35)',marginBottom:'20px'}}>
-                One-time · 4 months access
-              </div>
-              {['AWS Cloud Practitioner prep','11 modules + live classes','Weekly tests & assessment',
-                'Doubt Corner access','Verified certificate'].map(t=>(
-                <div key={t} style={{display:'flex',gap:'8px',fontSize:'13px',color:'rgba(255,255,255,0.6)',marginBottom:'8px'}}>
-                  <span style={{color:'#00d4ff',flexShrink:0}}>✓</span>{t}
+            {programmes.map(p=>{
+              const meta = PROGRAM_META[p.slug] ?? DEFAULT_META
+              const priceLabel = p.price_inr ? `₹${p.price_inr.toLocaleString('en-IN')}` : 'Revealing Soon'
+              return (
+                <div key={p.id} style={{
+                  background:`rgba(${meta.colorRgb},0.05)`,border:`1px solid rgba(${meta.colorRgb},0.2)`,
+                  borderRadius:'20px',padding:'28px',position:'relative',overflow:'hidden',
+                }}>
+                  <div style={{position:'absolute',top:0,left:0,right:0,height:'2px',background:`linear-gradient(90deg,${meta.color},#3b5bdb)`}}/>
+                  <div style={{fontSize:'11px',color:meta.color,fontFamily:'Space Mono,monospace',
+                    letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:'10px'}}>{p.name}</div>
+                  <div style={{
+                    fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'32px',lineHeight:1,
+                    background:`linear-gradient(135deg,${meta.color},#3b5bdb)`,
+                    WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
+                    marginBottom:'4px',
+                  }}>{priceLabel}</div>
+                  <div style={{fontSize:'12px',color:'rgba(255,255,255,0.35)',marginBottom:'20px'}}>
+                    {p.duration_label ? `${p.duration_label} access` : 'One-time payment'}
+                  </div>
+                  {p.learning_outcomes.slice(0,4).map(t=>(
+                    <div key={t} style={{display:'flex',gap:'8px',fontSize:'13px',color:'rgba(255,255,255,0.6)',marginBottom:'8px'}}>
+                      <span style={{color:meta.color,flexShrink:0}}>✓</span>{t}
+                    </div>
+                  ))}
+                  <div style={{marginTop:'24px'}}>
+                    {ENROLLMENT_OPEN ? (
+                      <Btn text="Enrol Now" href={`/payment?plan=${p.slug}`} size="sm"/>
+                    ) : (
+                      <Btn text="Enrollments Will Start Soon" disabled size="sm"/>
+                    )}
+                  </div>
                 </div>
-              ))}
-              <div style={{marginTop:'24px'}}>
-                <Btn text="Enrol Now" href="/register" size="sm"/>
-              </div>
-            </div>
-
-            {/* Cloud Architect — Coming Soon */}
-            <div style={{
-              background:'rgba(124,58,237,0.04)',border:'1px solid rgba(124,58,237,0.15)',
-              borderRadius:'20px',padding:'28px',position:'relative',overflow:'hidden',opacity:0.7,
-            }}>
-              <div style={{position:'absolute',top:0,left:0,right:0,height:'2px',background:'linear-gradient(90deg,#7c3aed,#3b5bdb)'}}/>
-              <div style={{
-                position:'absolute',top:'16px',right:'16px',
-                padding:'3px 10px',borderRadius:'100px',fontSize:'9px',fontWeight:800,
-                letterSpacing:'0.08em',textTransform:'uppercase',
-                background:'rgba(124,58,237,0.2)',color:'#a78bfa',border:'1px solid rgba(124,58,237,0.35)',
-              }}>Coming Soon</div>
-              <div style={{fontSize:'11px',color:'#a78bfa',fontFamily:'Space Mono,monospace',
-                letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:'10px'}}>Cloud Architect</div>
-              <div style={{
-                fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'36px',lineHeight:1,
-                color:'rgba(167,139,250,0.35)',marginBottom:'4px',
-              }}>—</div>
-              <div style={{fontSize:'12px',color:'rgba(255,255,255,0.25)',marginBottom:'20px'}}>
-                Pricing revealed at launch
-              </div>
-              {['AWS Solutions Architect prep','12 modules + live classes','Advanced architecture labs',
-                'Doubt Corner access','Verified certificate'].map(t=>(
-                <div key={t} style={{display:'flex',gap:'8px',fontSize:'13px',color:'rgba(255,255,255,0.3)',marginBottom:'8px'}}>
-                  <span style={{color:'rgba(167,139,250,0.35)',flexShrink:0}}>✓</span>{t}
-                </div>
-              ))}
-              <div style={{marginTop:'24px'}}>
-                <button disabled style={{
-                  padding:'10px 24px',borderRadius:'100px',
-                  background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',
-                  color:'rgba(255,255,255,0.25)',fontSize:'13px',fontWeight:700,
-                  cursor:'not-allowed',fontFamily:'Syne,sans-serif',
-                }}>Coming Soon</button>
-              </div>
-            </div>
+              )
+            })}
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════
-          SECTION 6 — FAQ
+          SECTION 5 — FAQ
       ══════════════════════════════════════════════════ */}
       <section id="faq" style={{
         padding:'clamp(64px,8vw,120px) clamp(20px,4vw,48px)',
       }}>
         <div style={{maxWidth:'780px',margin:'0 auto'}}>
-          <SH n="6" eyebrow="FAQ" title="Common questions"/>
+          <SH n="5" eyebrow="FAQ" title="Common questions"/>
           <div style={{display:'flex',flexDirection:'column',gap:'4px'}}>
             {FAQS.map(([q,a],i)=>(
               <div key={i} style={{
@@ -1502,7 +1143,9 @@ export default function HomePage() {
             </p>
           </div>
           <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',gap:'10px',flexShrink:0}}>
-            <Btn text="Enrol Now" href="/register" size="lg"/>
+            {ENROLLMENT_OPEN
+              ? <Btn text="Enrol Now" href="/register" size="lg"/>
+              : <Btn text="Enrollments Will Start Soon" disabled size="lg"/>}
             <Btn text="View Programmes" href="#programs" variant="outline" size="md"/>
           </div>
         </div>

@@ -165,7 +165,7 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
                 value={form.discount_amount}
                 onChange={e => setForm(p => ({ ...p, discount_amount: Number(e.target.value) }))}/>
               <div style={{ fontSize:'11px', color:'var(--muted)', marginTop:'4px' }}>
-                Standard price ₹7,599 → student pays ₹{(7599 - form.discount_amount).toLocaleString('en-IN')}
+                Applied as a flat ₹{form.discount_amount.toLocaleString('en-IN')} discount off whichever programme the student enrols in.
               </div>
             </div>
           </div>

@@ -24,6 +24,8 @@ export interface Database {
           difficulty:'beginner'|'intermediate'|'advanced'|null
           instructor_name:string|null; instructor_title:string|null; instructor_bio:string|null
           learning_outcomes:string[]; tagline:string|null
+          curriculum_url:string|null; faqs:{q:string;a:string}[]|null; display_order:number
+          mode:string; placement_assistance:boolean
         }
         Insert: Omit<Database['public']['Tables']['programs']['Row'],'id'|'created_at'>
         Update: Partial<Database['public']['Tables']['programs']['Insert']>
@@ -75,6 +77,17 @@ export interface Database {
         Row: { id:string; faculty_name:string; faculty_email:string|null; referral_code:string; discount_amount:number; is_active:boolean; created_at:string; created_by:string|null }
         Insert: Omit<Database['public']['Tables']['faculty_referrals']['Row'],'id'|'created_at'>
         Update: Partial<Database['public']['Tables']['faculty_referrals']['Insert']>
+      }
+      curriculum_leads: {
+        Row: {
+          id:string; program_id:string|null
+          full_name:string; email:string; phone:string
+          college_name:string|null; graduation_year:number|null
+          current_status:'student'|'graduate'|'working_professional'|null
+          created_at:string
+        }
+        Insert: Omit<Database['public']['Tables']['curriculum_leads']['Row'],'id'|'created_at'>
+        Update: Partial<Database['public']['Tables']['curriculum_leads']['Insert']>
       }
       payment_requests: {
         Row: {
@@ -183,3 +196,4 @@ export type Doubt           = Database['public']['Tables']['doubts']['Row']
 export type LiveSession     = Database['public']['Tables']['live_sessions']['Row']
 export type AttendanceRecord = Database['public']['Tables']['attendance_records']['Row']
 export type PaymentRequest  = Database['public']['Tables']['payment_requests']['Row']
+export type CurriculumLead  = Database['public']['Tables']['curriculum_leads']['Row']

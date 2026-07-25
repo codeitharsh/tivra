@@ -3,6 +3,7 @@ import { useState, useTransition, useMemo, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
 const ERROR_MESSAGES: Record<string, string> = {
   restricted: 'Your account access has been suspended. Please contact contact@tivra.in to resolve this.',
@@ -37,6 +38,16 @@ function LoginForm() {
 
   const error = submitError ?? urlError
 
+  // Only ever redirect to a same-origin relative path after login — a
+  // `next` value like `//evil.com` or `https://evil.com` must never be
+  // followed, since it's attacker-controllable via the URL.
+  const safeNext = useMemo(() => {
+    const next = searchParams.get('next')
+    if (!next) return null
+    if (!next.startsWith('/') || next.startsWith('//') || next.includes('://')) return null
+    return next
+  }, [searchParams])
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setSubmitError(null)
@@ -48,7 +59,7 @@ function LoginForm() {
       })
       const data = await res.json() as { error?: string; success?: boolean }
       if (data.error) { setSubmitError(data.error); return }
-      router.push('/dashboard')
+      router.push(safeNext ?? '/dashboard')
       router.refresh()
     })
   }
@@ -85,8 +96,14 @@ function LoginForm() {
           </form>
 
           <p style={{ textAlign:'center', marginTop:'20px', fontSize:'13px', color:'rgba(255,255,255,0.35)' }}>
-            Don&apos;t have an account?{' '}
-            <Link href="/register" style={{ color:'#00d4ff', textDecoration:'none', fontWeight:600 }}>Enrol Now</Link>
+            {ENROLLMENT_OPEN ? (
+              <>Don&apos;t have an account?{' '}
+                <Link
+                  href={safeNext ? `/register?next=${encodeURIComponent(safeNext)}` : '/register'}
+                  style={{ color:'#00d4ff', textDecoration:'none', fontWeight:600 }}
+                >Enrol Now</Link>
+              </>
+            ) : 'Enrollments will start soon.'}
           </p>
         </div>
       </div>

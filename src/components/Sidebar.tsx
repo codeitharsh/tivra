@@ -9,7 +9,7 @@ import {
   Trophy, MessageCircle, CalendarCheck, Video, LogOut,
   Upload, Settings2, ShieldCheck, UserCheck,
   BarChart3, Users, Home, TrendingUp, Layers, BookMarked,
-  Target, Menu, X, ChevronRight, Gift,
+  Target, Menu, X, ChevronRight, Gift, FileText, GraduationCap,
 } from 'lucide-react'
 
 import type { Profile, UserRole } from '@/types/database'
@@ -68,19 +68,22 @@ const NAV_TEACHER = [
   { href:'/teacher/attendance',   label:'Attendance',     icon:CalendarCheck },
 ]
 const NAV_ADMIN = [
-  { href:'/admin',              label:'Overview',      icon:BarChart3 },
-  { href:'/admin/analytics',    label:'Analytics',     icon:TrendingUp },
-  { href:'/admin/batches',      label:'Batches',       icon:Layers },
-  { href:'/admin/students',     label:'All Users',     icon:Users },
-  { href:'/admin/access',       label:'Grant Access',  icon:UserCheck },
-  { href:'/admin/payments',     label:'Payments',      icon:ShieldCheck },
-  { href:'/admin/referrals',    label:'Referrals',     icon:Gift },
-  { href:'/admin/assessments',  label:'Assessments',   icon:Target },
-  { href:'/admin/content',      label:'Content',       icon:Upload },
-  { href:'/admin/tests',        label:'Tests',         icon:ClipboardList },
-  { href:'/admin/live',         label:'Live Sessions', icon:Video },
-  { href:'/admin/attendance',   label:'Attendance',    icon:CalendarCheck },
-  { href:'/admin/settings',     label:'Settings',      icon:Settings2 },
+  { href:'/admin',                 label:'Overview',        icon:BarChart3 },
+  { href:'/admin/analytics',       label:'Analytics',       icon:TrendingUp },
+  { href:'/admin/programs',        label:'Programmes',      icon:BookMarked },
+  { href:'/admin/batches',         label:'Batches',         icon:Layers },
+  { href:'/admin/students',        label:'All Users',       icon:Users },
+  { href:'/admin/enrollments',     label:'Enrollments',     icon:GraduationCap },
+  { href:'/admin/access',          label:'Grant Access',    icon:UserCheck },
+  { href:'/admin/payments',        label:'Payments',        icon:ShieldCheck },
+  { href:'/admin/curriculum-leads',label:'Curriculum Leads',icon:FileText },
+  { href:'/admin/referrals',       label:'Referrals',       icon:Gift },
+  { href:'/admin/assessments',     label:'Assessments',     icon:Target },
+  { href:'/admin/content',         label:'Content',         icon:Upload },
+  { href:'/admin/tests',           label:'Tests',           icon:ClipboardList },
+  { href:'/admin/live',            label:'Live Sessions',   icon:Video },
+  { href:'/admin/attendance',      label:'Attendance',      icon:CalendarCheck },
+  { href:'/admin/settings',        label:'Settings',        icon:Settings2 },
 ]
 
 function getRoleMeta(role: UserRole | undefined) {

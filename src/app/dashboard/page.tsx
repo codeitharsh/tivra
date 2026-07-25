@@ -7,6 +7,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import { requireActiveStudent } from '@/lib/access-gate'
+import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 import WhatsAppBanner from '@/components/WhatsAppBanner'
 import type { Profile } from '@/types/database'
 
@@ -255,13 +256,18 @@ export default async function DashboardPage({
             <div className="banner banner-warning" style={{ marginBottom:'20px' }}>
               <span style={{ fontSize:'20px', flexShrink:0 }}>💳</span>
               <div style={{ flex:1 }}>
-                <strong>Payment pending.</strong> Submit your payment details so our team can activate your account.
-                Usually done within 24 hours.
+                {ENROLLMENT_OPEN ? (
+                  <><strong>Payment pending.</strong> Submit your payment details so our team can activate your account. Usually done within 24 hours.</>
+                ) : (
+                  <><strong>Enrollments will start soon.</strong> We&apos;ll notify you when payments reopen — check back soon.</>
+                )}
               </div>
-              <Link href="/payment" className="btn btn-primary"
-                style={{ fontSize:'12px', padding:'8px 16px', flexShrink:0 }}>
-                Submit Payment →
-              </Link>
+              {ENROLLMENT_OPEN && (
+                <Link href="/payment" className="btn btn-primary"
+                  style={{ fontSize:'12px', padding:'8px 16px', flexShrink:0 }}>
+                  Submit Payment →
+                </Link>
+              )}
             </div>
           )}
 

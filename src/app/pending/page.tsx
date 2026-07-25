@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import SignOutButton from './SignOutButton'
 import WhatsAppBanner from '@/components/WhatsAppBanner'
+import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
 import type { Profile, Program } from '@/types/database'
 
@@ -124,14 +125,25 @@ export default async function PendingPage() {
               </div>
             </div>
             {isRejected && (
-              <Link href="/payment" style={{
-                flexShrink: 0, padding: '10px 20px', borderRadius: '100px',
-                background: 'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)',
-                color: '#fff', fontFamily: 'Syne,sans-serif', fontWeight: 700,
-                fontSize: '13px', textDecoration: 'none',
-              }}>
-                Resubmit Payment →
-              </Link>
+              ENROLLMENT_OPEN ? (
+                <Link href="/payment" style={{
+                  flexShrink: 0, padding: '10px 20px', borderRadius: '100px',
+                  background: 'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)',
+                  color: '#fff', fontFamily: 'Syne,sans-serif', fontWeight: 700,
+                  fontSize: '13px', textDecoration: 'none',
+                }}>
+                  Resubmit Payment →
+                </Link>
+              ) : (
+                <span style={{
+                  flexShrink: 0, padding: '10px 20px', borderRadius: '100px',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'rgba(255,255,255,0.3)', fontFamily: 'Syne,sans-serif', fontWeight: 700,
+                  fontSize: '13px', cursor: 'not-allowed',
+                }}>
+                  Enrollments Will Start Soon
+                </span>
+              )
             )}
           </div>
         )}
@@ -175,7 +187,7 @@ export default async function PendingPage() {
           )}
           {programmes.map((p, i) => {
             const palette = PALETTE[i % PALETTE.length]
-            const priceLabel = p.price_inr ? `₹${p.price_inr.toLocaleString('en-IN')}` : 'Contact us'
+            const priceLabel = p.price_inr ? `₹${p.price_inr.toLocaleString('en-IN')}` : 'Revealing Soon'
 
             return (
               <Link key={p.id} href={`/programs/${p.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
@@ -282,19 +294,32 @@ export default async function PendingPage() {
             <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)' }}>
               {hasPendingRequest
                 ? 'Your payment is already being reviewed — no action needed.'
-                : 'Pick a plan and get instant access after payment.'}
+                : ENROLLMENT_OPEN
+                  ? 'Pick a plan and get instant access after payment.'
+                  : 'Enrollments will start soon. Check back for updates.'}
             </div>
           </div>
           {!hasPendingRequest && (
-            <Link href="/payment" style={{
-              flexShrink: 0, padding: '12px 26px', borderRadius: '100px',
-              background: 'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)',
-              color: '#fff', fontFamily: 'Syne,sans-serif', fontWeight: 700,
-              fontSize: '14px', textDecoration: 'none',
-              boxShadow: '0 6px 24px rgba(59,91,219,0.35)',
-            }}>
-              Enrol Now →
-            </Link>
+            ENROLLMENT_OPEN ? (
+              <Link href="/payment" style={{
+                flexShrink: 0, padding: '12px 26px', borderRadius: '100px',
+                background: 'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)',
+                color: '#fff', fontFamily: 'Syne,sans-serif', fontWeight: 700,
+                fontSize: '14px', textDecoration: 'none',
+                boxShadow: '0 6px 24px rgba(59,91,219,0.35)',
+              }}>
+                Enrol Now →
+              </Link>
+            ) : (
+              <span style={{
+                flexShrink: 0, padding: '12px 26px', borderRadius: '100px',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.3)', fontFamily: 'Syne,sans-serif', fontWeight: 700,
+                fontSize: '14px', cursor: 'not-allowed',
+              }}>
+                Enrollments Will Start Soon
+              </span>
+            )
           )}
         </div>
 

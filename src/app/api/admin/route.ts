@@ -228,6 +228,38 @@ export async function POST(req: Request): Promise<Response> {
       return Response.json({ csv, error: null })
     }
 
+    // ── Curriculum leads CSV export ────────────────────────────
+    if (action === 'curriculum_leads_csv') {
+      const caller = await requireAdmin()
+      if (!caller) return Response.json({ error: 'Forbidden', csv: null }, { status: 403 })
+
+      const sb = adminSB()
+      const { data, error } = await sb
+        .from('curriculum_leads')
+        .select('full_name, email, phone, college_name, graduation_year, current_status, created_at, programs(name)')
+        .order('created_at', { ascending: false })
+
+      if (error) return Response.json({ error: error.message, csv: null }, { status: 500 })
+
+      const headers = [
+        'Full Name', 'Email', 'Phone', 'Programme', 'College Name',
+        'Graduation Year', 'Current Status', 'Submitted At',
+      ]
+      const rows = (data ?? []).map((row: Record<string, unknown>) => [
+        row.full_name ?? '', row.email ?? '', row.phone ?? '',
+        (row.programs as { name?: string } | null)?.name ?? '',
+        row.college_name ?? '', row.graduation_year ?? '',
+        row.current_status ?? '',
+        row.created_at ? new Date(row.created_at as string).toLocaleString('en-IN') : '',
+      ])
+
+      const csv = [headers, ...rows]
+        .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+        .join('\n')
+
+      return Response.json({ csv, error: null })
+    }
+
     // ── Referral code management ──────────────────────────────
     if (action === 'create_referral') {
       const caller = await requireAdmin()

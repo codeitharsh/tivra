@@ -3,18 +3,14 @@ export const runtime = 'edge'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { sendEmailFireAndForget } from '@/lib/email'
+import { renderEnrollmentConfirmationEmail } from '@/lib/email-templates/enrollment-confirmation'
 
 function adminSB() {
   return createSB(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-}
-
-const PLAN_SLUGS: Record<string, string[]> = {
-  cloud_launchpad: ['cloud-launchpad'],
-  cloud_architect: ['cloud-architect'],
-  // bundle removed — no longer offered
 }
 
 // Web Crypto HMAC-SHA256 — works on Cloudflare edge (no Node.js needed)
@@ -78,7 +74,7 @@ export async function POST(req: Request): Promise<Response> {
     //    pending order exists for this order_id AND this user, reject. ──
     const { data: orderRow, error: orderErr } = await sb
       .from('payment_requests')
-      .select('id, student_id, plan, amount, status')
+      .select('id, student_id, plan, program_id, amount, status')
       .eq('razorpay_order_id', razorpay_order_id)
       .maybeSingle()
 
@@ -87,7 +83,7 @@ export async function POST(req: Request): Promise<Response> {
       return Response.json({ error: 'Order not found. Contact support with your payment ID.' }, { status: 404 })
     }
 
-    const order = orderRow as { id: string; student_id: string; plan: string; amount: number; status: string }
+    const order = orderRow as { id: string; student_id: string; plan: string; program_id: string | null; amount: number; status: string }
 
     // The order must belong to the caller — prevents activating someone else's account
     if (order.student_id !== user.id) {
@@ -133,7 +129,29 @@ export async function POST(req: Request): Promise<Response> {
     // ── STEP 6: Everything verified — activate the account ──────
     const plan   = order.plan
     const amount = order.amount
-    const slugs  = PLAN_SLUGS[plan] ?? ['cloud-launchpad']
+
+    // Prefer the program_id recorded at order-creation time (DB-driven,
+    // works for any programme with zero per-programme code). Only orders
+    // created before this column was populated fall back to resolving
+    // by the plan string, tolerating the old underscore-style plan IDs.
+    let programId = order.program_id
+    if (!programId) {
+      const legacySlug = plan.replace(/_/g, '-')
+      const { data: legacyProg } = await sb
+        .from('programs').select('id').eq('slug', legacySlug).maybeSingle()
+      programId = (legacyProg as { id: string } | null)?.id ?? null
+    }
+
+    if (!programId) {
+      console.error('[verify-payment] Could not resolve a programme for plan', plan)
+      return Response.json({
+        error: 'Could not determine which programme this payment is for. Contact support with your payment ID: ' + razorpay_payment_id,
+      }, { status: 500 })
+    }
+
+    const { data: progRow } = await sb
+      .from('programs').select('id, name').eq('id', programId).maybeSingle()
+    const program = progRow as { id: string; name: string } | null
 
     // Mark the order approved (idempotency guard for future replays)
     await sb.from('payment_requests').update({
@@ -143,21 +161,15 @@ export async function POST(req: Request): Promise<Response> {
       reviewed_by:     'razorpay_auto',
     }).eq('id', order.id)
 
-    // Enrol in programme(s)
-    for (const slug of slugs) {
-      const { data: prog } = await sb
-        .from('programs').select('id').eq('slug', slug).maybeSingle()
-      if (prog) {
-        await sb.from('enrolled_programs').upsert({
-          student_id:        user.id,
-          program_id:        (prog as { id: string }).id,
-          plan:              'upfront',
-          amount_paid:       amount,
-          enrolled_at:       new Date().toISOString(),
-          access_granted_at: new Date().toISOString(),
-        }, { onConflict: 'student_id,program_id' })
-      }
-    }
+    // Enrol in the programme
+    await sb.from('enrolled_programs').upsert({
+      student_id:        user.id,
+      program_id:        programId,
+      plan:              'upfront',
+      amount_paid:       amount,
+      enrolled_at:       new Date().toISOString(),
+      access_granted_at: new Date().toISOString(),
+    }, { onConflict: 'student_id,program_id' })
 
     // Activate account
     // NOTE: payment_verified_by is a uuid column (references an admin's
@@ -188,6 +200,34 @@ export async function POST(req: Request): Promise<Response> {
       type:    'success',
       link:    '/dashboard',
     })
+
+    // Enrollment confirmation email — never fails the request even if sending fails
+    const programName = program?.name ?? 'your programme'
+    if (user.email) {
+      const { data: profileRow } = await sb
+        .from('profiles').select('full_name').eq('id', user.id).maybeSingle()
+      const fullName = (profileRow as { full_name: string | null } | null)?.full_name ?? undefined
+
+      const { subject, html, text } = renderEnrollmentConfirmationEmail({
+        fullName,
+        programName,
+        amountPaid: amount,
+      })
+      // Awaited (not fire-and-forget from this call site) — on Cloudflare's
+      // edge runtime the function can be torn down as soon as the handler
+      // stops awaiting anything, which would silently kill the email send
+      // partway through. See src/app/api/auth/register/route.ts for the
+      // same pattern/reasoning.
+      await sendEmailFireAndForget({
+        to:        user.email,
+        subject,
+        html,
+        text,
+        emailType: 'enrollment_confirmation',
+        userId:    user.id,
+        metadata:  { program_id: programId, amount },
+      })
+    }
 
     return Response.json({ success: true, activated: true })
 

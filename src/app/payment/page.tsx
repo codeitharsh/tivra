@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { CheckCircle2, Loader2, Shield, Zap } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { ENROLLMENT_OPEN } from '@/lib/enrollment'
+import { PROGRAM_META, DEFAULT_PROGRAM_META } from '@/lib/program-meta'
 
 // ── Razorpay type declaration ─────────────────────────────
 declare global {
@@ -28,54 +30,38 @@ interface RazorpayOptions {
 }
 interface RazorpayInstance { open(): void }
 
-// ── Plan config ───────────────────────────────────────────
-const PLANS = [
-  {
-    id:         'cloud_launchpad',
-    name:       'Cloud LaunchPad',
-    subtitle:   'AWS Cloud Practitioner',
-    duration:   '4 months',
-    price:      7599,
-    modules:    11,
-    color:      '#00d4ff',
-    popular:    false,
-    coming_soon: false,
-    features: [
-      '11 modules with live classes',
-      'AWS Cloud Practitioner prep',
-      'Weekly tests + assessments',
-      'Study notes & recordings',
-      'Doubt resolution',
-      'Verified certificate',
-    ],
-  },
-  {
-    id:         'cloud_architect',
-    name:       'Cloud Architect',
-    subtitle:   'AWS Solutions Architect',
-    duration:   '6 months',
-    price:      9999,
-    modules:    12,
-    color:      '#7c3aed',
-    popular:    false,
-    coming_soon: true,
-    features: [
-      '12 modules with live classes',
-      'AWS Solutions Architect prep',
-      'Weekly tests + assessments',
-      'Study notes & recordings',
-      'Doubt resolution',
-      'Verified certificate',
-    ],
-  },
-  // bundle removed — no longer offered
+// ── Plan shape, populated from `programs` via /api/programs ────────
+// No plan is ever hardcoded here — any active programme in the DB
+// becomes payable the instant it exists, with zero code changes.
+interface Plan {
+  id:       string // = programs.slug
+  name:     string
+  subtitle: string
+  duration: string
+  price:    number
+  color:    string
+  features: string[]
+}
+
+interface ApiProgram {
+  slug: string; name: string; tagline: string | null
+  price_inr: number | null; duration_label: string | null
+  learning_outcomes: string[]
+}
+
+const DEFAULT_FEATURES = [
+  'Live weekly classes', 'Study notes & recordings', 'Weekly tests & assessments',
+  'Doubt Corner support', 'Verified certificate',
 ]
 
 type PayState = 'idle' | 'creating' | 'open' | 'verifying' | 'done' | 'error'
 
-export default function PaymentPage() {
+function PaymentForm() {
   const router            = useRouter()
-  const [selectedPlan, setSelectedPlan] = useState('cloud_launchpad')
+  const searchParams      = useSearchParams()
+  const [plans,       setPlans]         = useState<Plan[]>([])
+  const [plansLoaded, setPlansLoaded]   = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState('')
   const [payState,    setPayState]      = useState<PayState>('idle')
   const [errorMsg,    setErrorMsg]      = useState<string | null>(null)
   const [scriptLoaded, setScriptLoaded] = useState(false)
@@ -86,6 +72,26 @@ export default function PaymentPage() {
   const [referralCode,   setReferralCode]   = useState('')
   const [referralStatus, setReferralStatus] = useState<'idle'|'checking'|'valid'|'invalid'>('idle')
   const [referralData,   setReferralData]   = useState<{ referral_id: string; faculty_name: string; discount: number } | null>(null)
+
+  // Load available programmes from the DB
+  useEffect(() => {
+    fetch('/api/programs').then(r => r.json()).then(d => {
+      const list: Plan[] = ((d.programs ?? []) as ApiProgram[]).map(p => ({
+        id:       p.slug,
+        name:     p.name,
+        subtitle: p.tagline ?? '',
+        duration: p.duration_label ?? '',
+        price:    p.price_inr ?? 0,
+        color:    (PROGRAM_META[p.slug] ?? DEFAULT_PROGRAM_META).color,
+        features: p.learning_outcomes.length > 0 ? p.learning_outcomes : DEFAULT_FEATURES,
+      }))
+      setPlans(list)
+      setPlansLoaded(true)
+      const urlPlan = searchParams.get('plan')
+      if (urlPlan && list.some(p => p.id === urlPlan)) setSelectedPlan(urlPlan)
+      else if (list.length > 0) setSelectedPlan(list[0].id)
+    }).catch(() => setPlansLoaded(true))
+  }, [searchParams])
 
   // Load Razorpay script + fetch current user
   useEffect(() => {
@@ -129,9 +135,9 @@ export default function PaymentPage() {
     })
   }, [])
 
-  const plan = PLANS.find(p => p.id === selectedPlan)!
+  const plan = plans.find(p => p.id === selectedPlan)
   const discount      = referralData?.discount ?? 0
-  const effectivePrice = Math.max(0, plan.price - discount)
+  const effectivePrice = Math.max(0, (plan?.price ?? 0) - discount)
 
   async function validateReferral() {
     const code = referralCode.trim()
@@ -163,6 +169,7 @@ export default function PaymentPage() {
   }
 
   async function handlePay() {
+    if (!plan) return
     if (!scriptLoaded) { setErrorMsg('Payment gateway not loaded yet. Try again.'); return }
     if (!userId) { setErrorMsg('Session expired. Please refresh the page.'); return }
     setErrorMsg(null)
@@ -243,6 +250,52 @@ export default function PaymentPage() {
       setErrorMsg(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       setPayState('error')
     }
+  }
+
+  // ── Enrollments closed ────────────────────────────────────
+  if (!ENROLLMENT_OPEN) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#07080c',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
+      }}>
+        <div style={{ maxWidth: '440px', width: '100%', textAlign: 'center' }}>
+          <div style={{
+            width: '64px', height: '64px', borderRadius: '50%',
+            background: '#12151d', border: '1px solid rgba(255,255,255,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 24px', fontSize: '26px',
+          }}>
+            ⏳
+          </div>
+          <h1 style={{
+            fontFamily: 'Syne,sans-serif', fontWeight: 800,
+            fontSize: '24px', color: '#fff', marginBottom: '10px',
+          }}>
+            Enrollments will start soon
+          </h1>
+          <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', marginBottom: '28px', lineHeight: 1.7 }}>
+            We&apos;re not accepting payments just yet. Check back soon.
+          </p>
+          <Link href="/" className="btn btn-primary"
+            style={{ fontSize: '14px', padding: '12px 28px', textDecoration: 'none', display: 'inline-flex' }}>
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Loading programmes ────────────────────────────────────
+  if (!plansLoaded || !plan) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#07080c',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Loader2 size={24} style={{ color: 'rgba(255,255,255,0.4)', animation: 'spin 1s linear infinite' }}/>
+      </div>
+    )
   }
 
   // ── Success screen ────────────────────────────────────────
@@ -355,73 +408,44 @@ export default function PaymentPage() {
         <div className="r-grid-3" style={{
           display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '16px', marginBottom: '32px',
         }}>
-          {PLANS.map(p => (
-            <div key={p.id} onClick={() => !p.coming_soon && setSelectedPlan(p.id)}
+          {plans.map(p => (
+            <div key={p.id} onClick={() => setSelectedPlan(p.id)}
               style={{
                 borderRadius: '16px', padding: '24px 20px',
-                cursor: p.coming_soon ? 'not-allowed' : 'pointer', position: 'relative', overflow: 'hidden',
+                cursor: 'pointer', position: 'relative', overflow: 'hidden',
                 border: selectedPlan === p.id
                   ? `1.5px solid ${p.color}`
                   : '1.5px solid rgba(255,255,255,0.08)',
-                background: p.coming_soon
-                  ? 'rgba(255,255,255,0.015)'
-                  : selectedPlan === p.id
+                background: selectedPlan === p.id
                   ? `linear-gradient(135deg,${p.color}12,${p.color}06)`
                   : 'rgba(255,255,255,0.025)',
                 transition: 'all 0.2s',
-                opacity: p.coming_soon ? 0.6 : 1,
               }}>
 
-              {/* Coming Soon badge */}
-              {p.coming_soon && (
-                <div style={{
-                  position: 'absolute', top: '12px', right: '12px',
-                  background: 'rgba(124,58,237,0.25)', border: '1px solid rgba(124,58,237,0.4)',
-                  borderRadius: '20px', padding: '3px 10px',
-                  fontSize: '10px', fontWeight: 700, color: '#a78bfa', letterSpacing: '0.06em',
-                }}>COMING SOON</div>
-              )}
-
-              {/* Popular badge */}
-              {p.popular && !p.coming_soon && (
-                <div style={{
-                  position: 'absolute', top: '12px', right: '12px',
-                  background: 'linear-gradient(135deg,#00d4ff,#7c3aed)',
-                  borderRadius: '20px', padding: '3px 10px',
-                  fontSize: '10px', fontWeight: 700, color: '#fff', letterSpacing: '0.06em',
-                }}>BEST VALUE</div>
-              )}
-
               {/* Selected indicator */}
-              {!p.coming_soon && (
-                <div style={{
-                  width: '18px', height: '18px', borderRadius: '50%', marginBottom: '14px',
-                  border: `2px solid ${selectedPlan === p.id ? p.color : 'rgba(255,255,255,0.2)'}`,
-                  background: selectedPlan === p.id ? p.color : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {selectedPlan === p.id && (
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }}/>
-                  )}
-                </div>
-              )}
-              {p.coming_soon && <div style={{ height: '32px' }}/>}
+              <div style={{
+                width: '18px', height: '18px', borderRadius: '50%', marginBottom: '14px',
+                border: `2px solid ${selectedPlan === p.id ? p.color : 'rgba(255,255,255,0.2)'}`,
+                background: selectedPlan === p.id ? p.color : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {selectedPlan === p.id && (
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }}/>
+                )}
+              </div>
 
               <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800,
                 fontSize: '16px', color: '#fff', marginBottom: '3px' }}>
                 {p.name}
               </div>
               <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '14px' }}>
-                {p.subtitle} · {p.duration}
+                {[p.subtitle, p.duration].filter(Boolean).join(' · ')}
               </div>
               <div style={{
                 fontFamily: 'Syne,sans-serif', fontWeight: 800,
                 fontSize: '28px', color: p.color, lineHeight: 1,
               }}>
-                {p.coming_soon ? '—' : `₹${p.price.toLocaleString('en-IN')}`}
-              </div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>
-                {p.modules} modules
+                {p.price ? `₹${p.price.toLocaleString('en-IN')}` : 'Revealing Soon'}
               </div>
             </div>
           ))}
@@ -605,5 +629,13 @@ export default function PaymentPage() {
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
+  )
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={null}>
+      <PaymentForm/>
+    </Suspense>
   )
 }
