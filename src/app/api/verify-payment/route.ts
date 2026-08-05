@@ -5,6 +5,7 @@ import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { sendEmailFireAndForget } from '@/lib/email'
 import { renderEnrollmentConfirmationEmail } from '@/lib/email-templates/enrollment-confirmation'
+import { isRateLimited, RATE_LIMIT_MESSAGE } from '@/lib/rate-limit'
 
 function adminSB() {
   return createSB(
@@ -12,6 +13,10 @@ function adminSB() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 }
+
+// Generous — legitimate retries after a network blip are expected —
+// but still bounded so a forged/guessed signature can't be hammered.
+const VERIFY_PAYMENT_LIMIT = { windowMs: 10 * 60 * 1000, max: 20 }
 
 // Web Crypto HMAC-SHA256 — works on Cloudflare edge (no Node.js needed)
 async function hmacSHA256(secret: string, message: string): Promise<string> {
@@ -40,6 +45,10 @@ export async function POST(req: Request): Promise<Response> {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'Unauthorized — please log in again.' }, { status: 401 })
+    }
+
+    if (isRateLimited(`verify-payment:${user.id}`, VERIFY_PAYMENT_LIMIT)) {
+      return Response.json({ error: RATE_LIMIT_MESSAGE }, { status: 429 })
     }
 
     const body = await req.json() as {

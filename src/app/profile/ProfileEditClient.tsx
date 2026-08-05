@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import { Edit2, Check, X, Loader2 } from 'lucide-react'
+import { Edit2, Check, X, Loader2, Flame, Calendar, School } from 'lucide-react'
 import type { Profile } from '@/types/database'
 
 export default function ProfileEditClient({ profile }: { profile: Profile }) {
@@ -43,8 +43,8 @@ export default function ProfileEditClient({ profile }: { profile: Profile }) {
   }
 
   const roleColors: Record<string, string> = {
-    student: 'var(--cyan)', teacher: '#a78bfa',
-    parent:  '#93c5fd',    admin:   'var(--green)',
+    student: 'var(--accent-2)', teacher: '#a78bda',
+    parent:  '#a9c0e8',    admin:   'var(--accent)',
   }
   const statusColors: Record<string, string> = {
     active: 'var(--green)', pending_payment: 'var(--amber)', restricted: 'var(--red)',
@@ -57,27 +57,19 @@ export default function ProfileEditClient({ profile }: { profile: Profile }) {
       {/* Avatar card */}
       <div className="card" style={{
         marginBottom: '20px', padding: '32px', textAlign: 'center',
-        background: 'linear-gradient(135deg,rgba(0,212,255,0.05),rgba(124,58,237,0.05))',
-        border: '1px solid rgba(59,91,219,0.2)',
-        position: 'relative', overflow: 'hidden',
+        borderTop: '2px solid var(--accent)',
       }}>
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-          background: 'linear-gradient(90deg,#00d4ff,#3b5bdb,#7c3aed)',
-        }}/>
-
-        <div style={{
-          width: '80px', height: '80px', borderRadius: '50%',
+          width: '72px', height: '72px', borderRadius: 'var(--radius)',
           margin: '0 auto 16px',
-          background: 'linear-gradient(135deg,#00c8f8,#7030d0)',
+          background: 'var(--accent-dim)', border: '1px solid var(--accent-ring)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '28px', color: '#fff',
-          boxShadow: '0 0 32px rgba(59,91,219,0.35)',
+          fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '26px', color: 'var(--accent-2)',
         }}>
           {initials}
         </div>
 
-        <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '22px', marginBottom: '4px' }}>
+        <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '22px', marginBottom: '4px' }}>
           {profile.full_name ?? '—'}
         </div>
         <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '14px' }}>
@@ -85,28 +77,23 @@ export default function ProfileEditClient({ profile }: { profile: Profile }) {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <span style={{
-            padding: '4px 14px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
-            background: `${roleColors[profile.role ?? 'student']}20`,
+          <span className="pill" style={{
+            background: 'rgba(255,255,255,0.06)',
             color: roleColors[profile.role ?? 'student'],
           }}>
-            {(profile.role ?? 'student').charAt(0).toUpperCase() + (profile.role ?? 'student').slice(1)}
+            {profile.role ?? 'student'}
           </span>
-          <span style={{
-            padding: '4px 14px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
-            background: `${statusColors[profile.access_status ?? 'pending_payment']}18`,
+          <span className="pill" style={{
+            background: 'rgba(255,255,255,0.06)',
             color: statusColors[profile.access_status ?? 'pending_payment'],
           }}>
-            {profile.access_status === 'pending_payment' ? 'Pending Activation'
+            {profile.access_status === 'pending_payment' ? 'Pending activation'
               : profile.access_status === 'active'       ? 'Active'
               : 'Restricted'}
           </span>
           {(profile.streak_count ?? 0) > 0 && (
-            <span style={{
-              padding: '4px 14px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
-              background: 'rgba(245,158,11,0.12)', color: 'var(--amber)',
-            }}>
-              🔥 {profile.streak_count} day streak
+            <span className="pill" style={{ background: 'var(--amber-dim)', color: 'var(--amber)', gap:'4px' }}>
+              <Flame size={11}/> {profile.streak_count} day streak
             </span>
           )}
         </div>
@@ -118,8 +105,8 @@ export default function ProfileEditClient({ profile }: { profile: Profile }) {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           marginBottom: '20px',
         }}>
-          <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '15px' }}>
-            Account Details
+          <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px' }}>
+            Account details
           </div>
           {!editing ? (
             <button className="btn btn-ghost" onClick={() => setEditing(true)}
@@ -148,7 +135,7 @@ export default function ProfileEditClient({ profile }: { profile: Profile }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {/* Editable: Full Name */}
           <div>
-            <label className="form-label">Full Name</label>
+            <label className="form-label">Full name</label>
             {editing ? (
               <input className="form-input" value={fullName}
                 onChange={e => setFullName(e.target.value)}
@@ -162,14 +149,14 @@ export default function ProfileEditClient({ profile }: { profile: Profile }) {
 
           {/* Editable: Phone */}
           <div>
-            <label className="form-label">Phone Number</label>
+            <label className="form-label">Phone number</label>
             {editing ? (
               <input className="form-input" value={phone}
                 onChange={e => setPhone(e.target.value)}
                 placeholder="+91 98765 43210" type="tel"/>
             ) : (
               <div style={{ fontSize: '14px', fontWeight: 500, padding: '11px 0',
-                color: profile.phone ? '#fff' : 'var(--muted)' }}>
+                color: profile.phone ? 'var(--text)' : 'var(--muted)' }}>
                 {profile.phone ?? 'Not added'}
               </div>
             )}
@@ -177,8 +164,8 @@ export default function ProfileEditClient({ profile }: { profile: Profile }) {
 
           {/* Read-only fields */}
           {[
-            { label: 'Email Address',  value: profile.email ?? '—',         note: 'Cannot be changed' },
-            { label: 'Member Since',   value: profile.created_at
+            { label: 'Email address',  value: profile.email ?? '—',         note: 'Cannot be changed' },
+            { label: 'Member since',   value: profile.created_at
               ? new Date(profile.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })
               : '—', note: undefined },
           ].map(({ label, value, note }) => (
@@ -195,27 +182,26 @@ export default function ProfileEditClient({ profile }: { profile: Profile }) {
 
       {/* Stats card */}
       <div className="card" style={{ padding: '20px' }}>
-        <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>
-          Activity Stats
+        <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', marginBottom: '16px' }}>
+          Activity stats
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px' }}>
           {[
-            { icon: '🔥', label: 'Day Streak',    value: String(profile.streak_count ?? 0) },
-            { icon: '📅', label: 'Last Login',    value: profile.last_login_date
+            { Icon: Flame,    label: 'Day streak', value: String(profile.streak_count ?? 0) },
+            { Icon: Calendar, label: 'Last login',    value: profile.last_login_date
               ? new Date(profile.last_login_date).toLocaleDateString('en-IN', { day:'numeric', month:'short' })
               : 'Never' },
-            { icon: '🏫', label: 'Programme',     value: profile.enrolled_program_id ? 'Cloud LaunchPad' : '—' },
+            { Icon: School,   label: 'Programme',     value: profile.enrolled_program_id ? 'Cloud LaunchPad' : '—' },
           ].map(s => (
             <div key={s.label} style={{
-              padding: '14px', borderRadius: '10px', textAlign: 'center',
-              background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+              padding: '14px', borderRadius: 'var(--radius-sm)', textAlign: 'center',
+              background: 'var(--card2)', border: '1px solid var(--border)',
             }}>
-              <div style={{ fontSize: '20px', marginBottom: '6px' }}>{s.icon}</div>
-              <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '18px', lineHeight: 1 }}>
+              <s.Icon size={17} color="var(--muted)" style={{ marginBottom: '6px' }}/>
+              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '18px', lineHeight: 1 }}>
                 {s.value}
               </div>
-              <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '4px',
-                textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              <div className="stat-label" style={{ marginBottom: 0, marginTop: '4px', justifyContent: 'center' }}>
                 {s.label}
               </div>
             </div>

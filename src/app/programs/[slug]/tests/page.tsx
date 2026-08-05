@@ -10,6 +10,7 @@ import CountdownCell from './CountdownCell'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { requireProgramAccess } from '@/lib/program-access'
 import type { Profile } from '@/types/database'
+import { Info, CheckCircle2, Clock, Lock, ArrowRight } from 'lucide-react'
 
 type TestRow = {
   id: string; week_number: number; title: string; topic: string | null
@@ -68,10 +69,10 @@ export default async function TestsPage({
   }
 
   const statusConfig = {
-    completed: { label: 'Completed', color: 'var(--green)',  bg: 'rgba(34,197,94,0.12)',  dot: '●' },
-    open:      { label: 'Open',      color: 'var(--green)',  bg: 'rgba(34,197,94,0.12)',  dot: '●' },
-    upcoming:  { label: 'Upcoming',  color: 'var(--amber)',  bg: 'rgba(245,158,11,0.12)', dot: '⏳' },
-    locked:    { label: 'Locked',    color: 'var(--muted)',  bg: 'rgba(255,255,255,0.06)',dot: '🔒' },
+    completed: { label: 'Completed', cls: 'pill-active',   Icon: CheckCircle2 },
+    open:      { label: 'Open',      cls: 'pill-open',     Icon: CheckCircle2 },
+    upcoming:  { label: 'Upcoming',  cls: 'pill-upcoming', Icon: Clock },
+    locked:    { label: 'Locked',    cls: 'pill-locked',   Icon: Lock },
   }
 
   // Group tests by phase_number dynamically — works for any number of
@@ -88,8 +89,8 @@ export default async function TestsPage({
         padding: '16px 20px', borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', gap: '10px',
       }}>
-        <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '15px' }}>
-          Phase {phaseNum} Weekly Tests
+        <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px' }}>
+          Phase {phaseNum} weekly tests
         </div>
         <span className="pill pill-in-progress" style={{ fontSize: '10px' }}>
           {phaseTests.filter(t => attemptMap.has(t.id)).length}/{phaseTests.length} completed
@@ -116,7 +117,7 @@ export default async function TestsPage({
 
               return (
                 <tr key={test.id}>
-                  <td style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: 'var(--muted)', fontSize: '12px' }}>
+                  <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--muted)', fontSize: '12px' }}>
                     W{test.week_number}
                   </td>
                   <td style={{ fontWeight: 500, fontSize: '13px' }}>
@@ -143,19 +144,14 @@ export default async function TestsPage({
                     {test.duration_minutes} min
                   </td>
                   <td>
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '5px',
-                      padding: '3px 10px', borderRadius: '20px',
-                      fontSize: '11px', fontWeight: 600,
-                      background: cfg.bg, color: cfg.color,
-                    }}>
-                      {cfg.dot} {cfg.label}
+                    <span className={`pill ${cfg.cls}`}>
+                      <cfg.Icon size={11}/> {cfg.label}
                     </span>
                   </td>
                   <td>
                     {score !== undefined ? (
                       <span style={{
-                        fontFamily: 'Syne, sans-serif', fontWeight: 700,
+                        fontFamily: 'var(--font-serif)', fontWeight: 600,
                         color: score >= 75 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)',
                         fontSize: '14px',
                       }}>
@@ -172,7 +168,7 @@ export default async function TestsPage({
                         className="btn btn-primary"
                         style={{ fontSize: '11px', padding: '6px 14px' }}
                       >
-                        Take Test →
+                        Take test <ArrowRight size={12}/>
                       </Link>
                     )}
                     {st === 'completed' && (
@@ -200,8 +196,8 @@ export default async function TestsPage({
       <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
         <Topbar title="Weekly Tests" subtitle={`${program.name} — Tests unlock on admin-scheduled date and time`}/>
         <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
-          <div className="banner banner-info" style={{ marginBottom: '24px' }}>
-            <span style={{ fontSize: '16px', flexShrink: 0 }}>ℹ️</span>
+          <div className="banner banner-info">
+            <Info size={16} style={{ flexShrink: 0 }}/>
             <span style={{ fontSize: '13px' }}>
               Tests unlock automatically when the scheduled date and time is reached.
               Each test can only be attempted once — your score is saved immediately on submission.

@@ -8,6 +8,7 @@ import Topbar from '@/components/Topbar'
 import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 import LockedFeature from '@/components/LockedFeature'
+import { CalendarCheck, AlertTriangle } from 'lucide-react'
 
 export default async function AttendancePage() {
   const supabase = await createClient()
@@ -49,7 +50,7 @@ export default async function AttendancePage() {
 
   const statusColor: Record<string, string> = {
     present: 'var(--green)', partial: 'var(--amber)',
-    absent: 'var(--red)', late: 'var(--cyan)',
+    absent: 'var(--red)', late: 'var(--accent-2)',
   }
 
   return (
@@ -61,25 +62,25 @@ export default async function AttendancePage() {
 
           {/* Attendance rate */}
           <div style={{
-            background: pct >= 75 ? 'rgba(34,197,94,0.07)' : 'rgba(245,158,11,0.07)',
-            border: `1px solid ${pct >= 75 ? 'rgba(34,197,94,0.2)' : 'rgba(245,158,11,0.2)'}`,
+            background: pct >= 75 ? 'var(--green-dim)' : 'var(--amber-dim)',
+            border: `1px solid ${pct >= 75 ? 'rgba(74,222,128,0.2)' : 'rgba(245,166,35,0.2)'}`,
             borderRadius:'var(--radius)', padding:'20px', marginBottom:'24px',
             display:'flex', alignItems:'center', gap:'20px',
           }}>
-            <div style={{
-              fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'48px',
-              color: pct >= 75 ? 'var(--green)' : 'var(--amber)', lineHeight:1,
+            <div className="stat-value" style={{
+              fontSize:'44px',
+              color: pct >= 75 ? 'var(--green)' : 'var(--amber)',
             }}>{pct}%</div>
             <div>
-              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'16px', marginBottom:'4px' }}>
-                Overall Attendance
+              <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'16px', marginBottom:'4px' }}>
+                Overall attendance
               </div>
               <div style={{ fontSize:'13px', color:'var(--muted)' }}>
                 {present} present · {partial} partial · {total - present - partial} absent
               </div>
               {pct < 75 && (
-                <div style={{ fontSize:'12px', color:'var(--amber)', marginTop:'6px' }}>
-                  ⚠️ Below 75% threshold — required to unlock phase assessments
+                <div style={{ fontSize:'12px', color:'var(--amber)', marginTop:'6px', display:'flex', alignItems:'center', gap:'6px' }}>
+                  <AlertTriangle size={12}/> Below 75% threshold — required to unlock phase assessments
                 </div>
               )}
             </div>
@@ -87,7 +88,7 @@ export default async function AttendancePage() {
 
           {rows.length === 0 ? (
             <div className="card" style={{ textAlign:'center', padding:'48px', color:'var(--muted)' }}>
-              <div style={{ fontSize:'32px', marginBottom:'12px' }}>📋</div>
+              <CalendarCheck size={28} color="var(--muted2)" style={{ marginBottom:'12px' }}/>
               <div style={{ fontSize:'14px' }}>No attendance records yet.</div>
               <div style={{ fontSize:'13px', marginTop:'6px' }}>Join a live class to start building your attendance.</div>
             </div>
@@ -131,13 +132,11 @@ export default async function AttendancePage() {
                           {row.duration_minutes ? `${row.duration_minutes} min` : '—'}
                         </td>
                         <td>
-                          <span style={{
-                            padding:'3px 10px', borderRadius:'20px',
-                            fontSize:'11px', fontWeight:600,
-                            background:`${statusColor[row.status as string] ?? 'var(--muted)'}20`,
+                          <span className="pill" style={{
+                            background: 'rgba(255,255,255,0.06)',
                             color: statusColor[row.status as string] ?? 'var(--muted)',
                           }}>
-                            {String(row.status ?? 'absent').charAt(0).toUpperCase() + String(row.status ?? 'absent').slice(1)}
+                            {String(row.status ?? 'absent')}
                           </span>
                           {row.is_override ? <span style={{ fontSize:'10px', color:'var(--muted)', marginLeft:'6px' }}>overridden</span> : null}
                         </td>

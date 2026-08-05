@@ -9,6 +9,7 @@ import Topbar from '@/components/Topbar'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { requireProgramAccess } from '@/lib/program-access'
 import type { Profile } from '@/types/database'
+import { Check, Circle, PlayCircle, Lock } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────
 interface ModuleRow {
@@ -35,10 +36,10 @@ interface ProgressRow {
 // Cycles through a fixed palette rather than indexing a fixed-length
 // array — works correctly whether a programme has 1 phase or 12.
 const PHASE_PALETTE = [
-  { top: 'linear-gradient(90deg,#ff6b35,#f59e0b)', fill: '#ff6b35' },
-  { top: 'linear-gradient(90deg,var(--teal),var(--blue))',  fill: 'var(--teal)' },
-  { top: 'linear-gradient(90deg,#a78bfa,#7c3aed)',  fill: '#a78bfa' },
-  { top: 'linear-gradient(90deg,#22c55e,#16a34a)',  fill: '#22c55e' },
+  { fill: 'var(--amber)' },
+  { fill: 'var(--accent-2)' },
+  { fill: 'var(--accent)' },
+  { fill: 'var(--green)' },
 ]
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -50,12 +51,12 @@ function ModuleItem({
   slug: string
 }) {
   const iconMap = {
-    completed:  { cls: 'mod-done',   icon: '✓' },
-    in_progress:{ cls: 'mod-active', icon: '▶' },
-    not_started:{ cls: 'mod-active', icon: '○' },
-    locked:     { cls: 'mod-locked', icon: '🔒' },
+    completed:  { cls: 'mod-done',   Icon: Check },
+    in_progress:{ cls: 'mod-active', Icon: PlayCircle },
+    not_started:{ cls: 'mod-active', Icon: Circle },
+    locked:     { cls: 'mod-locked', Icon: Lock },
   }
-  const { cls, icon } = iconMap[status]
+  const { cls, Icon } = iconMap[status]
   const isLocked = status === 'locked'
 
   const inner = (
@@ -63,16 +64,16 @@ function ModuleItem({
       className="module-item"
       style={{
         background: status === 'in_progress'
-          ? 'rgba(59,91,219,0.07)'
+          ? 'var(--accent-dim)'
           : status === 'completed'
-          ? 'rgba(34,197,94,0.04)'
+          ? 'var(--green-dim)'
           : undefined,
         cursor: isLocked ? 'default' : 'pointer',
         opacity: isLocked ? 0.55 : 1,
       }}
     >
-      <div className={`mod-icon ${cls}`} style={{ fontSize: '11px' }}>
-        {icon}
+      <div className={`mod-icon ${cls}`}>
+        <Icon size={11}/>
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '13px', fontWeight: status === 'in_progress' ? 500 : 400 }}>
@@ -187,7 +188,7 @@ export default async function ContentPage({
           subtitle={`${program.name} — ${phases.length} phase${phases.length !== 1 ? 's' : ''} · ${totalModules} module${totalModules !== 1 ? 's' : ''}`}
         />
 
-        <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
+        <div style={{ padding: '28px', maxWidth: '1100px', margin: '0 auto', width: '100%' }}>
 
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:'16px' }}>
             {sortedPhases.map((phase, pi) => {
@@ -204,17 +205,14 @@ export default async function ContentPage({
                     opacity: locked ? 0.75 : 1,
                   }}
                 >
-                  <div style={{ height: '3px', background: colors.top }}/>
+                  <div style={{ height: '2px', background: colors.fill }}/>
 
                   <div style={{ padding: '20px' }}>
-                    <div style={{
-                      fontSize: '10px', color: 'var(--muted)',
-                      textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px',
-                    }}>
+                    <div className="stat-label" style={{ marginBottom: '6px' }}>
                       Phase {phase.phase_number}
                     </div>
                     <div style={{
-                      fontFamily: 'Syne, sans-serif', fontWeight: 700,
+                      fontFamily: 'var(--font-serif)', fontWeight: 600,
                       fontSize: '16px', marginBottom: '4px',
                     }}>
                       {phase.title}
@@ -229,12 +227,12 @@ export default async function ContentPage({
                         fontSize: '11px', color: 'var(--muted)', marginBottom: '5px',
                       }}>
                         <span>{locked ? `Unlocks after Phase ${phase.phase_number - 1} complete` : `${stats.completed} of ${stats.total} modules complete`}</span>
-                        <span style={{ color: locked ? 'var(--muted)' : colors.fill }}>{stats.pct}%</span>
+                        <span style={{ color: locked ? 'var(--muted)' : colors.fill, fontFamily: 'var(--font-mono)' }}>{stats.pct}%</span>
                       </div>
                       <div className="progress-track">
                         <div
                           className="progress-fill"
-                          style={{ width: `${locked ? 0 : stats.pct}%`, background: colors.top }}
+                          style={{ width: `${locked ? 0 : stats.pct}%`, background: colors.fill }}
                         />
                       </div>
                     </div>
@@ -258,15 +256,15 @@ export default async function ContentPage({
                   {locked && (
                     <div style={{
                       position: 'absolute', inset: 0,
-                      background: 'rgba(7,8,13,0.55)',
+                      background: 'rgba(11,11,13,0.72)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       zIndex: 10, flexDirection: 'column', gap: '8px',
                     }}>
-                      <div style={{ fontSize: '32px' }}>🔒</div>
+                      <Lock size={26} color="var(--muted)"/>
                       <div style={{
-                        fontFamily: 'Syne, sans-serif', fontWeight: 700,
-                        fontSize: '14px', color: '#fff',
-                      }}>Phase {phase.phase_number} Locked</div>
+                        fontFamily: 'var(--font-serif)', fontWeight: 600,
+                        fontSize: '14px', color: 'var(--text)',
+                      }}>Phase {phase.phase_number} locked</div>
                       <div style={{ fontSize: '12px', color: 'var(--muted)', textAlign: 'center', maxWidth: '200px' }}>
                         Complete all Phase {phase.phase_number - 1} modules to unlock
                       </div>

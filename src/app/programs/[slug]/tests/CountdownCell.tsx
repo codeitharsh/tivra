@@ -29,7 +29,7 @@ export default function CountdownCell({ unlockAt }: { unlockAt: string }) {
 
   return (
     <span style={{
-      fontFamily: 'Syne, sans-serif', fontSize: '12px',
+      fontFamily: 'var(--font-mono)', fontSize: '12px',
       color: 'var(--amber)', fontWeight: 600,
     }}>
       {display}

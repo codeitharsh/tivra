@@ -10,6 +10,7 @@ import MarkCompleteButton from './MarkCompleteButton'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { requireProgramAccess } from '@/lib/program-access'
 import type { Profile } from '@/types/database'
+import { Check, PlayCircle, Circle, FileText, Download, MessageCircle, ChevronRight } from 'lucide-react'
 
 export default async function ModulePage({
   params,
@@ -105,30 +106,27 @@ export default async function ModulePage({
         <div style={{ padding: '28px', maxWidth: '900px' }}>
 
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
+            display: 'flex', alignItems: 'center', gap: '6px',
             fontSize: '12px', color: 'var(--muted)', marginBottom: '24px',
           }}>
             <Link href={`/programs/${slug}/content`} style={{ color: 'var(--muted)', textDecoration: 'none' }}>
               Study Content
             </Link>
-            <span>›</span>
+            <ChevronRight size={13}/>
             <span style={{ color: 'var(--muted)' }}>Phase {phaseNum}: {phaseTitle}</span>
-            <span>›</span>
+            <ChevronRight size={13}/>
             <span style={{ color: 'var(--text)' }}>Module {mod.module_number}</span>
           </div>
 
           <div className="card" style={{ marginBottom: '20px', padding: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
               <div>
-                <div style={{
-                  fontSize: '11px', color: 'var(--muted)',
-                  textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px',
-                }}>
+                <div className="stat-label" style={{ marginBottom: '6px' }}>
                   Phase {phaseNum} · Module {mod.module_number}
                 </div>
                 <h1 style={{
-                  fontFamily: 'Syne, sans-serif', fontWeight: 700,
-                  fontSize: '22px', color: '#fff', marginBottom: '8px',
+                  fontFamily: 'var(--font-serif)', fontWeight: 600,
+                  fontSize: '22px', color: 'var(--text)', marginBottom: '8px',
                 }}>
                   {mod.title}
                 </h1>
@@ -137,12 +135,12 @@ export default async function ModulePage({
                     status === 'completed' ? 'pill-active' :
                     status === 'in_progress' ? 'pill-in-progress' : 'pill-locked'
                   }`}>
-                    {status === 'completed' ? '✓ Completed' :
-                     status === 'in_progress' ? '▶ In Progress' : '○ Not started'}
+                    {status === 'completed' ? <><Check size={11}/> Completed</> :
+                     status === 'in_progress' ? <><PlayCircle size={11}/> In progress</> : <><Circle size={11}/> Not started</>}
                   </span>
                   {mod.notes_url && (
-                    <span className="pill pill-active" style={{ background: 'rgba(0,212,255,0.1)', color: 'var(--teal)' }}>
-                      📄 Notes available
+                    <span className="pill" style={{ background: 'var(--accent-2-dim)', color: 'var(--accent-2)' }}>
+                      <FileText size={11}/> Notes available
                     </span>
                   )}
                 </div>
@@ -161,8 +159,8 @@ export default async function ModulePage({
                 padding: '16px 20px', borderBottom: '1px solid var(--border)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}>
-                <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '14px' }}>
-                  📄 Module Notes
+                <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px', display:'flex', alignItems:'center', gap:'8px' }}>
+                  <FileText size={15}/> Module notes
                 </div>
                 <a
                   href={signedUrl}
@@ -172,7 +170,7 @@ export default async function ModulePage({
                   className="btn btn-ghost"
                   style={{ fontSize: '12px', padding: '6px 14px' }}
                 >
-                  ⬇ Download PDF
+                  <Download size={13}/> Download PDF
                 </a>
               </div>
               <iframe
@@ -184,10 +182,10 @@ export default async function ModulePage({
           ) : (
             <div className="card" style={{
               marginBottom: '20px', textAlign: 'center', padding: '48px',
-              background: 'rgba(255,255,255,0.02)',
+              background: 'var(--card2)',
             }}>
-              <div style={{ fontSize: '32px', marginBottom: '12px' }}>📋</div>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '15px', marginBottom: '6px' }}>
+              <FileText size={28} color="var(--muted2)" style={{ marginBottom: '12px' }}/>
+              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', marginBottom: '6px' }}>
                 Notes not uploaded yet
               </div>
               <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
@@ -202,14 +200,14 @@ export default async function ModulePage({
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 marginBottom: '16px',
               }}>
-                <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '14px' }}>
+                <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px' }}>
                   Doubts for this module
                 </div>
                 <Link
                   href={`/doubts?module=${moduleId}`}
-                  style={{ fontSize: '12px', color: 'var(--teal)', textDecoration: 'none' }}
+                  style={{ fontSize: '12px', color: 'var(--accent-2)', textDecoration: 'none', fontFamily: 'var(--font-mono)' }}
                 >
-                  View all →
+                  VIEW ALL →
                 </Link>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -218,16 +216,16 @@ export default async function ModulePage({
                     key={d.id}
                     style={{
                       padding: '12px',
-                      background: 'rgba(255,255,255,0.03)',
-                      borderRadius: '8px',
-                      borderLeft: `2px solid ${d.is_resolved ? 'var(--teal)' : 'var(--amber)'}`,
+                      background: 'var(--card2)',
+                      borderRadius: 'var(--radius-sm)',
+                      borderLeft: `2px solid ${d.is_resolved ? 'var(--accent-2)' : 'var(--amber)'}`,
                     }}
                   >
                     <div style={{ fontSize: '13px', marginBottom: '4px' }}>{d.question_text}</div>
                     <div style={{ fontSize: '11px', color: 'var(--muted)' }}>
                       {d.is_resolved
-                        ? <span style={{ color: 'var(--teal)' }}>✓ Answered</span>
-                        : <span style={{ color: 'var(--amber)' }}>⏳ Awaiting answer</span>
+                        ? <span style={{ color: 'var(--accent-2)' }}>Answered</span>
+                        : <span style={{ color: 'var(--amber)' }}>Awaiting answer</span>
                       }
                       {' · '}{d.upvotes} upvotes
                     </div>
@@ -243,14 +241,14 @@ export default async function ModulePage({
               className="btn btn-ghost"
               style={{ fontSize: '13px' }}
             >
-              ← Back to Content
+              ← Back to content
             </Link>
             <Link
               href="/doubts"
               className="btn btn-ghost"
               style={{ fontSize: '13px' }}
             >
-              💬 Post a Doubt
+              <MessageCircle size={13}/> Post a doubt
             </Link>
           </div>
         </div>

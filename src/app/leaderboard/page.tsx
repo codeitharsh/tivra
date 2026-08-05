@@ -8,6 +8,7 @@ import Topbar from '@/components/Topbar'
 import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 import LockedFeature from '@/components/LockedFeature'
+import { Medal } from 'lucide-react'
 
 export default async function LeaderboardPage() {
   const supabase = await createClient()
@@ -69,7 +70,7 @@ export default async function LeaderboardPage() {
     .sort((a, b) => b.avg - a.avg)
     .slice(0, 10)
 
-  const medals = ['🥇','🥈','🥉']
+  const medalColors = ['var(--amber)', '#b8bfc9', '#c9905b']
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
@@ -79,8 +80,8 @@ export default async function LeaderboardPage() {
         <div style={{ padding:'28px', maxWidth:'700px' }}>
           <div className="card" style={{ padding:0, overflow:'hidden' }}>
             <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--border)' }}>
-              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'15px' }}>
-                Weekly Test Rankings
+              <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px' }}>
+                Weekly test rankings
               </div>
               <div style={{ fontSize:'12px', color:'var(--muted)', marginTop:'2px' }}>
                 Based on average score across all tests taken
@@ -99,31 +100,31 @@ export default async function LeaderboardPage() {
                     display:'flex', alignItems:'center', gap:'14px',
                     padding:'14px 20px',
                     borderBottom: i < ranked.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                    background: isMe ? 'rgba(0,200,248,0.06)' : 'transparent',
+                    background: isMe ? 'var(--accent-dim)' : 'transparent',
                   }}>
                     <div style={{
-                      fontFamily:'Syne,sans-serif', fontWeight:800,
-                      fontSize:'20px', width:'32px', textAlign:'center',
-                      color: i === 0 ? 'var(--amber)' : i === 1 ? '#94a3b8' : i === 2 ? '#cd7c3f' : 'var(--muted)',
+                      width:'32px', display:'flex', alignItems:'center', justifyContent:'center',
+                      fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'16px',
+                      color: i < 3 ? medalColors[i] : 'var(--muted)',
                     }}>
-                      {medals[i] ?? `#${i+1}`}
+                      {i < 3 ? <Medal size={18}/> : `#${i+1}`}
                     </div>
                     <div style={{
-                      width:'36px', height:'36px', borderRadius:'50%', flexShrink:0,
-                      background:'linear-gradient(135deg,#00c8f8,#7030d0)',
+                      width:'36px', height:'36px', borderRadius:'6px', flexShrink:0,
+                      background:'var(--card2)', border: '1px solid var(--border)',
                       display:'flex', alignItems:'center', justifyContent:'center',
-                      fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'12px', color:'#fff',
+                      fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'12px', color:'var(--text)',
                     }}>
                       {entry.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
                     </div>
                     <div style={{ flex:1 }}>
-                      <div style={{ fontSize:'14px', fontWeight:500, color: isMe ? 'var(--cyan)' : '#fff' }}>
-                        {entry.name}{isMe && <span style={{ fontSize:'11px', color:'var(--cyan)', marginLeft:'6px' }}>(You)</span>}
+                      <div style={{ fontSize:'14px', fontWeight:500, color: isMe ? 'var(--accent-2)' : 'var(--text)' }}>
+                        {entry.name}{isMe && <span style={{ fontSize:'11px', color:'var(--accent-2)', marginLeft:'6px' }}>(You)</span>}
                       </div>
                       <div style={{ fontSize:'11px', color:'var(--muted)' }}>{entry.tests} test{entry.tests !== 1 ? 's' : ''} taken</div>
                     </div>
                     <div style={{
-                      fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'20px',
+                      fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'18px',
                       color: entry.avg >= 75 ? 'var(--green)' : entry.avg >= 50 ? 'var(--amber)' : 'var(--red)',
                     }}>
                       {entry.avg}%

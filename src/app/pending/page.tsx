@@ -8,15 +8,10 @@ import Image from 'next/image'
 import SignOutButton from './SignOutButton'
 import WhatsAppBanner from '@/components/WhatsAppBanner'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
+import { PROGRAM_META, DEFAULT_PROGRAM_META } from '@/lib/program-meta'
+import { Clock, XCircle, ArrowRight, Check } from 'lucide-react'
 
 import type { Profile, Program } from '@/types/database'
-
-const PALETTE = [
-  { color: '#00d4ff', rgb: '0,212,255' },
-  { color: '#7c3aed', rgb: '124,58,237' },
-  { color: '#22c55e', rgb: '34,197,94' },
-  { color: '#f59e0b', rgb: '245,158,11' },
-]
 
 const DIFFICULTY_LABEL: Record<string, string> = {
   beginner:     'Beginner friendly',
@@ -70,29 +65,26 @@ export default async function PendingPage() {
   const isRejected        = pr?.status === 'rejected'
 
   return (
-    <div style={{ minHeight: '100vh', background: '#07080c' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Top bar */}
       <div style={{
         padding: '16px 32px', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(255,255,255,0.02)',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--surface)',
         position: 'sticky', top: 0, zIndex: 10,
       }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
           <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32} />
           <div>
-            <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '15px',
-              letterSpacing: '0.08em',
-              background: 'linear-gradient(135deg,#00d4ff,#7c3aed)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text' }}>TIVRA</div>
-            <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)',
+            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '15px',
+              letterSpacing: '0.08em', color: 'var(--text)' }}>TIVRA</div>
+            <div style={{ fontSize: '8px', color: 'var(--muted2)',
               letterSpacing: '0.14em', textTransform: 'uppercase' }}>Rise Beyond</div>
           </div>
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
+          <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
             {profile.full_name ?? profile.email}
           </span>
           <SignOutButton/>
@@ -104,44 +96,36 @@ export default async function PendingPage() {
         {/* Payment status banner — only shown if relevant, otherwise this
             whole section collapses so the explore content is front and center */}
         {(hasPendingRequest || isRejected) && (
-          <div style={{
-            background: hasPendingRequest ? 'rgba(245,158,11,0.06)' : 'rgba(239,68,68,0.06)',
-            border: `1px solid ${hasPendingRequest ? 'rgba(245,158,11,0.25)' : 'rgba(239,68,68,0.25)'}`,
-            borderRadius: '14px', padding: '18px 22px', marginBottom: '32px',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
-            flexWrap: 'wrap',
+          <div className={`banner ${hasPendingRequest ? 'banner-warning' : ''}`} style={{
+            background: hasPendingRequest ? undefined : 'var(--red-dim)',
+            border: hasPendingRequest ? undefined : '1px solid rgba(240,69,58,0.25)',
+            padding: '18px 22px', marginBottom: '32px',
+            justifyContent: 'space-between', flexWrap: 'wrap',
           }}>
-            <div>
-              <div style={{
-                fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '14px',
-                color: hasPendingRequest ? '#f59e0b' : '#ef4444', marginBottom: '4px',
-              }}>
-                {hasPendingRequest ? '⏳ Payment Under Review' : '❌ Payment Not Verified'}
-              </div>
-              <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
-                {hasPendingRequest
-                  ? "You'll receive access within 24 hours on working days."
-                  : <>Couldn&apos;t verify your payment. <a href="mailto:contact@tivra.in" style={{ color: '#00d4ff' }}>Contact us</a> or resubmit below.</>}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              {hasPendingRequest ? <Clock size={18} style={{ flexShrink: 0, marginTop: '2px' }}/> : <XCircle size={18} color="var(--red)" style={{ flexShrink: 0, marginTop: '2px' }}/>}
+              <div>
+                <div style={{
+                  fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px',
+                  color: hasPendingRequest ? 'var(--amber)' : 'var(--red)', marginBottom: '4px',
+                }}>
+                  {hasPendingRequest ? 'Payment under review' : 'Payment not verified'}
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                  {hasPendingRequest
+                    ? "You'll receive access within 24 hours on working days."
+                    : <>Couldn&apos;t verify your payment. <a href="mailto:contact@tivra.in" style={{ color: 'var(--accent-2)' }}>Contact us</a> or resubmit below.</>}
+                </div>
               </div>
             </div>
             {isRejected && (
               ENROLLMENT_OPEN ? (
-                <Link href="/payment" style={{
-                  flexShrink: 0, padding: '10px 20px', borderRadius: '100px',
-                  background: 'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)',
-                  color: '#fff', fontFamily: 'Syne,sans-serif', fontWeight: 700,
-                  fontSize: '13px', textDecoration: 'none',
-                }}>
-                  Resubmit Payment →
+                <Link href="/payment" className="btn btn-primary" style={{ flexShrink: 0, fontSize: '13px' }}>
+                  Resubmit payment <ArrowRight size={13}/>
                 </Link>
               ) : (
-                <span style={{
-                  flexShrink: 0, padding: '10px 20px', borderRadius: '100px',
-                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-                  color: 'rgba(255,255,255,0.3)', fontFamily: 'Syne,sans-serif', fontWeight: 700,
-                  fontSize: '13px', cursor: 'not-allowed',
-                }}>
-                  Enrollments Will Start Soon
+                <span className="btn btn-ghost" style={{ flexShrink: 0, fontSize: '13px', cursor: 'not-allowed', opacity: 0.6 }}>
+                  Enrollments will start soon
                 </span>
               )
             )}
@@ -152,22 +136,22 @@ export default async function PendingPage() {
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
-            padding: '6px 16px', borderRadius: '100px', marginBottom: '20px',
-            background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)',
+            padding: '6px 16px', borderRadius: 'var(--radius-pill)', marginBottom: '20px',
+            background: 'var(--accent-dim)', border: '1px solid var(--accent-ring)',
           }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#00d4ff', letterSpacing: '0.06em' }}>
-              👋 WELCOME TO TIVRA
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--accent-2)', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)' }}>
+              WELCOME TO TIVRA
             </span>
           </div>
           <h1 style={{
-            fontFamily: 'Syne,sans-serif', fontWeight: 800,
-            fontSize: 'clamp(28px,5vw,40px)', color: '#fff',
-            letterSpacing: '-0.02em', marginBottom: '14px', lineHeight: 1.15,
+            fontFamily: 'var(--font-serif)', fontWeight: 600,
+            fontSize: 'clamp(28px,5vw,40px)', color: 'var(--text)',
+            letterSpacing: '-0.01em', marginBottom: '14px', lineHeight: 1.15,
           }}>
             Explore our programmes
           </h1>
           <p style={{
-            fontSize: '15px', color: 'rgba(255,255,255,0.5)',
+            fontSize: '15px', color: 'var(--muted)',
             maxWidth: '480px', margin: '0 auto', lineHeight: 1.7,
           }}>
             Your account is ready. Pick a programme below to see the full curriculum,
@@ -177,44 +161,44 @@ export default async function PendingPage() {
         </div>
 
         {/* Programme cards — the actual explore experience */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '16px', marginBottom: '40px',
-        }} className="r-grid-2">
+        <div className="r-grid-2" style={{ marginBottom: '40px' }}>
           {programmes.length === 0 && (
-            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--muted)', fontSize: '13px' }}>
               No programmes are currently open for enrolment. Check back soon, or contact us directly.
             </div>
           )}
-          {programmes.map((p, i) => {
-            const palette = PALETTE[i % PALETTE.length]
-            const priceLabel = p.price_inr ? `₹${p.price_inr.toLocaleString('en-IN')}` : 'Revealing Soon'
+          {programmes.map(p => {
+            const meta = PROGRAM_META[p.slug] ?? DEFAULT_PROGRAM_META
+            const Icon = meta.icon
+            const priceLabel = p.price_inr ? `₹${p.price_inr.toLocaleString('en-IN')}` : 'Revealing soon'
 
             return (
-              <Link key={p.id} href={`/programs/${p.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
-                <div style={{
-                  background: `rgba(${palette.rgb},0.05)`,
-                  border: `1px solid rgba(${palette.rgb},0.2)`,
-                  borderRadius: '18px', padding: '26px', height: '100%',
-                  position: 'relative', overflow: 'hidden', cursor: 'pointer',
-                  transition: 'transform 0.15s',
+              <Link key={p.id} href={`/programs/${p.slug}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
+                <div className="card" style={{
+                  borderTop: `2px solid ${meta.color}`,
+                  padding: '26px', height: '100%',
                 }}>
                   <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-                    background: `linear-gradient(90deg, ${palette.color}, transparent)`,
-                  }}/>
+                    width: '30px', height: '30px', borderRadius: '6px', flexShrink: 0,
+                    background: `rgba(${meta.colorRgb},0.14)`, color: meta.color,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: '12px',
+                  }}>
+                    <Icon size={16}/>
+                  </div>
 
                   {p.tagline && (
-                    <div style={{ fontSize: '11px', color: palette.color, fontWeight: 700,
-                      letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px' }}>
+                    <div style={{ fontSize: '11px', color: meta.color, fontWeight: 600,
+                      letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '10px', fontFamily: 'var(--font-mono)' }}>
                       {p.tagline}
                     </div>
                   )}
-                  <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '20px',
-                    color: '#fff', marginBottom: '10px' }}>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '20px',
+                    color: 'var(--text)', marginBottom: '10px' }}>
                     {p.name}
                   </div>
                   {p.description && (
-                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: '14px' }}>
+                    <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.6, marginBottom: '14px' }}>
                       {p.description}
                     </p>
                   )}
@@ -223,19 +207,19 @@ export default async function PendingPage() {
                   {p.instructor_name && (
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px',
-                      padding: '8px 10px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)',
+                      padding: '8px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--card2)',
                     }}>
                       <div style={{
-                        width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
-                        background: `rgba(${palette.rgb},0.2)`, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: palette.color,
+                        width: '26px', height: '26px', borderRadius: '6px', flexShrink: 0,
+                        background: `rgba(${meta.colorRgb},0.18)`, display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: meta.color,
                       }}>
                         {p.instructor_name.charAt(0)}
                       </div>
                       <div style={{ fontSize: '11px', lineHeight: 1.3 }}>
-                        <div style={{ color: '#fff', fontWeight: 600 }}>{p.instructor_name}</div>
+                        <div style={{ color: 'var(--text)', fontWeight: 600 }}>{p.instructor_name}</div>
                         {p.instructor_title && (
-                          <div style={{ color: 'rgba(255,255,255,0.4)' }}>{p.instructor_title}</div>
+                          <div style={{ color: 'var(--muted)' }}>{p.instructor_title}</div>
                         )}
                       </div>
                     </div>
@@ -246,10 +230,10 @@ export default async function PendingPage() {
                     <ul style={{ margin: '0 0 14px', padding: 0, listStyle: 'none' }}>
                       {p.learning_outcomes.slice(0, 3).map((o, oi) => (
                         <li key={oi} style={{
-                          fontSize: '12px', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5,
-                          marginBottom: '4px', paddingLeft: '16px', position: 'relative',
+                          fontSize: '12px', color: 'var(--muted)', lineHeight: 1.5,
+                          marginBottom: '4px', paddingLeft: '18px', position: 'relative',
                         }}>
-                          <span style={{ position: 'absolute', left: 0, color: palette.color }}>✓</span>
+                          <Check size={12} style={{ position: 'absolute', left: 0, top: '3px', color: meta.color }}/>
                           {o}
                         </li>
                       ))}
@@ -262,17 +246,16 @@ export default async function PendingPage() {
                       p.difficulty ? DIFFICULTY_LABEL[p.difficulty] : null,
                       priceLabel,
                     ].filter(Boolean).map(t => (
-                      <span key={t} style={{
-                        padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600,
-                        background: `rgba(${palette.rgb},0.1)`, color: palette.color,
+                      <span key={t} className="pill" style={{
+                        background: `rgba(${meta.colorRgb},0.12)`, color: meta.color,
                       }}>{t}</span>
                     ))}
                   </div>
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: '6px',
-                    fontSize: '13px', fontWeight: 700, color: palette.color,
+                    fontSize: '13px', fontWeight: 600, color: meta.color,
                   }}>
-                    View curriculum →
+                    View curriculum <ArrowRight size={13}/>
                   </div>
                 </div>
               </Link>
@@ -281,17 +264,16 @@ export default async function PendingPage() {
         </div>
 
         {/* Soft enrol CTA — secondary to the explore cards above */}
-        <div style={{
-          background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: '16px', padding: '24px 28px',
+        <div className="card" style={{
+          padding: '24px 28px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
           flexWrap: 'wrap',
         }}>
           <div>
-            <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '15px', color: '#fff', marginBottom: '4px' }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', color: 'var(--text)', marginBottom: '4px' }}>
               Ready to enrol?
             </div>
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)' }}>
+            <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
               {hasPendingRequest
                 ? 'Your payment is already being reviewed — no action needed.'
                 : ENROLLMENT_OPEN
@@ -301,23 +283,12 @@ export default async function PendingPage() {
           </div>
           {!hasPendingRequest && (
             ENROLLMENT_OPEN ? (
-              <Link href="/payment" style={{
-                flexShrink: 0, padding: '12px 26px', borderRadius: '100px',
-                background: 'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)',
-                color: '#fff', fontFamily: 'Syne,sans-serif', fontWeight: 700,
-                fontSize: '14px', textDecoration: 'none',
-                boxShadow: '0 6px 24px rgba(59,91,219,0.35)',
-              }}>
-                Enrol Now →
+              <Link href="/payment" className="btn btn-primary" style={{ flexShrink: 0, fontSize: '14px' }}>
+                Enrol now <ArrowRight size={14}/>
               </Link>
             ) : (
-              <span style={{
-                flexShrink: 0, padding: '12px 26px', borderRadius: '100px',
-                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-                color: 'rgba(255,255,255,0.3)', fontFamily: 'Syne,sans-serif', fontWeight: 700,
-                fontSize: '14px', cursor: 'not-allowed',
-              }}>
-                Enrollments Will Start Soon
+              <span className="btn btn-ghost" style={{ flexShrink: 0, fontSize: '14px', cursor: 'not-allowed', opacity: 0.6 }}>
+                Enrollments will start soon
               </span>
             )
           )}
@@ -325,9 +296,9 @@ export default async function PendingPage() {
 
         <WhatsAppBanner/>
 
-        <p style={{ textAlign: 'center', marginTop: '28px', fontSize: '12px', color: 'rgba(255,255,255,0.2)' }}>
+        <p style={{ textAlign: 'center', marginTop: '28px', fontSize: '12px', color: 'var(--muted2)' }}>
           Questions?{' '}
-          <a href="mailto:contact@tivra.in" style={{ color: 'rgba(0,212,255,0.5)', textDecoration: 'none' }}>
+          <a href="mailto:contact@tivra.in" style={{ color: 'var(--accent-2)', textDecoration: 'none' }}>
             contact@tivra.in
           </a>
         </p>

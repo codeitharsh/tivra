@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
+import { isRateLimited, getClientIp, RATE_LIMIT_MESSAGE } from '@/lib/rate-limit'
 
 function adminSB() {
   return createSB(
@@ -11,6 +12,8 @@ function adminSB() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 }
+
+const CREATE_ORDER_LIMIT = { windowMs: 10 * 60 * 1000, max: 15 }
 
 export async function POST(req: Request): Promise<Response> {
   try {
@@ -30,6 +33,10 @@ export async function POST(req: Request): Promise<Response> {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return Response.json({ error: 'Unauthorized — please log in again.' }, { status: 401 })
+    }
+
+    if (isRateLimited(`create-order:${user.id}`, CREATE_ORDER_LIMIT) || isRateLimited(`create-order-ip:${getClientIp(req)}`, CREATE_ORDER_LIMIT)) {
+      return Response.json({ error: RATE_LIMIT_MESSAGE }, { status: 429 })
     }
 
     const body = await req.json() as { plan?: string; referral_code?: string; referral_id?: string }

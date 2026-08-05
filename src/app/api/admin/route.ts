@@ -3,6 +3,13 @@ export const runtime = 'edge'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { isRateLimited, getClientIp, RATE_LIMIT_MESSAGE } from '@/lib/rate-limit'
+
+// Every action below is already independently role-gated (requireAdmin/
+// requireStaff) — this is a coarse defense-in-depth layer on top, not a
+// substitute for that. Generous limit since legitimate admin usage
+// (bulk operations, CSV exports) can be bursty.
+const ADMIN_ROUTE_LIMIT = { windowMs: 5 * 60 * 1000, max: 100 }
 
 // Mirrors the exact mapping in verify-payment/route.ts — kept in sync
 // manually since this is a small, stable, infrequently-changed list.
@@ -55,6 +62,9 @@ async function requireStaff() {
 // ══════════════════════════════════════════════════════════════
 export async function POST(req: Request): Promise<Response> {
   try {
+    if (isRateLimited(`admin-route:${getClientIp(req)}`, ADMIN_ROUTE_LIMIT)) {
+      return Response.json({ error: RATE_LIMIT_MESSAGE }, { status: 429 })
+    }
 
     const body = await req.json() as Record<string, unknown>
     const action = body.action as string
@@ -155,9 +165,32 @@ export async function POST(req: Request): Promise<Response> {
       if (!studentId || !newRole) return Response.json({ error: 'Missing fields' }, { status: 400 })
       if (!allowedRoles.includes(newRole)) return Response.json({ error: 'Invalid role' }, { status: 400 })
 
+      // An admin changing their own role — including re-confirming
+      // 'admin' — has no legitimate use case here and is exactly the
+      // failure mode a compromised admin session would exploit first
+      // (either self-lockout, which is just an accident to prevent, or
+      // deliberately safe should never route through this action).
+      // A second admin account must always be the one to change it.
+      if (studentId === caller.id) {
+        return Response.json({ error: "You can't change your own role. Ask another admin to do it." }, { status: 400 })
+      }
+
       const sb = adminSB()
+      const { data: before } = await sb.from('profiles').select('role').eq('id', studentId).maybeSingle()
+      const previousRole = (before as { role: string } | null)?.role ?? null
+
       const { error } = await sb.from('profiles').update({ role: newRole }).eq('id', studentId)
       if (error) return Response.json({ error: error.message }, { status: 500 })
+
+      // Best-effort audit trail — a role change is exactly the kind of
+      // action you want a record of after the fact. Never blocks the
+      // actual role change if the log insert itself fails.
+      await sb.from('admin_audit_log').insert({
+        actor_id:   caller.id,
+        action:     'change_role',
+        target_id:  studentId,
+        details:    { previous_role: previousRole, new_role: newRole },
+      })
 
       return Response.json({ success: true })
     }

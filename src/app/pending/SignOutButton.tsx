@@ -7,12 +7,8 @@ export default function SignOutButton() {
   }
 
   return (
-    <button onClick={handleSignOut} type="button" style={{
-      background: 'none', border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '8px', padding: '6px 14px', cursor: 'pointer',
-      color: 'rgba(255,255,255,0.4)', fontSize: '12px',
-    }}>
-      Sign Out
+    <button onClick={handleSignOut} type="button" className="btn btn-ghost" style={{ fontSize: '12px', padding: '6px 14px' }}>
+      Sign out
     </button>
   )
 }

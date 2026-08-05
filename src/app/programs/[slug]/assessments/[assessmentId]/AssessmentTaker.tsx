@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Clock, Trophy, AlertTriangle, RotateCcw } from 'lucide-react'
+import {
+  Loader2, Clock, Trophy, AlertTriangle, RotateCcw, Lock, ClipboardList,
+  HelpCircle, Timer, Target, Zap, CheckCircle2, Frown, ArrowLeft, ArrowRight, Check,
+} from 'lucide-react'
 
 interface Question {
   id: string
@@ -68,7 +71,7 @@ function CooldownTimer({ unlocksAt, onUnlock }: { unlocksAt: string; onUnlock: (
     const id = setInterval(compute, 1000)
     return () => clearInterval(id)
   }, [unlocksAt, onUnlock])
-  return <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'32px', color:'var(--amber)' }}>{display}</span>
+  return <span style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'32px', color:'var(--amber)' }}>{display}</span>
 }
 
 export default function AssessmentTaker({
@@ -173,15 +176,15 @@ export default function AssessmentTaker({
   if (!isUnlocked) {
     return (
       <div className="card" style={{ textAlign:'center', padding:'60px 40px' }}>
-        <div style={{ fontSize:'48px', marginBottom:'16px' }}>🔒</div>
-        <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'20px', marginBottom:'8px' }}>
-          Assessment Not Yet Available
+        <Lock size={36} color="var(--muted2)" style={{ marginBottom:'16px' }}/>
+        <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'20px', marginBottom:'8px' }}>
+          Assessment not yet available
         </div>
         <div style={{ fontSize:'14px', color:'var(--muted)', maxWidth:'400px', margin:'0 auto 24px' }}>
           Complete all modules and wait for your admin to unlock this assessment.
         </div>
         <a href={`/programs/${slug}/assessments`} className="btn btn-ghost"
-          style={{ fontSize:'13px', display:'inline-flex' }}>← Back to Assessments</a>
+          style={{ fontSize:'13px', display:'inline-flex' }}><ArrowLeft size={13}/> Back to assessments</a>
       </div>
     )
   }
@@ -191,19 +194,19 @@ export default function AssessmentTaker({
     const lastScore = latestAttempt?.score_percent ?? 0
     return (
       <div>
-        <div style={{ background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.2)',
+        <div style={{ background:'var(--red-dim)', border:'1px solid rgba(240,69,58,0.2)',
           borderRadius:'var(--radius)', padding:'32px', textAlign:'center', marginBottom:'20px' }}>
-          <div style={{ fontSize:'40px', marginBottom:'12px' }}>😔</div>
-          <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'44px', color:'var(--red)', lineHeight:1, marginBottom:'8px' }}>
+          <Frown size={30} color="var(--red)" style={{ marginBottom:'12px' }}/>
+          <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'44px', color:'var(--red)', lineHeight:1, marginBottom:'8px' }}>
             {Math.round(lastScore)}%
           </div>
           <div style={{ fontSize:'14px', color:'var(--muted)' }}>
             Pass mark is {assessment.passing_percent}% · Attempt {attemptCount}
           </div>
         </div>
-        <div style={{ background:'rgba(245,158,11,0.07)', border:'1px solid rgba(245,158,11,0.25)',
+        <div style={{ background:'var(--amber-dim)', border:'1px solid rgba(245,166,35,0.25)',
           borderRadius:'var(--radius)', padding:'32px', textAlign:'center', marginBottom:'20px' }}>
-          <div style={{ fontSize:'13px', color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'12px', fontWeight:600 }}>
+          <div className="stat-label" style={{ marginBottom:'12px', justifyContent:'center' }}>
             Next attempt available in
           </div>
           <CooldownTimer unlocksAt={retakeUnlocksAt} onUnlock={() => setCooldownExpired(true)}/>
@@ -212,7 +215,7 @@ export default function AssessmentTaker({
           </div>
         </div>
         <a href={`/programs/${slug}/assessments`} className="btn btn-ghost" style={{ fontSize:'13px' }}>
-          ← Back to Assessments
+          <ArrowLeft size={13}/> Back to assessments
         </a>
       </div>
     )
@@ -224,13 +227,14 @@ export default function AssessmentTaker({
     return (
       <div className="card" style={{ padding:'40px', maxWidth:'560px', margin:'0 auto' }}>
         <div style={{ textAlign:'center', marginBottom:'32px' }}>
-          <div style={{ fontSize:'48px', marginBottom:'16px' }}>{isRetake ? '🔄' : '📋'}</div>
-          <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'22px', marginBottom:'8px' }}>
+          {isRetake ? <RotateCcw size={32} color="var(--amber)" style={{ marginBottom:'16px' }}/>
+                    : <ClipboardList size={32} color="var(--accent)" style={{ marginBottom:'16px' }}/>}
+          <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'22px', marginBottom:'8px' }}>
             {isRetake ? `Retake — Attempt #${attemptCount + 1}` : assessment.title}
           </div>
           {isRetake && latestAttempt && (
             <div style={{ display:'inline-flex', alignItems:'center', gap:'8px', padding:'6px 14px',
-              borderRadius:'20px', background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.2)',
+              borderRadius:'var(--radius-pill)', background:'var(--amber-dim)', border:'1px solid rgba(245,166,35,0.2)',
               fontSize:'12px', color:'var(--amber)', marginBottom:'8px' }}>
               <RotateCcw size={12}/>
               Last: {Math.round(latestAttempt.score_percent)}% — Need {assessment.passing_percent}%
@@ -239,14 +243,14 @@ export default function AssessmentTaker({
         </div>
         <div className='r-grid-3' style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'12px', marginBottom:'28px' }}>
           {[
-            ['❓', String(questions.length), 'Questions'],
-            ['⏱', `${assessment.duration_minutes} min`, 'Duration'],
-            ['🎯', `${assessment.passing_percent}%`, 'Pass Mark'],
+            { Icon: HelpCircle, val: String(questions.length), label: 'Questions' },
+            { Icon: Timer, val: `${assessment.duration_minutes} min`, label: 'Duration' },
+            { Icon: Target, val: `${assessment.passing_percent}%`, label: 'Pass mark' },
           ].map(s => (
-            <div key={s[2]} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid var(--border)', borderRadius:'10px', padding:'16px', textAlign:'center' }}>
-              <div style={{ fontSize:'22px', marginBottom:'6px' }}>{s[0]}</div>
-              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'18px' }}>{s[1]}</div>
-              <div style={{ fontSize:'11px', color:'var(--muted)', marginTop:'3px' }}>{s[2]}</div>
+            <div key={s.label} style={{ background:'var(--card2)', border:'1px solid var(--border)', borderRadius:'var(--radius-sm)', padding:'16px', textAlign:'center' }}>
+              <s.Icon size={18} color="var(--muted)" style={{ marginBottom:'6px' }}/>
+              <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'18px' }}>{s.val}</div>
+              <div style={{ fontSize:'11px', color:'var(--muted)', marginTop:'3px' }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -254,14 +258,14 @@ export default function AssessmentTaker({
           <AlertTriangle size={16} style={{ flexShrink:0 }}/>
           <span style={{ fontSize:'13px' }}>
             {isRetake
-              ? <>Retake: Score below {assessment.passing_percent}% triggers a 24-hour cooldown.</>
+              ? <>Retake: score below {assessment.passing_percent}% triggers a 24-hour cooldown.</>
               : <>Score below {assessment.passing_percent}% triggers a 24-hour cooldown before retake.</>
             }
           </span>
         </div>
         <button className="btn btn-primary" onClick={() => setScreen('confirm')}
           style={{ width:'100%', justifyContent:'center', fontSize:'15px', padding:'14px' }}>
-          {isRetake ? '🔄 Start Retake →' : "I'm Ready →"}
+          {isRetake ? <><RotateCcw size={14}/> Start retake</> : <>I&apos;m ready</>}
         </button>
         <div style={{ textAlign:'center', marginTop:'14px' }}>
           <a href={`/programs/${slug}/assessments`}
@@ -276,22 +280,22 @@ export default function AssessmentTaker({
   // ── Confirm modal ─────────────────────────────────────────
   if (screen === 'confirm') {
     return (
-      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.8)',
-        display:'flex', alignItems:'center', justifyContent:'center', zIndex:100, backdropFilter:'blur(4px)' }}>
-        <div className="glass" style={{ padding:'36px', maxWidth:'440px', width:'90%', textAlign:'center' }}>
-          <div style={{ fontSize:'44px', marginBottom:'16px' }}>⚡</div>
-          <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'20px', marginBottom:'8px' }}>
-            Start Assessment?
+      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)',
+        display:'flex', alignItems:'center', justifyContent:'center', zIndex:100 }}>
+        <div className="card" style={{ padding:'36px', maxWidth:'440px', width:'90%', textAlign:'center' }}>
+          <Zap size={34} color="var(--accent)" style={{ marginBottom:'16px' }}/>
+          <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'20px', marginBottom:'8px' }}>
+            Start assessment?
           </div>
           <div style={{ fontSize:'14px', color:'var(--muted)', marginBottom:'24px', lineHeight:1.6 }}>
-            Timer starts immediately. <strong style={{ color:'#fff' }}>{assessment.duration_minutes} minutes</strong> for{' '}
-            <strong style={{ color:'#fff' }}>{questions.length} questions</strong>.
+            Timer starts immediately. <strong style={{ color:'var(--text)' }}>{assessment.duration_minutes} minutes</strong> for{' '}
+            <strong style={{ color:'var(--text)' }}>{questions.length} questions</strong>.
           </div>
           <div style={{ display:'flex', gap:'12px' }}>
             <button className="btn btn-primary" style={{ flex:1, justifyContent:'center', fontSize:'14px' }}
-              onClick={() => setScreen('taking')}>✓ Start Now</button>
+              onClick={() => setScreen('taking')}><Check size={14}/> Start now</button>
             <button className="btn btn-ghost" style={{ flex:1, justifyContent:'center' }}
-              onClick={() => setScreen('info')}>Go Back</button>
+              onClick={() => setScreen('info')}>Go back</button>
           </div>
         </div>
       </div>
@@ -305,14 +309,13 @@ export default function AssessmentTaker({
     return (
       <div>
         <div style={{
-          background: passed
-            ? 'linear-gradient(135deg,rgba(34,197,94,0.08),rgba(0,212,170,0.05))'
-            : 'linear-gradient(135deg,rgba(239,68,68,0.08),rgba(180,40,40,0.04))',
-          border:`1px solid ${passed ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.2)'}`,
+          background: passed ? 'var(--green-dim)' : 'var(--red-dim)',
+          border:`1px solid ${passed ? 'rgba(74,222,128,0.25)' : 'rgba(240,69,58,0.2)'}`,
           borderRadius:'var(--radius)', padding:'36px', textAlign:'center', marginBottom:'24px',
         }}>
-          <div style={{ fontSize:'48px', marginBottom:'12px' }}>{passed ? '🏆' : '😔'}</div>
-          <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'56px', lineHeight:1,
+          {passed ? <Trophy size={34} color="var(--green)" style={{ marginBottom:'12px' }}/>
+                  : <Frown size={34} color="var(--red)" style={{ marginBottom:'12px' }}/>}
+          <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'52px', lineHeight:1,
             color: passed ? 'var(--green)' : 'var(--red)', marginBottom:'8px' }}>
             {Math.round(score)}%
           </div>
@@ -322,12 +325,12 @@ export default function AssessmentTaker({
             </div>
           )}
           <div style={{ fontSize:'16px', fontWeight:600, marginBottom:'20px' }}>
-            {passed ? '🎉 You passed! Certificate issued.' : `Need ${assessment.passing_percent}% to pass. Retake available in 24 hours.`}
+            {passed ? 'You passed — certificate issued.' : `Need ${assessment.passing_percent}% to pass. Retake available in 24 hours.`}
           </div>
           {passed && (
             <a href={`/programs/${slug}/certificate`} className="btn btn-primary"
               style={{ fontSize:'14px', padding:'12px 28px', display:'inline-flex' }}>
-              <Trophy size={15}/> View Certificate →
+              <Trophy size={15}/> View certificate
             </a>
           )}
         </div>
@@ -335,9 +338,8 @@ export default function AssessmentTaker({
         {/* Attempt history */}
         {allAttempts.length > 1 && (
           <div className="card" style={{ marginBottom:'20px', padding:'16px 20px' }}>
-            <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'13px',
-              textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--muted)', marginBottom:'12px' }}>
-              Attempt History
+            <div className="stat-label" style={{ marginBottom:'12px' }}>
+              Attempt history
             </div>
             {allAttempts.map((att, i) => (
               <div key={att.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
@@ -347,7 +349,7 @@ export default function AssessmentTaker({
                 <span style={{ color:'var(--muted)', fontSize:'11px' }}>
                   {new Date(att.submitted_at).toLocaleDateString('en-IN')}
                 </span>
-                <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'15px',
+                <span style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px',
                   color: att.passed ? 'var(--green)' : 'var(--red)' }}>
                   {Math.round(att.score_percent)}%
                 </span>
@@ -357,7 +359,7 @@ export default function AssessmentTaker({
         )}
 
         <a href={`/programs/${slug}/assessments`} className="btn btn-ghost" style={{ fontSize:'13px' }}>
-          ← Back to Assessments
+          <ArrowLeft size={13}/> Back to assessments
         </a>
       </div>
     )
@@ -372,7 +374,7 @@ export default function AssessmentTaker({
           <div style={{ fontSize:'13px', color:'var(--muted)' }}>
             Q{currentQ+1}/{questions.length} · {answeredCount} answered
           </div>
-          <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'20px', color:timerColor,
+          <span style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'20px', color:timerColor,
             display:'flex', alignItems:'center', gap:'6px' }}>
             <Clock size={16}/> {formatTime(timeLeft)}
           </span>
@@ -386,19 +388,19 @@ export default function AssessmentTaker({
       <div style={{ display:'flex', flexWrap:'wrap', gap:'6px', margin:'20px 0 24px' }}>
         {questions.map((q, i) => (
           <button key={i} onClick={() => setCurrentQ(i)} style={{
-            width:'32px', height:'32px', borderRadius:'6px', border:'none', cursor:'pointer',
-            fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'11px',
+            width:'32px', height:'32px', borderRadius:'var(--radius-sm)', border:'none', cursor:'pointer',
+            fontFamily:'var(--font-mono)', fontWeight:600, fontSize:'11px',
             background: currentQ === i
-              ? 'linear-gradient(135deg,#00c8f8,#7030d0)'
-              : answers[q.id] ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)',
-            color: currentQ === i ? '#fff' : answers[q.id] ? 'var(--green)' : 'var(--muted)',
+              ? 'var(--accent)'
+              : answers[q.id] ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+            color: currentQ === i ? 'var(--on-accent)' : answers[q.id] ? 'var(--green)' : 'var(--muted)',
           }}>{i+1}</button>
         ))}
       </div>
 
       {submitError && (
         <div className="banner banner-warning" style={{ marginBottom:'16px' }}>
-          <span>⚠️</span><span style={{ fontSize:'13px' }}>{submitError}</span>
+          <AlertTriangle size={15} style={{ flexShrink:0 }}/><span style={{ fontSize:'13px' }}>{submitError}</span>
         </div>
       )}
 
@@ -415,20 +417,20 @@ export default function AssessmentTaker({
               return (
                 <button key={oi} onClick={() => setAnswers(prev => ({ ...prev, [questions[currentQ].id]: letter }))}
                   style={{
-                    textAlign:'left', padding:'14px 18px', borderRadius:'8px',
-                    border:`1px solid ${selected ? 'rgba(0,200,248,0.5)' : 'var(--border)'}`,
-                    background: selected ? 'rgba(0,200,248,0.1)' : 'rgba(255,255,255,0.03)',
-                    color: selected ? '#fff' : 'var(--muted)',
+                    textAlign:'left', padding:'14px 18px', borderRadius:'var(--radius-sm)',
+                    border:`1px solid ${selected ? 'var(--accent-ring)' : 'var(--border)'}`,
+                    background: selected ? 'var(--accent-dim)' : 'var(--card2)',
+                    color: selected ? 'var(--text)' : 'var(--muted)',
                     cursor:'pointer', fontSize:'14px', transition:'all 0.15s',
-                    fontFamily:'DM Sans,sans-serif', display:'flex', alignItems:'center', gap:'12px',
+                    fontFamily:'var(--font-sans)', display:'flex', alignItems:'center', gap:'12px',
                   }}>
                   <span style={{
                     width:'26px', height:'26px', borderRadius:'50%', flexShrink:0,
-                    border:`2px solid ${selected ? 'var(--cyan)' : 'rgba(255,255,255,0.15)'}`,
-                    background: selected ? 'rgba(0,200,248,0.15)' : 'transparent',
+                    border:`2px solid ${selected ? 'var(--accent-2)' : 'rgba(255,255,255,0.15)'}`,
+                    background: selected ? 'var(--accent-2-dim)' : 'transparent',
                     display:'flex', alignItems:'center', justifyContent:'center',
-                    fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'11px',
-                    color: selected ? 'var(--cyan)' : 'var(--muted)',
+                    fontFamily:'var(--font-mono)', fontWeight:600, fontSize:'11px',
+                    color: selected ? 'var(--accent-2)' : 'var(--muted)',
                   }}>{letter}</span>
                   {opt}
                 </button>
@@ -441,19 +443,19 @@ export default function AssessmentTaker({
       <div style={{ display:'flex', gap:'10px', marginBottom:'16px' }}>
         <button className="btn btn-ghost" onClick={() => setCurrentQ(q => Math.max(0,q-1))}
           disabled={currentQ===0} style={{ flex:1, justifyContent:'center', fontSize:'13px' }}>
-          ← Previous
+          <ArrowLeft size={13}/> Previous
         </button>
         {currentQ < questions.length-1 ? (
           <button className="btn btn-primary" onClick={() => setCurrentQ(q => Math.min(questions.length-1,q+1))}
             style={{ flex:1, justifyContent:'center', fontSize:'13px' }}>
-            Next →
+            Next <ArrowRight size={13}/>
           </button>
         ) : (
           <button className="btn btn-primary" onClick={handleSubmit} disabled={isPending}
             style={{ flex:2, justifyContent:'center', fontSize:'14px' }}>
             {isPending
               ? <><Loader2 size={14} style={{ animation:'spin 1s linear infinite' }}/> Submitting…</>
-              : '✓ Submit Assessment'}
+              : <><CheckCircle2 size={14}/> Submit assessment</>}
           </button>
         )}
       </div>
@@ -462,15 +464,15 @@ export default function AssessmentTaker({
         <div style={{ display:'flex', justifyContent:'flex-end', alignItems:'center', gap:'14px',
           padding:'14px 0', borderTop:'1px solid var(--border)' }}>
           {answeredCount < questions.length && (
-            <span style={{ fontSize:'12px', color:'var(--amber)' }}>
-              ⚠️ {questions.length-answeredCount} unanswered
+            <span style={{ fontSize:'12px', color:'var(--amber)', display:'inline-flex', alignItems:'center', gap:'6px' }}>
+              <AlertTriangle size={12}/> {questions.length-answeredCount} unanswered
             </span>
           )}
           <button className="btn btn-primary" onClick={handleSubmit}
             disabled={isPending||answeredCount===0} style={{ fontSize:'13px', padding:'10px 24px' }}>
             {isPending
               ? <><Loader2 size={14} style={{ animation:'spin 1s linear infinite' }}/> Submitting…</>
-              : 'Submit Assessment'}
+              : 'Submit assessment'}
           </button>
         </div>
       )}

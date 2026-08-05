@@ -4,24 +4,9 @@ import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { sendEmailFireAndForget } from '@/lib/email'
 import { renderWelcomeEmail } from '@/lib/email-templates/welcome'
+import { isRateLimited, getClientIp } from '@/lib/rate-limit'
 
-// ── Basic in-memory rate limit (per edge isolate). Not a substitute for a
-//    shared store like Cloudflare KV/Durable Objects under heavy load, but
-//    closes the "zero protection at all" gap for now. ──────────────────────
-const attempts = new Map<string, { count: number; resetAt: number }>()
-const WINDOW_MS = 10 * 60 * 1000 // 10 minutes
-const MAX_ATTEMPTS = 5
-
-function isRateLimited(key: string): boolean {
-  const now = Date.now()
-  const entry = attempts.get(key)
-  if (!entry || now > entry.resetAt) {
-    attempts.set(key, { count: 1, resetAt: now + WINDOW_MS })
-    return false
-  }
-  entry.count++
-  return entry.count > MAX_ATTEMPTS
-}
+const REGISTER_LIMIT = { windowMs: 10 * 60 * 1000, max: 5 } // 5 attempts / 10 min
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+]?[\d\s-()]{7,16}$/
@@ -31,8 +16,8 @@ export async function POST(req: Request): Promise<Response> {
     const { email, password, full_name, phone } = await req.json() as Record<string,string>
 
     // ── Basic rate limit by IP ─────────────────────────────────
-    const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? 'unknown'
-    if (isRateLimited(`register:${ip}`)) {
+    const ip = getClientIp(req)
+    if (isRateLimited(`register:${ip}`, REGISTER_LIMIT)) {
       return Response.json({ error: 'Too many registration attempts. Please try again in a few minutes.' }, { status: 429 })
     }
 

@@ -89,13 +89,13 @@ export default function DoubtsClient({ doubts, userRole, modules }: Props) {
         <div style={{ display: 'flex', gap: '6px' }}>
           {(['all', 'open', 'resolved'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} style={{
-              padding: '6px 14px', borderRadius: '100px', border: 'none',
-              cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'DM Sans,sans-serif',
-              background: filter === f ? 'linear-gradient(135deg,#00c8f8,#7030d0)' : 'rgba(255,255,255,0.06)',
-              color: filter === f ? '#fff' : 'var(--muted)',
+              padding: '6px 14px', borderRadius: 'var(--radius-pill)', border: 'none',
+              cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'var(--font-sans)',
+              background: filter === f ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
+              color: filter === f ? 'var(--on-accent)' : 'var(--muted)',
             }}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
-              {f === 'open' && <span style={{ marginLeft: '5px', color: 'var(--amber)' }}>
+              {f === 'open' && <span style={{ marginLeft: '5px', color: filter === f ? 'var(--on-accent)' : 'var(--amber)' }}>
                 ({doubts.filter(d => !d.is_resolved).length})
               </span>}
             </button>
@@ -105,21 +105,21 @@ export default function DoubtsClient({ doubts, userRole, modules }: Props) {
         {/* Only students can post doubts */}
         {!isStaff && (
           <button className="btn btn-primary" onClick={() => setShowNew(v => !v)} style={{ fontSize: '13px' }}>
-            {showNew ? <><X size={14}/> Cancel</> : <><Plus size={14}/> Ask a Question</>}
+            {showNew ? <><X size={14}/> Cancel</> : <><Plus size={14}/> Ask a question</>}
           </button>
         )}
       </div>
 
       {/* New doubt form */}
       {showNew && !isStaff && (
-        <div className="card" style={{ marginBottom: '20px', padding: '20px', border: '1px solid rgba(0,200,248,0.2)' }}>
-          <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '15px', marginBottom: '14px' }}>
-            Ask a Question
+        <div className="card" style={{ marginBottom: '20px', padding: '20px', border: '1px solid var(--accent-ring)' }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', marginBottom: '14px' }}>
+            Ask a question
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {modules.length > 0 && (
               <div>
-                <label className="form-label">Related Module (optional)</label>
+                <label className="form-label">Related module (optional)</label>
                 <select className="form-select" value={moduleId} onChange={e => setModuleId(e.target.value)}>
                   <option value="">General question</option>
                   {modules.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
@@ -127,7 +127,7 @@ export default function DoubtsClient({ doubts, userRole, modules }: Props) {
               </div>
             )}
             <div>
-              <label className="form-label">Your Question *</label>
+              <label className="form-label">Your question *</label>
               <textarea className="form-input" rows={3}
                 placeholder="Be specific — what exactly are you stuck on?"
                 value={question} onChange={e => setQuestion(e.target.value)}
@@ -137,7 +137,7 @@ export default function DoubtsClient({ doubts, userRole, modules }: Props) {
               disabled={saving === 'new' && isPending} style={{ fontSize: '13px', alignSelf: 'flex-start' }}>
               {saving === 'new' && isPending
                 ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }}/> Posting…</>
-                : <><MessageCircle size={13}/> Post Question</>}
+                : <><MessageCircle size={13}/> Post question</>}
             </button>
           </div>
         </div>
@@ -146,9 +146,9 @@ export default function DoubtsClient({ doubts, userRole, modules }: Props) {
       {/* Doubts list */}
       {filtered.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '48px', color: 'var(--muted)' }}>
-          <div style={{ fontSize: '32px', marginBottom: '12px' }}>💬</div>
+          <MessageCircle size={28} color="var(--muted2)" style={{ marginBottom: '12px' }}/>
           <div style={{ fontSize: '14px' }}>
-            {filter === 'open' ? 'No open doubts — all answered!' : 'No doubts yet.'}
+            {filter === 'open' ? 'No open doubts — all answered.' : 'No doubts yet.'}
           </div>
         </div>
       ) : (
@@ -169,11 +169,11 @@ export default function DoubtsClient({ doubts, userRole, modules }: Props) {
                   {/* Upvote */}
                   <button onClick={() => upvote(did)} style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px',
-                    background: 'none', border: '1px solid var(--border)', borderRadius: '8px',
+                    background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
                     padding: '6px 10px', cursor: 'pointer', color: 'var(--muted)', flexShrink: 0,
                   }}>
                     <ThumbsUp size={13}/>
-                    <span style={{ fontSize: '11px', fontWeight: 700 }}>{String(d.upvotes ?? 0)}</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{String(d.upvotes ?? 0)}</span>
                   </button>
 
                   <div style={{ flex: 1 }}>
@@ -185,8 +185,8 @@ export default function DoubtsClient({ doubts, userRole, modules }: Props) {
                       {mod && <span>· {String(mod.title ?? '')}</span>}
                       <span>· {new Date(d.created_at as string).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                       {d.is_resolved
-                        ? <span style={{ color: 'var(--green)' }}>✓ Resolved</span>
-                        : <span style={{ color: 'var(--amber)' }}>● Open</span>}
+                        ? <span style={{ color: 'var(--green)' }}>Resolved</span>
+                        : <span style={{ color: 'var(--amber)' }}>Open</span>}
                     </div>
                   </div>
                 </div>
@@ -198,8 +198,8 @@ export default function DoubtsClient({ doubts, userRole, modules }: Props) {
                       const responder = a.profiles as Record<string, unknown> | null
                       return (
                         <div key={a.id as string} style={{
-                          padding: '12px 14px', borderRadius: '8px',
-                          background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.15)',
+                          padding: '12px 14px', borderRadius: 'var(--radius-sm)',
+                          background: 'var(--green-dim)', border: '1px solid rgba(74,222,128,0.15)',
                         }}>
                           <div style={{ fontSize: '13px', lineHeight: 1.6, marginBottom: '6px' }}>
                             {String(a.answer_text ?? '')}
@@ -229,7 +229,7 @@ export default function DoubtsClient({ doubts, userRole, modules }: Props) {
                             disabled={saving === did && isPending} style={{ fontSize: '12px', padding: '7px 14px' }}>
                             {saving === did && isPending
                               ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }}/> Posting…</>
-                              : 'Post Answer'}
+                              : 'Post answer'}
                           </button>
                           <button className="btn btn-ghost" onClick={() => setAnswering(null)}
                             style={{ fontSize: '12px' }}>Cancel</button>

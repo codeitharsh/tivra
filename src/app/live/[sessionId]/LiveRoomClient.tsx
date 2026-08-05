@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, Loader2 } from 'lucide-react'
+import { CheckCircle2, Loader2, ArrowLeft, AlertTriangle, PlayCircle, Check, Clock3 } from 'lucide-react'
 
 interface Props {
   session:            Record<string, unknown>
@@ -95,7 +95,7 @@ export default function LiveRoomClient({
         display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '15px', marginBottom: '2px' }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', marginBottom: '2px' }}>
             {String(session.title ?? '')}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
@@ -109,19 +109,15 @@ export default function LiveRoomClient({
 
         {isLive && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{
-              width: '8px', height: '8px', borderRadius: '50%',
-              background: 'var(--green)', boxShadow: '0 0 8px var(--green)',
-              animation: 'pulse 2s ease-in-out infinite',
-            }}/>
-            <span style={{ fontSize: '12px', color: 'var(--green)', fontWeight: 600 }}>Live Now</span>
+            <div className="pulse-dot pulse-green"/>
+            <span style={{ fontSize: '12px', color: 'var(--green)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>LIVE NOW</span>
           </div>
         )}
-        {isCompleted && <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Session Ended</span>}
+        {isCompleted && <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Session ended</span>}
         {!isLive && !isCompleted && <span style={{ fontSize: '12px', color: 'var(--amber)' }}>Scheduled</span>}
 
         <Link href="/live" className="btn btn-ghost" style={{ fontSize: '12px', padding: '6px 12px' }}>
-          ← All Classes
+          <ArrowLeft size={12}/> All classes
         </Link>
       </div>
 
@@ -142,46 +138,46 @@ export default function LiveRoomClient({
             />
           ) : isLive && loadingRoom ? (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-              <Loader2 size={36} style={{ animation: 'spin 1s linear infinite', color: 'var(--cyan)', marginBottom: '16px' }}/>
+              alignItems: 'center', justifyContent: 'center', color: 'var(--text)' }}>
+              <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent-2)', marginBottom: '16px' }}/>
               <div style={{ fontSize: '15px', fontWeight: 600 }}>Joining class…</div>
               <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '6px' }}>Setting up your connection</div>
             </div>
           ) : isLive && !loadingRoom && !roomUrl ? (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', color: '#fff', padding: '40px', textAlign: 'center' }}>
-              <div style={{ fontSize: '36px', marginBottom: '14px' }}>⚠️</div>
-              <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '18px', marginBottom: '8px' }}>
+              alignItems: 'center', justifyContent: 'center', color: 'var(--text)', padding: '40px', textAlign: 'center' }}>
+              <AlertTriangle size={30} color="var(--amber)" style={{ marginBottom: '14px' }}/>
+              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '18px', marginBottom: '8px' }}>
                 Couldn&apos;t connect
               </div>
               <p style={{ color: 'var(--muted)', fontSize: '14px', maxWidth: '320px', marginBottom: '20px' }}>
                 Your account may not be active, or the room isn&apos;t ready yet.
               </p>
               <button className="btn btn-primary" onClick={() => window.location.reload()} style={{ fontSize: '13px' }}>
-                Refresh Page
+                Refresh page
               </button>
             </div>
           ) : isCompleted && session.recording_url ? (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', color: '#fff', padding: '40px', textAlign: 'center' }}>
-              <div style={{ fontSize: '40px', marginBottom: '14px' }}>🎬</div>
-              <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '20px', marginBottom: '8px' }}>
-                Recording Available
+              alignItems: 'center', justifyContent: 'center', color: 'var(--text)', padding: '40px', textAlign: 'center' }}>
+              <PlayCircle size={34} color="var(--accent-2)" style={{ marginBottom: '14px' }}/>
+              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '20px', marginBottom: '8px' }}>
+                Recording available
               </div>
               <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '24px' }}>
                 This session has ended. Watch the full recording below.
               </p>
               <a href={session.recording_url as string} target="_blank" rel="noreferrer"
                 className="btn btn-primary" style={{ fontSize: '14px', padding: '12px 28px' }}>
-                ▶ Watch Recording
+                <PlayCircle size={14}/> Watch recording
               </a>
             </div>
           ) : isCompleted ? (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', color: '#fff', padding: '40px', textAlign: 'center' }}>
-              <div style={{ fontSize: '40px', marginBottom: '14px' }}>✅</div>
-              <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '20px', marginBottom: '8px' }}>
-                Session Completed
+              alignItems: 'center', justifyContent: 'center', color: 'var(--text)', padding: '40px', textAlign: 'center' }}>
+              <Check size={34} color="var(--green)" style={{ marginBottom: '14px' }}/>
+              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '20px', marginBottom: '8px' }}>
+                Session completed
               </div>
               <p style={{ color: 'var(--muted)', fontSize: '14px', maxWidth: '360px' }}>
                 Recording will appear here once your teacher uploads it.
@@ -189,14 +185,14 @@ export default function LiveRoomClient({
             </div>
           ) : (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', color: '#fff', padding: '40px', textAlign: 'center' }}>
-              <div style={{ fontSize: '48px', marginBottom: '14px' }}>⏰</div>
-              <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '20px', marginBottom: '8px' }}>
-                Class Not Started Yet
+              alignItems: 'center', justifyContent: 'center', color: 'var(--text)', padding: '40px', textAlign: 'center' }}>
+              <Clock3 size={38} color="var(--muted2)" style={{ marginBottom: '14px' }}/>
+              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '20px', marginBottom: '8px' }}>
+                Class not started yet
               </div>
               <p style={{ color: 'var(--muted)', fontSize: '14px', maxWidth: '360px' }}>
                 Scheduled for{' '}
-                <strong style={{ color: '#fff' }}>
+                <strong style={{ color: 'var(--text)' }}>
                   {new Date(session.scheduled_at as string).toLocaleString('en-IN', {
                     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
                   })}
@@ -216,26 +212,25 @@ export default function LiveRoomClient({
         }}>
           {/* Attendance */}
           <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '11px',
-              textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', marginBottom: '10px' }}>
-              Your Attendance
+            <div className="stat-label" style={{ marginBottom: '10px' }}>
+              Your attendance
             </div>
 
             {attendanceMarked ? (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
-                borderRadius: '10px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
+                borderRadius: 'var(--radius-sm)', background: 'var(--green-dim)', border: '1px solid rgba(74,222,128,0.2)',
               }}>
                 <CheckCircle2 size={16} style={{ color: 'var(--green)', flexShrink: 0 }}/>
                 <div>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--green)' }}>Marked ✓</div>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--green)' }}>Marked</div>
                   <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '1px' }}>Join time recorded</div>
                 </div>
               </div>
             ) : (
               <div style={{
-                padding: '10px 12px', borderRadius: '10px',
-                background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)',
+                padding: '10px 12px', borderRadius: 'var(--radius-sm)',
+                background: 'var(--amber-dim)', border: '1px solid rgba(245,166,35,0.2)',
               }}>
                 <div style={{ fontSize: '12px', color: 'var(--amber)', marginBottom: '2px' }}>Pending…</div>
                 <div style={{ fontSize: '10px', color: 'var(--muted)' }}>Recorded when class starts</div>
@@ -244,16 +239,16 @@ export default function LiveRoomClient({
 
             {requiresCode && !existingAttendance?.session_code && (
               <div style={{ marginTop: '12px' }}>
-                <label className="form-label">Session Code</label>
+                <label className="form-label">Session code</label>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <input className="form-input" placeholder="Code" maxLength={4}
                     value={sessionCode}
                     onChange={e => setSessionCode(e.target.value.replace(/\D/, ''))}
-                    style={{ flex: 1, textAlign: 'center', fontFamily: 'Syne,sans-serif',
-                      fontWeight: 800, fontSize: '16px', letterSpacing: '0.2em' }}/>
+                    style={{ flex: 1, textAlign: 'center', fontFamily: 'var(--font-serif)',
+                      fontWeight: 600, fontSize: '16px', letterSpacing: '0.2em' }}/>
                   <button className="btn btn-primary" onClick={submitCode}
                     disabled={submittingCode} style={{ fontSize: '11px', padding: '7px 12px', flexShrink: 0 }}>
-                    {submittingCode ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }}/> : '✓'}
+                    {submittingCode ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }}/> : <Check size={13}/>}
                   </button>
                 </div>
                 {codeError && <div style={{ fontSize: '11px', color: 'var(--red)', marginTop: '5px' }}>{codeError}</div>}
@@ -263,9 +258,8 @@ export default function LiveRoomClient({
 
           {/* Session info */}
           <div style={{ padding: '16px' }}>
-            <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '11px',
-              textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', marginBottom: '10px' }}>
-              Session Info
+            <div className="stat-label" style={{ marginBottom: '10px' }}>
+              Session info
             </div>
             {[
               ['Duration',  `${String(session.duration_minutes ?? 60)} minutes`],
@@ -291,8 +285,7 @@ export default function LiveRoomClient({
       </div>
 
       <style>{`
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        @keyframes spin  { to{transform:rotate(360deg)} }
+        @keyframes spin { to{transform:rotate(360deg)} }
       `}</style>
     </div>
   )

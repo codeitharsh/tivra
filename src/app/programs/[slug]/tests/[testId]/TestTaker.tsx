@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Clock } from 'lucide-react'
+import {
+  Loader2, Clock, Lock, ClipboardList, Timer, Zap, AlertTriangle,
+  Trophy, TrendingUp, BookOpen, CheckCircle2, ArrowRight, ArrowLeft,
+} from 'lucide-react'
 
 interface Question {
   id: string
@@ -107,15 +110,15 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
   if (!isUnlocked) {
     return (
       <div className="card" style={{ textAlign:'center', padding:'60px 40px' }}>
-        <div style={{ fontSize:'48px', marginBottom:'16px' }}>🔒</div>
-        <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'20px', marginBottom:'8px' }}>
-          Test Not Yet Available
+        <Lock size={36} color="var(--muted2)" style={{ marginBottom:'16px' }}/>
+        <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'20px', marginBottom:'8px' }}>
+          Test not yet available
         </div>
         <div style={{ fontSize:'14px', color:'var(--muted)', maxWidth:'360px', margin:'0 auto 24px' }}>
           This test will unlock on the scheduled date. Check the tests page for the countdown.
         </div>
         <a href={`/programs/${slug}/tests`} className="btn btn-ghost" style={{ fontSize:'13px', display:'inline-flex' }}>
-          ← Back to Tests
+          <ArrowLeft size={13}/> Back to tests
         </a>
       </div>
     )
@@ -125,29 +128,29 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
   if (!started) {
     return (
       <div className="card" style={{ textAlign:'center', padding:'48px 40px' }}>
-        <div style={{ fontSize:'40px', marginBottom:'16px' }}>📝</div>
-        <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'20px', marginBottom:'8px' }}>
+        <ClipboardList size={32} color="var(--accent)" style={{ marginBottom:'16px' }}/>
+        <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'20px', marginBottom:'8px' }}>
           Week {test.week_number}: {test.topic ?? test.title}
         </div>
         <div className='r-grid-3' style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'12px', margin:'24px auto', maxWidth:'400px' }}>
           {[
-            ['📋', String(questions.length), 'Questions'],
-            ['⏱', String(test.duration_minutes), 'Minutes'],
-            ['⚡', '1', 'Attempt'],
-          ].map(([icon, val, label]) => (
-            <div key={label} style={{ background:'rgba(255,255,255,0.04)', borderRadius:'10px', padding:'14px', border:'1px solid var(--border)' }}>
-              <div style={{ fontSize:'20px', marginBottom:'4px' }}>{icon}</div>
-              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'20px' }}>{val}</div>
+            { Icon: ClipboardList, val: String(questions.length), label: 'Questions' },
+            { Icon: Timer, val: String(test.duration_minutes), label: 'Minutes' },
+            { Icon: Zap, val: '1', label: 'Attempt' },
+          ].map(({ Icon, val, label }) => (
+            <div key={label} style={{ background:'var(--card2)', borderRadius:'var(--radius-sm)', padding:'14px', border:'1px solid var(--border)' }}>
+              <Icon size={18} color="var(--muted)" style={{ marginBottom:'6px' }}/>
+              <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'20px' }}>{val}</div>
               <div style={{ fontSize:'11px', color:'var(--muted)' }}>{label}</div>
             </div>
           ))}
         </div>
         <div className="banner banner-warning" style={{ textAlign:'left', maxWidth:'400px', margin:'0 auto 24px' }}>
-          <span>⚠️</span>
+          <AlertTriangle size={15} style={{ flexShrink:0 }}/>
           <span style={{ fontSize:'13px' }}>One attempt only. Your score is submitted when the timer ends or you submit.</span>
         </div>
         <button className="btn btn-primary" onClick={() => setStarted(true)} style={{ fontSize:'14px', padding:'12px 32px' }}>
-          Start Test →
+          Start test <ArrowRight size={14}/>
         </button>
       </div>
     )
@@ -156,21 +159,16 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
   // ── Result screen ─────────────────────────────────────────
   if (submitted && result !== null) {
     const score = result.score
+    const ResultIcon = score >= 75 ? Trophy : score >= 50 ? TrendingUp : BookOpen
     return (
       <div>
         <div className="card" style={{
           textAlign:'center', padding:'36px', marginBottom:'20px',
-          background: score >= 75
-            ? 'linear-gradient(135deg,rgba(34,197,94,0.08),rgba(0,212,170,0.04))'
-            : score >= 50
-            ? 'linear-gradient(135deg,rgba(245,158,11,0.06),rgba(255,107,35,0.04))'
-            : 'linear-gradient(135deg,rgba(239,68,68,0.06),rgba(180,40,40,0.04))',
-          border: `1px solid ${score >= 75 ? 'rgba(34,197,94,0.2)' : score >= 50 ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}`,
+          background: score >= 75 ? 'var(--green-dim)' : score >= 50 ? 'var(--amber-dim)' : 'var(--red-dim)',
+          border: `1px solid ${score >= 75 ? 'rgba(74,222,128,0.25)' : score >= 50 ? 'rgba(245,166,35,0.25)' : 'rgba(240,69,58,0.25)'}`,
         }}>
-          <div style={{ fontSize:'36px', marginBottom:'12px' }}>
-            {score >= 75 ? '🏆' : score >= 50 ? '📈' : '📚'}
-          </div>
-          <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'56px', lineHeight:1,
+          <ResultIcon size={30} color={score >= 75 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)'} style={{ marginBottom:'12px' }}/>
+          <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'52px', lineHeight:1,
             color: score >= 75 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)' }}>
             {Math.round(score)}%
           </div>
@@ -180,12 +178,12 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
             </div>
           )}
           <div style={{ marginTop:'12px', fontSize:'15px', fontWeight:500 }}>
-            {score >= 75 ? 'Great work! 🔥' : score >= 50 ? 'Good effort! Keep studying.' : 'Review your notes and keep going.'}
+            {score >= 75 ? 'Great work.' : score >= 50 ? 'Good effort — keep studying.' : 'Review your notes and keep going.'}
           </div>
         </div>
         <div style={{ marginTop:'20px' }}>
           <a href={`/programs/${slug}/tests`} className="btn btn-ghost" style={{ fontSize:'13px' }}>
-            ← Back to Tests
+            <ArrowLeft size={13}/> Back to tests
           </a>
         </div>
       </div>
@@ -203,7 +201,7 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
       }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
           <span style={{ fontSize:'13px', color:'var(--muted)' }}>{answeredCount}/{questions.length} answered</span>
-          <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'18px', color:timerColor,
+          <span style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'18px', color:timerColor,
             display:'flex', alignItems:'center', gap:'6px' }}>
             <Clock size={16}/> {formatTime(timeLeft)}
           </span>
@@ -215,7 +213,7 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
 
       {error && (
         <div className="banner banner-warning" style={{ marginBottom:'16px' }}>
-          <span>⚠️</span><span style={{ fontSize:'13px' }}>{error}</span>
+          <AlertTriangle size={15} style={{ flexShrink:0 }}/><span style={{ fontSize:'13px' }}>{error}</span>
         </div>
       )}
 
@@ -233,14 +231,14 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
                 return (
                   <button key={oi} onClick={() => setAnswers(prev => ({ ...prev, [q.id]: letter }))}
                     style={{
-                      textAlign:'left', padding:'12px 16px', borderRadius:'8px',
-                      border:`1px solid ${selected ? 'rgba(59,91,219,0.5)' : 'var(--border)'}`,
-                      background: selected ? 'rgba(59,91,219,0.12)' : 'rgba(255,255,255,0.03)',
-                      color: selected ? '#fff' : 'var(--muted)',
+                      textAlign:'left', padding:'12px 16px', borderRadius:'var(--radius-sm)',
+                      border:`1px solid ${selected ? 'var(--accent-ring)' : 'var(--border)'}`,
+                      background: selected ? 'var(--accent-dim)' : 'var(--card2)',
+                      color: selected ? 'var(--text)' : 'var(--muted)',
                       cursor:'pointer', fontSize:'13px', transition:'all 0.15s',
-                      fontFamily:'DM Sans,sans-serif',
+                      fontFamily:'var(--font-sans)',
                     }}>
-                    <strong style={{ marginRight:'10px', color: selected ? 'var(--cyan)' : 'var(--muted)' }}>
+                    <strong style={{ marginRight:'10px', color: selected ? 'var(--accent-2)' : 'var(--muted)' }}>
                       {letter}.
                     </strong>
                     {opt}
@@ -255,15 +253,15 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
       <div className="card" style={{ padding:'20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div style={{ fontSize:'13px', color:'var(--muted)' }}>
           {answeredCount < questions.length
-            ? <span style={{ color:'var(--amber)' }}>⚠️ {questions.length - answeredCount} unanswered</span>
-            : <span style={{ color:'var(--green)' }}>✓ All questions answered</span>
+            ? <span style={{ color:'var(--amber)', display:'inline-flex', alignItems:'center', gap:'6px' }}><AlertTriangle size={13}/> {questions.length - answeredCount} unanswered</span>
+            : <span style={{ color:'var(--green)', display:'inline-flex', alignItems:'center', gap:'6px' }}><CheckCircle2 size={13}/> All questions answered</span>
           }
         </div>
         <button className="btn btn-primary" onClick={handleSubmit}
           disabled={isPending || answeredCount === 0} style={{ fontSize:'13px', padding:'11px 24px' }}>
           {isPending
             ? <><Loader2 size={14} style={{ animation:'spin 1s linear infinite' }}/> Submitting…</>
-            : 'Submit Test →'
+            : <>Submit test <ArrowRight size={14}/></>
           }
         </button>
       </div>

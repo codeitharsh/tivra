@@ -9,12 +9,13 @@ import Topbar from '@/components/Topbar'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { requireProgramAccess } from '@/lib/program-access'
 import type { Profile } from '@/types/database'
+import { Trophy, Lock, X, ArrowRight, Award } from 'lucide-react'
 
 const PHASE_PALETTE = [
-  { gradient: 'linear-gradient(135deg,rgba(255,107,35,0.08),rgba(245,158,11,0.05))', border: 'rgba(255,107,35,0.25)', accent: '#ff6b23' },
-  { gradient: 'linear-gradient(135deg,rgba(0,212,170,0.05),rgba(59,91,219,0.05))',   border: 'rgba(0,212,170,0.2)',  accent: 'var(--teal)' },
-  { gradient: 'linear-gradient(135deg,rgba(167,139,250,0.08),rgba(124,58,237,0.05))', border: 'rgba(167,139,250,0.25)', accent: '#a78bfa' },
-  { gradient: 'linear-gradient(135deg,rgba(34,197,94,0.08),rgba(22,163,74,0.05))',   border: 'rgba(34,197,94,0.25)',  accent: '#22c55e' },
+  { accent: 'var(--amber)' },
+  { accent: 'var(--accent-2)' },
+  { accent: 'var(--accent)' },
+  { accent: 'var(--green)' },
 ]
 
 export default async function AssessmentsPage({
@@ -143,16 +144,12 @@ export default async function AssessmentsPage({
 
               return (
                 <div key={phase.id} className="card" style={{
-                  background: colors.gradient, borderColor: colors.border,
-                  padding: '24px', position: 'relative',
+                  padding: '24px', position: 'relative', borderTop: `2px solid ${colors.accent}`,
                 }}>
-                  <div style={{
-                    fontSize: '11px', color: colors.accent,
-                    textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px',
-                  }}>
-                    Phase {phase.phase_number} Assessment
+                  <div className="stat-label" style={{ color: colors.accent, marginBottom: '8px' }}>
+                    Phase {phase.phase_number} assessment
                   </div>
-                  <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '18px', marginBottom: '6px' }}>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '18px', marginBottom: '6px' }}>
                     {phase.title}
                   </div>
 
@@ -173,7 +170,7 @@ export default async function AssessmentsPage({
                       </div>
                       <div className="progress-track">
                         <div className="progress-fill" style={{
-                          width: `${modulePct}%`, background: colors.gradient,
+                          width: `${modulePct}%`, background: colors.accent,
                         }}/>
                       </div>
                     </div>
@@ -181,19 +178,19 @@ export default async function AssessmentsPage({
 
                   {attempt && (
                     <div style={{
-                      background: attempt.passed ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.08)',
-                      border: `1px solid ${attempt.passed ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.2)'}`,
-                      borderRadius: '10px', padding: '14px', marginBottom: '16px',
+                      background: attempt.passed ? 'var(--green-dim)' : 'var(--red-dim)',
+                      border: `1px solid ${attempt.passed ? 'rgba(74,222,128,0.25)' : 'rgba(240,69,58,0.2)'}`,
+                      borderRadius: 'var(--radius-sm)', padding: '14px', marginBottom: '16px',
                       textAlign: 'center',
                     }}>
                       <div style={{
-                        fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '32px',
+                        fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '32px',
                         color: attempt.passed ? 'var(--green)' : 'var(--red)',
                       }}>
                         {Math.round(attempt.score_percent)}%
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
-                        {attempt.passed ? '🏆 Passed — Certificate issued' : '✗ Below passing mark'}
+                      <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px', display:'flex', alignItems:'center', justifyContent:'center', gap:'6px' }}>
+                        {attempt.passed ? <><Trophy size={12}/> Passed — certificate issued</> : <><X size={12}/> Below passing mark</>}
                       </div>
                     </div>
                   )}
@@ -206,7 +203,7 @@ export default async function AssessmentsPage({
                       className="btn btn-primary"
                       style={{ width: '100%', justifyContent: 'center', fontSize: '14px' }}
                     >
-                      Start Assessment →
+                      Start assessment <ArrowRight size={14}/>
                     </Link>
                   ) : attempt ? (
                     <div style={{ display: 'flex', gap: '10px' }}>
@@ -215,7 +212,7 @@ export default async function AssessmentsPage({
                         className="btn btn-ghost"
                         style={{ flex: 1, justifyContent: 'center', fontSize: '13px' }}
                       >
-                        Review Answers
+                        Review answers
                       </Link>
                       {cert && (
                         <Link
@@ -223,7 +220,7 @@ export default async function AssessmentsPage({
                           className="btn btn-primary"
                           style={{ flex: 1, justifyContent: 'center', fontSize: '13px' }}
                         >
-                          🏆 View Certificate
+                          <Trophy size={13}/> View certificate
                         </Link>
                       )}
                     </div>
@@ -231,7 +228,7 @@ export default async function AssessmentsPage({
                     <button disabled className="btn btn-ghost" style={{
                       width: '100%', justifyContent: 'center', fontSize: '13px', opacity: 0.55,
                     }}>
-                      🔒 {lockReason}
+                      <Lock size={13}/> {lockReason}
                     </button>
                   )}
                 </div>
@@ -240,10 +237,10 @@ export default async function AssessmentsPage({
           </div>
 
           <div className="card">
-            <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '15px', marginBottom: '16px' }}>
-              Certificate Eligibility
+            <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', marginBottom: '16px' }}>
+              Certificate eligibility
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {phases.map(phase => {
                 const assessment = assessments.find(a => a.phase_id === phase.id)
                 const attempt    = assessment ? attemptMap.get(assessment.id) : null
@@ -251,17 +248,17 @@ export default async function AssessmentsPage({
                 return (
                   <div key={phase.id} style={{
                     display: 'flex', alignItems: 'center', gap: '14px',
-                    padding: '12px', borderRadius: '8px',
-                    background: 'rgba(255,255,255,0.03)',
-                    borderBottom: '1px solid var(--border)',
+                    padding: '12px', borderRadius: 'var(--radius-sm)',
+                    background: 'var(--card2)', border: '1px solid var(--border)',
                   }}>
                     <div style={{
-                      width: '36px', height: '36px', borderRadius: '10px',
-                      background: cert ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)',
+                      width: '34px', height: '34px', borderRadius: '6px',
+                      background: cert ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+                      color: cert ? 'var(--green)' : 'var(--muted)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '18px', flexShrink: 0,
+                      flexShrink: 0,
                     }}>
-                      {cert ? '🏆' : '🔒'}
+                      {cert ? <Trophy size={16}/> : <Lock size={16}/>}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: '14px', fontWeight: 500 }}>
@@ -273,11 +270,11 @@ export default async function AssessmentsPage({
                     </div>
                     {cert ? (
                       <span className="pill pill-active">
-                        {Math.round(cert.score_percent)}% — Earned ✓
+                        <Award size={11}/> {Math.round(cert.score_percent)}% earned
                       </span>
                     ) : attempt && !attempt.passed ? (
                       <span className="pill pill-pending">
-                        {Math.round(attempt.score_percent)}% — Below pass mark
+                        {Math.round(attempt.score_percent)}% — below pass mark
                       </span>
                     ) : (
                       <span className="pill pill-locked">Pending</span>

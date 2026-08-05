@@ -10,6 +10,11 @@ import { requireActiveStudent } from '@/lib/access-gate'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 import WhatsAppBanner from '@/components/WhatsAppBanner'
 import type { Profile } from '@/types/database'
+import { PROGRAM_META, DEFAULT_PROGRAM_META } from '@/lib/program-meta'
+import {
+  BookOpen, ClipboardList, Target, Award, Flame, Video, Radio,
+  TrendingUp, CreditCard, Trophy, Lock, CheckCircle2, ArrowRight,
+} from 'lucide-react'
 
 export default async function DashboardPage({
   searchParams,
@@ -247,14 +252,14 @@ export default async function DashboardPage({
       <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
         <Topbar
           title="Dashboard"
-          subtitle={`Welcome back, ${p.full_name?.split(' ')[0] ?? 'Student'} 👋`}
+          subtitle={`Welcome back, ${p.full_name?.split(' ')[0] ?? 'Student'}`}
         />
 
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
+        <div style={{ padding:'28px', maxWidth:'1100px', margin:'0 auto', width:'100%' }}>
 
           {showPayBanner && (
-            <div className="banner banner-warning" style={{ marginBottom:'20px' }}>
-              <span style={{ fontSize:'20px', flexShrink:0 }}>💳</span>
+            <div className="banner banner-warning">
+              <CreditCard size={18} style={{ flexShrink:0 }}/>
               <div style={{ flex:1 }}>
                 {ENROLLMENT_OPEN ? (
                   <><strong>Payment pending.</strong> Submit your payment details so our team can activate your account. Usually done within 24 hours.</>
@@ -265,15 +270,15 @@ export default async function DashboardPage({
               {ENROLLMENT_OPEN && (
                 <Link href="/payment" className="btn btn-primary"
                   style={{ fontSize:'12px', padding:'8px 16px', flexShrink:0 }}>
-                  Submit Payment →
+                  Submit Payment <ArrowRight size={13}/>
                 </Link>
               )}
             </div>
           )}
 
           {!isPending && enrolledProgramsList.length === 0 && (
-            <div className="banner banner-info" style={{ marginBottom:'20px' }}>
-              <span style={{ fontSize:'20px', flexShrink:0 }}>📚</span>
+            <div className="banner banner-info">
+              <BookOpen size={18} style={{ flexShrink:0 }}/>
               <div style={{ flex:1 }}>
                 No programme enrollment found on this account yet.
                 If you believe this is a mistake, contact support.
@@ -281,36 +286,39 @@ export default async function DashboardPage({
             </div>
           )}
 
-          {/* Programme access cards — the primary navigation for enrolled students.
-              Previously the dashboard had no Study Content link at all, only Tests
-              and Assessments. This is the main entry point to the course. */}
+          {/* Programme access cards — the primary navigation for enrolled students. */}
           {enrolledProgramsList.length > 0 && (
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:'14px', marginBottom:'24px' }}>
-              {enrolledProgramsList.map((prog, i) => {
-                const colors = ['#00d4ff','#7c3aed','#22c55e','#f59e0b']
-                const color  = colors[i % colors.length]
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:'14px', marginBottom:'20px' }}>
+              {enrolledProgramsList.map(prog => {
+                const meta = PROGRAM_META[prog.slug] ?? DEFAULT_PROGRAM_META
+                const Icon = meta.icon
                 return (
-                  <div key={prog.id} className="card" style={{ borderTop:`2px solid ${color}`, padding:'20px' }}>
-                    <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'15px', marginBottom:'14px', color:'#fff' }}>
-                      {prog.name}
+                  <div key={prog.id} className="card" style={{ borderTop:`2px solid ${meta.color}` }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'14px' }}>
+                      <div style={{
+                        width:'28px', height:'28px', flexShrink:0, display:'flex',
+                        alignItems:'center', justifyContent:'center', borderRadius:'6px',
+                        background:`rgba(${meta.colorRgb},0.14)`, color:meta.color,
+                      }}>
+                        <Icon size={15}/>
+                      </div>
+                      <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px' }}>
+                        {prog.name}
+                      </div>
                     </div>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
                       {[
-                        { label:'Study Content', href:`/programs/${prog.slug}/content`,     emoji:'📚' },
-                        { label:'Weekly Tests',  href:`/programs/${prog.slug}/tests`,        emoji:'📝' },
-                        { label:'Assessments',   href:`/programs/${prog.slug}/assessments`,  emoji:'🎯' },
-                        { label:'Certificate',   href:`/programs/${prog.slug}/certificate`,  emoji:'🏆' },
+                        { label:'Study Content', href:`/programs/${prog.slug}/content`,     icon:BookOpen },
+                        { label:'Weekly Tests',  href:`/programs/${prog.slug}/tests`,        icon:ClipboardList },
+                        { label:'Assessments',   href:`/programs/${prog.slug}/assessments`,  icon:Target },
+                        { label:'Certificate',   href:`/programs/${prog.slug}/certificate`,  icon:Award },
                       ].map(link => (
                         <Link key={link.label} href={link.href} style={{ textDecoration:'none' }}>
-                          <div style={{
-                            padding:'10px 12px', borderRadius:'10px',
-                            background:'rgba(255,255,255,0.04)',
-                            border:'1px solid rgba(255,255,255,0.07)',
-                            fontSize:'12px', color:'rgba(255,255,255,0.7)',
-                            fontWeight:500, display:'flex', alignItems:'center', gap:'8px',
-                            transition:'all 0.15s',
+                          <div className="module-item" style={{
+                            background:'var(--card2)', border:'1px solid var(--border)',
+                            color:'var(--muted)', fontWeight:500,
                           }}>
-                            <span>{link.emoji}</span>
+                            <link.icon size={13} style={{ flexShrink:0 }}/>
                             {link.label}
                           </div>
                         </Link>
@@ -322,236 +330,227 @@ export default async function DashboardPage({
             </div>
           )}
 
-          <div className="grid-4 grid-2-keep" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'14px', marginBottom:'24px' }}>
+          <div className="r-grid-4" style={{ marginBottom:'20px' }}>
             {[
-              { label:'Progress',        value:`${progress}%`,     color:'var(--green)', bar:progress },
-              { label:'Modules Done',    value:`${modulesCompleted}/${totalModulesAcrossEnrolled}`, color:'var(--teal)',  bar:null },
-              { label:'Tests Taken',     value:String(testsTaken), color:'var(--blue)',   bar:null, sub: testsTaken>0?`Avg ${avgScore}%`:'No tests yet' },
-              { label:'Streak',          value:`${streak} 🔥`,    color:'var(--amber)',  bar:null, sub:'Days in a row' },
+              { label:'Progress',     value:`${progress}%`,    color:'var(--accent)', bar:progress, icon:TrendingUp },
+              { label:'Modules Done', value:`${modulesCompleted}/${totalModulesAcrossEnrolled}`, color:'var(--accent-2)', bar:null, icon:BookOpen },
+              { label:'Tests Taken',  value:String(testsTaken), color:'var(--text)', bar:null, sub: testsTaken>0?`Avg ${avgScore}%`:'No tests yet', icon:ClipboardList },
+              { label:'Streak',       value:String(streak),    color:'var(--amber)', bar:null, sub:'Days in a row', icon:Flame },
             ].map(s => (
-              <div key={s.label} className="card card-accent-top">
-                <div style={{ fontSize:'10px', color:'var(--muted)', textTransform:'uppercase',
-                  letterSpacing:'0.08em', marginBottom:'8px' }}>{s.label}</div>
-                <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'26px',
-                  color:s.color, lineHeight:1 }}>{s.value}</div>
+              <div key={s.label} className="stat-card">
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'8px' }}>
+                  <div className="stat-label" style={{ marginBottom:0 }}>{s.label}</div>
+                  <s.icon size={14} color="var(--muted2)"/>
+                </div>
+                <div className="stat-value" style={{ color:s.color }}>{s.value}</div>
                 {s.bar !== null && s.bar !== undefined && (
-                  <div className="progress-track" style={{ marginTop:'8px' }}>
-                    <div className="progress-fill" style={{ width:`${s.bar}%` }}/>
+                  <div className="progress-track" style={{ marginTop:'10px' }}>
+                    <div className="progress-fill" style={{ width:`${s.bar}%`, background:s.color }}/>
                   </div>
                 )}
-                {s.sub && <div style={{ fontSize:'11px', color:'var(--muted)', marginTop:'4px' }}>{s.sub}</div>}
+                {s.sub && <div style={{ fontSize:'11px', color:'var(--muted)', marginTop:'6px' }}>{s.sub}</div>}
               </div>
             ))}
           </div>
 
-          <div style={{ display:'grid', marginBottom:'24px' }}>
+          <div className="r-split" style={{ marginBottom:'20px' }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
 
-            <div style={{
-              background:'linear-gradient(135deg,rgba(74,222,128,0.06),rgba(245,158,11,0.04))',
-              border:'1px solid rgba(74,222,128,0.15)',
-              borderRadius:'var(--radius)', padding:'20px',
-              display:'flex', alignItems:'center', gap:'18px',
-            }}>
-              <div style={{ textAlign:'center' }}>
-                <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800,
-                  fontSize:'48px', color:'var(--amber)', lineHeight:1 }}>
-                  {streak}
+              <div className="card">
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'14px' }}>
+                  <span style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px' }}>Coming up</span>
+                  {primarySlug && (
+                    <Link href={`/programs/${primarySlug}/tests`}
+                      style={{ fontSize:'11px', color:'var(--accent-2)', textDecoration:'none', fontFamily:'var(--font-mono)' }}>
+                      ALL TESTS →
+                    </Link>
+                  )}
                 </div>
-                <div style={{ fontSize:'9px', color:'var(--muted)', textTransform:'uppercase',
-                  letterSpacing:'0.1em', marginTop:'4px' }}>Day streak</div>
-              </div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:'13px', fontWeight:500, marginBottom:'10px' }}>
-                  {streak >= 30 ? '🚀 One month! Unstoppable!'
-                   : streak >= 14 ? '💪 Two weeks strong!'
-                   : streak >= 7  ? '🔥 Amazing week streak!'
-                   : streak > 0   ? 'Keep it up!'
-                   : 'Start your streak today!'}
-                </div>
-                <div style={{ display:'flex', gap:'6px' }}>
-                  {streakDots.map((done, i) => (
-                    <div key={i} style={{
-                      flex:1, height:'5px', borderRadius:'3px',
-                      background: done ? 'var(--green)' : 'rgba(255,255,255,0.08)',
-                      boxShadow: done ? '0 0 5px rgba(34,197,94,0.4)' : 'none',
-                    }}/>
-                  ))}
-                </div>
-                <div style={{ fontSize:'10px', color:'var(--muted)', marginTop:'6px' }}>
-                  Mon – Sun this week
-                </div>
-              </div>
-            </div>
 
-            <div className="card">
-              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'14px',
-                marginBottom:'14px', display:'flex', justifyContent:'space-between' }}>
-                <span>Coming Up</span>
-                {primarySlug && (
-                  <Link href={`/programs/${primarySlug}/tests`}
-                    style={{ fontSize:'11px', color:'var(--teal)', textDecoration:'none' }}>
-                    All tests →
-                  </Link>
+                {isPending ? (
+                  <div style={{ fontSize:'13px', color:'var(--muted)', textAlign:'center', padding:'16px 0', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}>
+                    <Lock size={14}/> Activate your account to see upcoming tests
+                  </div>
+                ) : (
+                  <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                    {upcomingTests.length === 0 && sessions.length === 0 ? (
+                      <div style={{ fontSize:'13px', color:'var(--muted)', textAlign:'center', padding:'12px 0', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}>
+                        <CheckCircle2 size={14}/> All caught up!
+                      </div>
+                    ) : null}
+
+                    {upcomingTests.map(t => (
+                      <Link key={t.id}
+                        href={t.isOpen ? `/programs/${t.slug}/tests/${t.id}` : `/programs/${t.slug}/tests`}
+                        style={{ textDecoration:'none', display:'block' }}>
+                        <div className="module-item">
+                          <div className={`mod-icon ${t.isOpen ? 'mod-done' : 'mod-active'}`}>
+                            <ClipboardList size={12}/>
+                          </div>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:'13px', fontWeight:500 }}>
+                              Week {t.week_number}: {t.topic ?? t.title}
+                            </div>
+                            <div style={{ fontSize:'11px', color:'var(--muted)' }}>
+                              {t.duration_minutes} min
+                            </div>
+                          </div>
+                          <span style={{
+                            fontSize:'11px', fontWeight:600, fontFamily:'var(--font-mono)',
+                            color: t.isOpen ? 'var(--green)' : 'var(--amber)',
+                          }}>
+                            {t.isOpen ? 'OPEN →' : t.unlockDt
+                              ? new Date(t.unlockDt).toLocaleDateString('en-IN',{day:'numeric',month:'short'})
+                              : 'SOON'}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+
+                    {sessions.map(s => (
+                      <Link key={s.id as string} href={`/live/${s.id}`}
+                        style={{ textDecoration:'none', display:'block' }}>
+                        <div className="module-item">
+                          <div className="mod-icon" style={{ background:'var(--accent-2-dim)', color:'var(--accent-2)' }}>
+                            {s.is_live ? <Radio size={12}/> : <Video size={12}/>}
+                          </div>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:'13px', fontWeight:500 }}>{String(s.title??'')}</div>
+                            <div style={{ fontSize:'11px', color:'var(--muted)' }}>
+                              {s.is_live ? 'Live now'
+                                : new Date(s.scheduled_at as string).toLocaleString('en-IN',{
+                                    day:'numeric', month:'short', hour:'2-digit', minute:'2-digit',
+                                  })}
+                            </div>
+                          </div>
+                          <span style={{ fontSize:'11px', color:'var(--accent-2)', fontWeight:600, fontFamily:'var(--font-mono)' }}>
+                            {s.is_live ? '● LIVE' : 'JOIN →'}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 )}
               </div>
 
-              {isPending ? (
-                <div style={{ fontSize:'13px', color:'var(--muted)', textAlign:'center', padding:'16px 0' }}>
-                  🔒 Activate your account to see upcoming tests
+              <div className="card">
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'14px' }}>
+                  <span style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px' }}>Phase assessments</span>
+                  {primarySlug && (
+                    <Link href={`/programs/${primarySlug}/assessments`}
+                      style={{ fontSize:'11px', color:'var(--accent-2)', textDecoration:'none', fontFamily:'var(--font-mono)' }}>
+                      VIEW ALL →
+                    </Link>
+                  )}
                 </div>
-              ) : (
+
                 <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
-                  {upcomingTests.length === 0 && sessions.length === 0 ? (
+                  {phaseStatus.length === 0 && (
                     <div style={{ fontSize:'13px', color:'var(--muted)', textAlign:'center', padding:'12px 0' }}>
-                      ✓ All caught up!
+                      No phase assessments to show yet.
                     </div>
-                  ) : null}
+                  )}
+                  {phaseStatus.map(({ phase, hasCert, allDone, scheduleOk, statusLabel, statusColor, aId, doneCount, total, slug }) => {
+                    const phasePct = total > 0 ? Math.round((doneCount/total)*100) : 0
+                    const canStart = allDone && scheduleOk && !hasCert && !!aId
 
-                  {upcomingTests.map(t => (
-                    <Link key={t.id}
-                      href={t.isOpen ? `/programs/${t.slug}/tests/${t.id}` : `/programs/${t.slug}/tests`}
-                      style={{ textDecoration:'none', display:'block' }}>
-                      <div className="module-item" style={{
-                        background: t.isOpen ? 'rgba(34,197,94,0.06)' : 'rgba(245,158,11,0.06)',
+                    return (
+                      <div key={phase.id} style={{
+                        padding:'14px 16px', borderRadius:'var(--radius-sm)',
+                        background:'var(--card2)', border:'1px solid var(--border)',
+                        display:'flex', alignItems:'center', gap:'14px',
                       }}>
-                        <div className="mod-icon" style={{
-                          background: t.isOpen ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)',
-                          color: t.isOpen ? 'var(--green)' : 'var(--amber)',
-                        }}>📝</div>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontSize:'13px', fontWeight:500 }}>
-                            Week {t.week_number}: {t.topic ?? t.title}
-                          </div>
-                          <div style={{ fontSize:'11px', color:'var(--muted)' }}>
-                            {t.duration_minutes} min
-                          </div>
-                        </div>
-                        <span style={{
-                          fontSize:'11px', fontWeight:600,
-                          color: t.isOpen ? 'var(--green)' : 'var(--amber)',
+                        <div style={{
+                          width:'34px', height:'34px', borderRadius:'6px', flexShrink:0,
+                          background: hasCert ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+                          color: hasCert ? 'var(--green)' : 'var(--muted)',
+                          display:'flex', alignItems:'center', justifyContent:'center',
                         }}>
-                          {t.isOpen ? 'Open →' : t.unlockDt
-                            ? `${new Date(t.unlockDt).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}`
-                            : 'Soon'}
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-
-                  {sessions.map(s => (
-                    <Link key={s.id as string} href={`/live/${s.id}`}
-                      style={{ textDecoration:'none', display:'block' }}>
-                      <div className="module-item" style={{ background:'rgba(124,58,237,0.06)' }}>
-                        <div className="mod-icon" style={{ background:'rgba(124,58,237,0.15)', color:'#a78bfa' }}>
-                          {s.is_live ? '🔴' : '🎥'}
+                          {hasCert ? <Trophy size={16}/> : <Target size={16}/>}
                         </div>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontSize:'13px', fontWeight:500 }}>{String(s.title??'')}</div>
-                          <div style={{ fontSize:'11px', color:'var(--muted)' }}>
-                            {s.is_live ? 'Live now!'
-                              : new Date(s.scheduled_at as string).toLocaleString('en-IN',{
-                                  day:'numeric', month:'short', hour:'2-digit', minute:'2-digit',
-                                })}
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:'13px', fontWeight:600, marginBottom:'6px' }}>
+                            Phase {phase.phase_number}: {phase.title}
+                          </div>
+                          <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+                            <div className="progress-track" style={{ flex:1 }}>
+                              <div className="progress-fill" style={{ width:`${phasePct}%` }}/>
+                            </div>
+                            <span style={{ fontSize:'11px', color:'var(--accent)', fontWeight:600, flexShrink:0, fontFamily:'var(--font-mono)' }}>
+                              {phasePct}%
+                            </span>
                           </div>
                         </div>
-                        <span style={{ fontSize:'11px', color:'#a78bfa', fontWeight:600 }}>
-                          {s.is_live ? '● Live' : 'Join →'}
-                        </span>
+                        <div style={{ textAlign:'right', flexShrink:0 }}>
+                          <div style={{ fontSize:'11px', color:statusColor, fontWeight:500 }}>{statusLabel}</div>
+                          {canStart && (
+                            <Link href={`/programs/${slug}/assessments/${aId}`}
+                              className="btn btn-primary"
+                              style={{ fontSize:'11px', padding:'5px 12px', marginTop:'6px', display:'inline-flex' }}>
+                              Start
+                            </Link>
+                          )}
+                          {hasCert && (
+                            <Link href={`/programs/${slug}/certificate`}
+                              className="btn btn-ghost"
+                              style={{ fontSize:'11px', padding:'5px 12px', marginTop:'6px', display:'inline-flex' }}>
+                              View cert
+                            </Link>
+                          )}
+                        </div>
                       </div>
-                    </Link>
+                    )
+                  })}
+                </div>
+
+                {!isPending && (
+                  <div style={{ marginTop:'14px', padding:'10px 12px',
+                    background:'var(--card2)', borderRadius:'var(--radius-sm)',
+                    fontSize:'12px', color:'var(--muted)' }}>
+                    Score ≥ 75% in a phase assessment to earn your certificate.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
+              <div className="card">
+                <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'12px' }}>
+                  <div style={{
+                    width:'40px', height:'40px', borderRadius:'8px', flexShrink:0,
+                    background:'var(--amber-dim)', color:'var(--amber)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                  }}>
+                    <Flame size={19}/>
+                  </div>
+                  <div>
+                    <div className="stat-value" style={{ fontSize:'22px', color:'var(--amber)' }}>{streak}</div>
+                    <div className="stat-label" style={{ marginBottom:0 }}>Day streak</div>
+                  </div>
+                </div>
+                <div style={{ fontSize:'12px', color:'var(--muted)', marginBottom:'10px' }}>
+                  {streak >= 30 ? 'One month strong — unstoppable.'
+                   : streak >= 14 ? 'Two weeks strong, keep going.'
+                   : streak >= 7  ? 'A full week — nice momentum.'
+                   : streak > 0   ? 'Keep it up.'
+                   : 'Start your streak today.'}
+                </div>
+                <div style={{ display:'flex', gap:'5px' }}>
+                  {streakDots.map((done, i) => (
+                    <div key={i} style={{
+                      flex:1, height:'4px', borderRadius:'2px',
+                      background: done ? 'var(--amber)' : 'rgba(255,255,255,0.08)',
+                    }}/>
                   ))}
                 </div>
-              )}
-            </div>
-          </div>
-
-          <div className="card">
-            <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'14px',
-              marginBottom:'16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <span>Phase Assessments</span>
-              {primarySlug && (
-                <Link href={`/programs/${primarySlug}/assessments`}
-                  style={{ fontSize:'11px', color:'var(--teal)', textDecoration:'none' }}>
-                  View all →
-                </Link>
-              )}
-            </div>
-
-            <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-              {phaseStatus.length === 0 && (
-                <div style={{ fontSize:'13px', color:'var(--muted)', textAlign:'center', padding:'12px 0' }}>
-                  No phase assessments to show yet.
+                <div style={{ fontSize:'10px', color:'var(--muted2)', marginTop:'6px', fontFamily:'var(--font-mono)' }}>
+                  MON – SUN THIS WEEK
                 </div>
-              )}
-              {phaseStatus.map(({ phase, hasCert, allDone, scheduleOk, statusLabel, statusColor, aId, doneCount, total, slug }) => {
-                const phasePct = total > 0 ? Math.round((doneCount/total)*100) : 0
-                const phaseColors = ['#f59e0b','#00d4ff','#a78bfa','#22c55e']
-                const col = phaseColors[(phase.phase_number - 1) % phaseColors.length] ?? 'var(--cyan)'
-                const canStart = allDone && scheduleOk && !hasCert && !!aId
-
-                return (
-                  <div key={phase.id} style={{
-                    padding:'14px 16px', borderRadius:'10px',
-                    background:'rgba(255,255,255,0.025)',
-                    border:'1px solid var(--border)',
-                    display:'flex', alignItems:'center', gap:'14px',
-                  }}>
-                    <div style={{
-                      width:'40px', height:'40px', borderRadius:'10px', flexShrink:0,
-                      background: hasCert ? 'rgba(34,197,94,0.12)' : `rgba(255,255,255,0.06)`,
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      fontSize:'20px',
-                    }}>
-                      {hasCert ? '🏆' : '🎯'}
-                    </div>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:'13px', fontWeight:600, marginBottom:'4px' }}>
-                        Phase {phase.phase_number}: {phase.title}
-                      </div>
-                      <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                        <div className="progress-track" style={{ flex:1 }}>
-                          <div className="progress-fill" style={{
-                            width:`${phasePct}%`,
-                            background: `linear-gradient(90deg,${col},#7c3aed)`,
-                          }}/>
-                        </div>
-                        <span style={{ fontSize:'11px', color:col, fontWeight:600, flexShrink:0 }}>
-                          {phasePct}%
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign:'right', flexShrink:0 }}>
-                      <div style={{ fontSize:'12px', color:statusColor, fontWeight:500 }}>{statusLabel}</div>
-                      {canStart && (
-                        <Link href={`/programs/${slug}/assessments/${aId}`}
-                          className="btn btn-primary"
-                          style={{ fontSize:'11px', padding:'5px 12px', marginTop:'6px', display:'inline-flex' }}>
-                          Start →
-                        </Link>
-                      )}
-                      {hasCert && (
-                        <Link href={`/programs/${slug}/certificate`}
-                          className="btn btn-ghost"
-                          style={{ fontSize:'11px', padding:'5px 12px', marginTop:'6px', display:'inline-flex' }}>
-                          View Cert
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {!isPending && (
-              <div style={{ marginTop:'14px', padding:'10px 12px',
-                background:'rgba(255,255,255,0.025)', borderRadius:'8px',
-                fontSize:'12px', color:'var(--muted)' }}>
-                Score ≥ 75% in a phase assessment to earn your certificate 🏆
               </div>
-            )}
-          </div>
 
-          <WhatsAppBanner/>
+              <WhatsAppBanner/>
+            </div>
+          </div>
         </div>
       </main>
     </div>

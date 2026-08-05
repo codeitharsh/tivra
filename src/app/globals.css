@@ -371,6 +371,7 @@ h1,h2,h3,h4,h5,h6 { font-family: var(--font-serif), ui-serif, Georgia, serif; le
 .r-grid-2 { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 16px; }
 .r-grid-3 { display: grid !important; grid-template-columns: repeat(3,1fr) !important; gap: 14px; }
 .r-grid-4 { display: grid !important; grid-template-columns: repeat(4,1fr) !important; gap: 14px; }
+.r-split  { display: grid !important; grid-template-columns: 2fr 1fr !important; gap: 16px; align-items: start; }
 
 /* Sidebar layout main */
 .sidebar-layout-main { flex: 1; overflow: auto; min-width: 0; }
@@ -391,6 +392,7 @@ h1,h2,h3,h4,h5,h6 { font-family: var(--font-serif), ui-serif, Georgia, serif; le
   .r-grid-2 { grid-template-columns: 1fr !important; }
   .r-grid-3 { grid-template-columns: 1fr !important; }
   .r-grid-4 { grid-template-columns: repeat(2,1fr) !important; }
+  .r-split  { grid-template-columns: 1fr !important; }
 
   /* Cards */
   .card { padding: 14px !important; }

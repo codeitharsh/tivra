@@ -8,6 +8,7 @@ import Topbar from '@/components/Topbar'
 import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 import LockedFeature from '@/components/LockedFeature'
+import { Video, Radio, PlayCircle, ArrowRight } from 'lucide-react'
 
 export default async function LivePage() {
   const supabase = await createClient()
@@ -54,8 +55,8 @@ export default async function LivePage() {
   }
 
   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-    live:     { label:'🔴 Live Now',    color:'var(--green)', bg:'rgba(34,197,94,0.12)'  },
-    starting: { label:'Starting soon',  color:'var(--amber)', bg:'rgba(245,158,11,0.12)' },
+    live:     { label:'Live now',       color:'var(--green)', bg:'var(--green-dim)'      },
+    starting: { label:'Starting soon',  color:'var(--amber)', bg:'var(--amber-dim)'      },
     upcoming: { label:'Upcoming',       color:'var(--muted)', bg:'rgba(255,255,255,0.06)'},
     ended:    { label:'Ended',          color:'var(--muted)', bg:'rgba(255,255,255,0.04)'},
   }
@@ -69,7 +70,7 @@ export default async function LivePage() {
 
           {sessions.length === 0 ? (
             <div className="card" style={{ textAlign:'center', padding:'48px', color:'var(--muted)' }}>
-              <div style={{ fontSize:'32px', marginBottom:'12px' }}>🎥</div>
+              <Video size={28} color="var(--muted2)" style={{ marginBottom:'12px' }}/>
               <div style={{ fontSize:'14px' }}>No live sessions scheduled yet.</div>
               <div style={{ fontSize:'13px', marginTop:'6px' }}>Your teacher will schedule sessions soon.</div>
             </div>
@@ -87,15 +88,17 @@ export default async function LivePage() {
                     display:'flex', alignItems:'center', gap:'16px', padding:'18px 20px',
                     opacity: st === 'ended' ? 0.65 : 1,
                   }}>
-                    {/* Status dot */}
+                    {/* Status icon */}
                     <div style={{
-                      width:'8px', height:'8px', borderRadius:'50%', flexShrink:0,
-                      background: st === 'live' ? 'var(--green)' : st === 'starting' ? 'var(--amber)' : 'var(--muted)',
-                      boxShadow: st === 'live' ? '0 0 8px var(--green)' : 'none',
-                    }}/>
+                      width:'32px', height:'32px', borderRadius:'6px', flexShrink:0,
+                      background: cfg.bg, color: cfg.color,
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                    }}>
+                      {st === 'live' ? <Radio size={15}/> : <Video size={15}/>}
+                    </div>
 
                     <div style={{ flex:1 }}>
-                      <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'14px', marginBottom:'3px' }}>
+                      <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'14px', marginBottom:'3px' }}>
                         {String(session.title ?? '')}
                       </div>
                       <div style={{ fontSize:'12px', color:'var(--muted)' }}>
@@ -109,21 +112,21 @@ export default async function LivePage() {
                     </div>
 
                     <span style={{
-                      padding:'3px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:600,
-                      background: cfg.bg, color: cfg.color,
+                      padding:'3px 10px', borderRadius:'var(--radius-pill)', fontSize:'11px', fontWeight:600,
+                      background: cfg.bg, color: cfg.color, fontFamily:'var(--font-mono)',
                     }}>{cfg.label}</span>
 
                     <div style={{ display:'flex', gap:'8px', flexShrink:0 }}>
                       {canJoin && (
                         <a href={session.join_url as string} target="_blank" rel="noreferrer"
                           className="btn btn-primary" style={{ fontSize:'12px', padding:'7px 16px' }}>
-                          Join →
+                          Join <ArrowRight size={12}/>
                         </a>
                       )}
                       {session.recording_url && (
                         <a href={session.recording_url as string} target="_blank" rel="noreferrer"
                           className="btn btn-ghost" style={{ fontSize:'12px', padding:'7px 16px' }}>
-                          ▶ Recording
+                          <PlayCircle size={12}/> Recording
                         </a>
                       )}
                     </div>

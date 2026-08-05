@@ -1,24 +1,9 @@
 export const runtime = 'edge'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { isRateLimited, getClientIp } from '@/lib/rate-limit'
 
-// ── Basic in-memory rate limit (per edge isolate) — closes the
-//    "fully open to brute force" gap. Supabase Auth has its own internal
-//    throttling too, but this adds an app-level layer. ────────────────────
-const attempts = new Map<string, { count: number; resetAt: number }>()
-const WINDOW_MS = 10 * 60 * 1000 // 10 minutes
-const MAX_ATTEMPTS = 8
-
-function isRateLimited(key: string): boolean {
-  const now = Date.now()
-  const entry = attempts.get(key)
-  if (!entry || now > entry.resetAt) {
-    attempts.set(key, { count: 1, resetAt: now + WINDOW_MS })
-    return false
-  }
-  entry.count++
-  return entry.count > MAX_ATTEMPTS
-}
+const LOGIN_LIMIT = { windowMs: 10 * 60 * 1000, max: 8 } // 8 attempts / 10 min
 
 export async function POST(req: Request): Promise<Response> {
   try {
@@ -28,10 +13,10 @@ export async function POST(req: Request): Promise<Response> {
       return Response.json({ error: 'Email and password are required.' }, { status: 400 })
     }
 
-    const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? 'unknown'
+    const ip = getClientIp(req)
     // Rate limit by IP AND by email — protects against both a single attacker
     // hammering one account and a distributed attempt against many accounts.
-    if (isRateLimited(`login-ip:${ip}`) || isRateLimited(`login-email:${email.toLowerCase()}`)) {
+    if (isRateLimited(`login-ip:${ip}`, LOGIN_LIMIT) || isRateLimited(`login-email:${email.toLowerCase()}`, LOGIN_LIMIT)) {
       return Response.json({ error: 'Too many login attempts. Please try again in a few minutes.' }, { status: 429 })
     }
 

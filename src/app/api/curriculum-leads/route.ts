@@ -2,6 +2,7 @@ export const runtime = 'edge'
 
 import { createClient as createSB } from '@supabase/supabase-js'
 import { sendEmailFireAndForget } from '@/lib/email'
+import { isRateLimited, getClientIp, RATE_LIMIT_MESSAGE } from '@/lib/rate-limit'
 
 function adminSB() {
   return createSB(
@@ -12,6 +13,10 @@ function adminSB() {
 
 const CONTACT_EMAIL = 'contact@tivra.in'
 const CURRICULUM_SIGNED_URL_TTL_SECONDS = 300 // 5 minutes
+// A genuine visitor submits this once per programme they're curious
+// about — not ten times a minute. Guards the lead form (and the email
+// it triggers) against spam.
+const CURRICULUM_LEADS_LIMIT = { windowMs: 60 * 60 * 1000, max: 10 }
 
 const VALID_STATUSES = ['student', 'graduate', 'working_professional'] as const
 type CurrentStatus = typeof VALID_STATUSES[number]
@@ -28,6 +33,10 @@ interface LeadBody {
 
 export async function POST(req: Request): Promise<Response> {
   try {
+    if (isRateLimited(`curriculum-leads:${getClientIp(req)}`, CURRICULUM_LEADS_LIMIT)) {
+      return Response.json({ error: RATE_LIMIT_MESSAGE }, { status: 429 })
+    }
+
     const body = await req.json() as LeadBody
 
     const programSlug   = body.program_slug?.trim()
