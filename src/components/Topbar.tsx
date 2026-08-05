@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Bell, Settings, X } from 'lucide-react'
+import { Bell, BellOff, Settings, X } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
 
 interface TopbarProps { title: string; subtitle?: string }
@@ -104,16 +104,16 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
       position: 'sticky', top: 0, zIndex: 20,
     }}>
       <div>
-        <h1 style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'16px',
-          color:'#fff', lineHeight:1 }}>{title}</h1>
-        {subtitle && <p style={{ fontSize:'11px', color:'var(--muted)', marginTop:'2px' }}>{subtitle}</p>}
+        <h1 style={{ fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'17px',
+          color:'var(--text)', lineHeight:1 }}>{title}</h1>
+        {subtitle && <p style={{ fontSize:'11px', color:'var(--muted)', marginTop:'4px' }}>{subtitle}</p>}
       </div>
 
       <div style={{ display:'flex', alignItems:'center', gap:'8px', position:'relative' }}>
         {/* Notification bell */}
         <button onClick={() => { setShowNotifs(v => !v); if (!showNotifs) { setLoading(true); fetchNotifs() } }}
           style={{
-            width:'34px', height:'34px', borderRadius:'8px',
+            width:'34px', height:'34px', borderRadius:'var(--radius-sm)',
             background:'rgba(255,255,255,0.04)', border:'1px solid var(--border)',
             display:'flex', alignItems:'center', justifyContent:'center',
             cursor:'pointer', color:'var(--muted)', position:'relative',
@@ -123,10 +123,9 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
             <span style={{
               position:'absolute', top:'4px', right:'4px',
               width:'16px', height:'16px', borderRadius:'50%',
-              background:'var(--red)', color:'#fff',
-              fontSize:'9px', fontWeight:700, fontFamily:'Syne,sans-serif',
+              background:'var(--accent)', color:'var(--on-accent)',
+              fontSize:'9px', fontWeight:700, fontFamily:'var(--font-mono), monospace',
               display:'flex', alignItems:'center', justifyContent:'center',
-              boxShadow:'0 0 6px rgba(239,68,68,0.6)',
             }}>{unread > 9 ? '9+' : unread}</span>
           )}
         </button>
@@ -140,21 +139,21 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
             <div style={{
               position:'absolute', top:'42px', right:0, width:'320px',
               background:'var(--surface)', border:'1px solid var(--border)',
-              borderRadius:'12px', zIndex:50, boxShadow:'0 8px 32px rgba(0,0,0,0.4)',
+              borderRadius:'var(--radius)', zIndex:50, boxShadow:'0 12px 32px rgba(0,0,0,0.45)',
               overflow:'hidden',
             }}>
               <div style={{
                 padding:'14px 16px', borderBottom:'1px solid var(--border)',
                 display:'flex', justifyContent:'space-between', alignItems:'center',
               }}>
-                <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'14px' }}>
-                  Notifications {unread > 0 && <span style={{ color:'var(--red)', fontSize:'12px' }}>({unread})</span>}
+                <span style={{ fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'14px' }}>
+                  Notifications {unread > 0 && <span style={{ color:'var(--accent)', fontSize:'12px' }}>({unread})</span>}
                 </span>
                 <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
                   {unread > 0 && (
                     <button onClick={markAllRead} style={{
                       background:'none', border:'none', cursor:'pointer',
-                      fontSize:'11px', color:'var(--cyan)',
+                      fontSize:'11px', color:'var(--accent)', fontFamily:'var(--font-sans), sans-serif',
                     }}>Mark all read</button>
                   )}
                   <button onClick={() => setShowNotifs(false)} style={{
@@ -170,7 +169,7 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
                   </div>
                 ) : notifs.length === 0 ? (
                   <div style={{ padding:'32px', textAlign:'center' }}>
-                    <div style={{ fontSize:'28px', marginBottom:'8px' }}>🔔</div>
+                    <BellOff size={22} style={{ color:'var(--muted2)', marginBottom:'8px' }}/>
                     <div style={{ fontSize:'13px', color:'var(--muted)' }}>No notifications yet</div>
                   </div>
                 ) : notifs.map(n => (
@@ -178,7 +177,7 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
                     onClick={() => { markRead(n.id); if (n.link) window.location.href = n.link }}
                     style={{
                       padding:'12px 16px', cursor:n.link ? 'pointer' : 'default',
-                      background: n.is_read ? 'transparent' : 'rgba(59,91,219,0.06)',
+                      background: n.is_read ? 'transparent' : 'rgba(74,63,224,0.07)',
                       borderBottom:'1px solid rgba(255,255,255,0.04)',
                       display:'flex', gap:'10px', alignItems:'flex-start',
                       transition:'background 0.15s',
@@ -205,7 +204,7 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
 
         {/* Settings */}
         <Link href="/profile" style={{
-          width:'34px', height:'34px', borderRadius:'8px',
+          width:'34px', height:'34px', borderRadius:'var(--radius-sm)',
           background:'rgba(255,255,255,0.04)', border:'1px solid var(--border)',
           display:'flex', alignItems:'center', justifyContent:'center',
           cursor:'pointer', color:'var(--muted)', textDecoration:'none',

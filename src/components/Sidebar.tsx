@@ -9,7 +9,7 @@ import {
   Trophy, MessageCircle, CalendarCheck, Video, LogOut,
   Upload, Settings2, ShieldCheck, UserCheck,
   BarChart3, Users, Home, TrendingUp, Layers, BookMarked,
-  Target, Menu, X, ChevronRight, Gift, FileText, GraduationCap,
+  Target, Menu, X, ChevronRight, Gift, FileText, GraduationCap, Lock,
 } from 'lucide-react'
 
 import type { Profile, UserRole } from '@/types/database'
@@ -86,12 +86,12 @@ const NAV_ADMIN = [
   { href:'/admin/settings',        label:'Settings',        icon:Settings2 },
 ]
 
-function getRoleMeta(role: UserRole | undefined) {
+function getRoleMeta(role: UserRole | undefined): { label: string; color: string; bg: string; ring?: string } {
   switch (role) {
-    case 'admin':   return { label: 'Admin',   grad: true }
-    case 'teacher': return { label: 'Teacher', color: '#a78bfa', bg: 'rgba(124,58,237,0.15)' }
-    case 'parent':  return { label: 'Parent',  color: '#93c5fd', bg: 'rgba(59,91,219,0.15)' }
-    default:        return { label: 'Student', color: '#00d4ff', bg: 'rgba(0,212,255,0.1)' }
+    case 'admin':   return { label: 'Admin',   color: 'var(--accent)', bg: 'var(--card2)', ring: '1px solid var(--accent-ring)' }
+    case 'teacher': return { label: 'Teacher', color: '#c3b1ea', bg: 'rgba(167,139,218,0.14)' }
+    case 'parent':  return { label: 'Parent',  color: '#a9c0e8', bg: 'rgba(107,143,209,0.14)' }
+    default:        return { label: 'Student', color: 'var(--cyan)', bg: 'rgba(111,196,214,0.1)' }
   }
 }
 
@@ -121,12 +121,12 @@ function NavSection({
           <Link key={href} href={href} style={{ textDecoration: 'none', display: 'block' }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '9px 16px', borderRadius: '8px', margin: '1px 8px',
-              background: active ? 'rgba(59,91,219,0.18)' : 'transparent',
-              color: active ? '#fff' : 'rgba(255,255,255,0.55)',
-              fontFamily: 'DM Sans,sans-serif', fontSize: '13px', fontWeight: active ? 600 : 400,
+              padding: '9px 16px', borderRadius: 'var(--radius-sm)', margin: '1px 8px',
+              background: active ? 'var(--accent-dim)' : 'transparent',
+              color: active ? 'var(--text)' : 'var(--muted)',
+              fontFamily: 'var(--font-sans), sans-serif', fontSize: '13px', fontWeight: active ? 600 : 400,
               transition: 'all 0.15s',
-              borderLeft: active ? '2px solid var(--cyan)' : '2px solid transparent',
+              borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
             }}>
               <Icon size={15}/>
               <span style={{ flex: 1 }}>{lbl}</span>
@@ -156,15 +156,15 @@ function LockedNavSection({ label, items }: {
       {items.map(({ label: lbl, icon: Icon }) => (
         <div key={lbl} style={{
           display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '9px 16px', borderRadius: '8px', margin: '1px 8px',
-          color: 'rgba(255,255,255,0.2)',
-          fontFamily: 'DM Sans,sans-serif', fontSize: '13px',
+          padding: '9px 16px', borderRadius: 'var(--radius-sm)', margin: '1px 8px',
+          color: 'var(--muted2)',
+          fontFamily: 'var(--font-sans), sans-serif', fontSize: '13px',
           cursor: 'not-allowed',
           borderLeft: '2px solid transparent',
         }}>
           <Icon size={15}/>
           <span style={{ flex: 1 }}>{lbl}</span>
-          <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.15)' }}>🔒</span>
+          <Lock size={11} style={{ opacity: 0.5 }}/>
         </div>
       ))}
     </div>
@@ -272,13 +272,11 @@ export default function Sidebar({ profile }: SidebarProps) {
             style={{ borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}/>
           <div>
             <div style={{
-              fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '16px',
-              letterSpacing: '0.08em',
-              background: 'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>TIVRA</div>
-            <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)',
-              letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: '-1px' }}>
+              fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '17px',
+              letterSpacing: '-0.01em', color: 'var(--text)',
+            }}>Tivra</div>
+            <div style={{ fontSize: '8px', color: 'var(--muted2)', fontFamily: 'var(--font-mono), monospace',
+              letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: '1px' }}>
               Rise Beyond
             </div>
           </div>
@@ -289,29 +287,29 @@ export default function Sidebar({ profile }: SidebarProps) {
       <Link href="/profile" style={{ textDecoration: 'none', display: 'block', margin: '10px 8px 6px' }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 10px',
-          borderRadius: '10px', background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.07)', transition: 'background 0.15s',
+          borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.03)',
+          border: '1px solid var(--border)', transition: 'background 0.15s',
         }}>
           <div style={{
             width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
-            background: 'linear-gradient(135deg,#00c8f8,#7030d0)',
+            background: 'var(--card2)', border: '1px solid var(--border2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '11px', color: '#fff',
+            fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '12px', color: 'var(--text)',
           }}>
             {getInitials(profile?.full_name ?? null)}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: '#fff',
+            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {profile?.full_name ?? 'User'}
             </div>
             <div style={{
               display: 'inline-block', fontSize: '9px', fontWeight: 700, padding: '1px 6px',
-              borderRadius: '10px', marginTop: '2px',
-              background: rm.grad
-                ? 'linear-gradient(135deg,#00c8f8,#7030d0)'
-                : (rm as { bg: string }).bg,
-              color: rm.grad ? '#fff' : (rm as { color: string }).color,
+              borderRadius: '10px', marginTop: '2px', fontFamily: 'var(--font-mono), monospace',
+              letterSpacing: '0.04em', textTransform: 'uppercase',
+              background: rm.bg,
+              color: rm.color,
+              border: rm.ring,
             }}>
               {rm.label}
             </div>
@@ -346,9 +344,9 @@ export default function Sidebar({ profile }: SidebarProps) {
       <div style={{ padding: '10px 8px', borderTop: '1px solid var(--border)' }}>
         <button onClick={handleLogout} disabled={busy} style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '9px 16px', borderRadius: '8px', background: 'none',
-          border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer',
-          color: 'var(--red)', fontSize: '13px', fontFamily: 'DM Sans,sans-serif',
+          padding: '9px 16px', borderRadius: 'var(--radius-sm)', background: 'none',
+          border: '1px solid rgba(240,69,58,0.2)', cursor: 'pointer',
+          color: 'var(--red)', fontSize: '13px', fontFamily: 'var(--font-sans), sans-serif',
           fontWeight: 500, transition: 'background 0.15s',
         }}>
           <LogOut size={14}/>
@@ -380,7 +378,7 @@ export default function Sidebar({ profile }: SidebarProps) {
         style={{
           display: 'none',
           position: 'fixed', top: '12px', left: '12px', zIndex: 200,
-          width: '42px', height: '42px', borderRadius: '10px',
+          width: '42px', height: '42px', borderRadius: 'var(--radius)',
           background: 'var(--surface)', border: '1px solid var(--border)',
           cursor: 'pointer', alignItems: 'center', justifyContent: 'center',
           color: 'var(--text)',

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import { AlertTriangle } from 'lucide-react'
 
 export default function Error({
   error,
@@ -20,28 +21,30 @@ export default function Error({
       minHeight: '100vh', background: 'var(--bg)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
     }}>
-      <div style={{ textAlign: 'center', maxWidth: '480px' }}>
-        <div style={{ fontSize: '56px', marginBottom: '16px' }}>⚠️</div>
-        <h1 style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '28px',
-          color: '#fff', marginBottom: '10px' }}>
+      <div style={{ textAlign: 'center', maxWidth: '440px' }}>
+        <div style={{
+          width: '56px', height: '56px', borderRadius: 'var(--radius)', margin: '0 auto 20px',
+          background: 'var(--card2)', border: '1px solid var(--border2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)',
+        }}>
+          <AlertTriangle size={24}/>
+        </div>
+        <h1 style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '26px',
+          color: 'var(--text)', marginBottom: '10px' }}>
           Something went wrong
         </h1>
         <p style={{ fontSize: '15px', color: 'var(--muted)', marginBottom: '28px', lineHeight: 1.6 }}>
           An unexpected error occurred. Our team has been notified.
           {error.digest && (
             <span style={{ display: 'block', marginTop: '8px', fontSize: '12px',
-              fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)' }}>
+              fontFamily: 'var(--font-mono), monospace', color: 'var(--muted2)' }}>
               Error ID: {error.digest}
             </span>
           )}
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" onClick={reset} style={{ fontSize: '14px' }}>
-            Try Again
-          </button>
-          <Link href="/" className="btn btn-ghost" style={{ fontSize: '14px' }}>
-            Go Home
-          </Link>
+          <button className="btn btn-primary" onClick={reset}>Try Again</button>
+          <Link href="/" className="btn btn-ghost">Go Home</Link>
         </div>
       </div>
     </div>

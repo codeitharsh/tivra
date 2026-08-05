@@ -6,47 +6,34 @@ export default function NotFound() {
     <div style={{
       minHeight: '100vh', background: 'var(--bg)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '24px', position: 'relative', overflow: 'hidden',
+      padding: '24px',
     }}>
-      <div style={{
-        position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)',
-        width: '500px', height: '300px',
-        background: 'radial-gradient(ellipse,rgba(59,91,219,0.08) 0%,transparent 70%)',
-        pointerEvents: 'none',
-      }}/>
-      <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+      <div style={{ textAlign: 'center', maxWidth: '440px' }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px',
           textDecoration: 'none', marginBottom: '40px', justifyContent: 'center' }}>
-          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={36} height={36}
-            />
-          <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '18px',
-            background: 'linear-gradient(135deg,#00c8f8,#7030d0)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            letterSpacing: '0.08em' }}>TIVRA</span>
+          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32}/>
+          <span style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '19px', color: 'var(--text)' }}>Tivra</span>
         </Link>
 
-        <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 'clamp(80px,15vw,140px)',
-          lineHeight: 1, letterSpacing: '-0.05em', marginBottom: '8px',
-          background: 'linear-gradient(135deg,rgba(255,255,255,0.1),rgba(255,255,255,0.04))',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+        <div className="tick-rule tick-rule-accent" style={{ marginBottom: '20px' }}/>
+
+        <div style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'clamp(70px,14vw,120px)',
+          lineHeight: 1, letterSpacing: '-0.03em', marginBottom: '12px', color: 'var(--card2)',
+          WebkitTextStroke: '1px var(--border2)' }}>
           404
         </div>
 
-        <h1 style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 'clamp(22px,4vw,32px)',
-          color: '#fff', marginBottom: '12px', letterSpacing: '-0.02em' }}>
+        <h1 style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'clamp(20px,4vw,28px)',
+          color: 'var(--text)', marginBottom: '12px', letterSpacing: '-0.01em' }}>
           Page not found
         </h1>
-        <p style={{ fontSize: '16px', color: 'var(--muted)', marginBottom: '32px',
+        <p style={{ fontSize: '15px', color: 'var(--muted)', marginBottom: '32px',
           maxWidth: '360px', margin: '0 auto 32px', lineHeight: 1.6 }}>
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/" className="btn btn-primary" style={{ fontSize: '14px', padding: '12px 28px' }}>
-            Go Home
-          </Link>
-          <Link href="/dashboard" className="btn btn-ghost" style={{ fontSize: '14px' }}>
-            Dashboard
-          </Link>
+          <Link href="/" className="btn btn-primary">Go Home</Link>
+          <Link href="/dashboard" className="btn btn-ghost">Dashboard</Link>
         </div>
       </div>
     </div>

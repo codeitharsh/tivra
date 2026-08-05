@@ -3,6 +3,7 @@ import { useMemo, useState, Suspense, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Mail, Check, X } from 'lucide-react'
 
 function RegisterForm() {
   const router = useRouter()
@@ -66,46 +67,36 @@ function RegisterForm() {
     return (
       <div style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', background: '#07080c', padding: '24px',
+        justifyContent: 'center', background: 'var(--bg)', padding: '24px',
       }}>
-        <div style={{
-          maxWidth: '440px', width: '100%', textAlign: 'center',
-          background: '#0d0f14', border: '1px solid #1c1f28',
-          borderRadius: '20px', padding: '44px 36px',
+        <div className="card card-accent-top" style={{
+          maxWidth: '440px', width: '100%', textAlign: 'center', padding: '44px 36px',
         }}>
           <div style={{
-            width: '64px', height: '64px', borderRadius: '50%',
-            background: '#12151d', border: '1px solid rgba(0,212,255,0.25)',
+            width: '56px', height: '56px', borderRadius: 'var(--radius)',
+            background: 'var(--card2)', border: '1px solid var(--border2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 24px', fontSize: '26px',
+            margin: '0 auto 24px', color: 'var(--muted)',
           }}>
-            ✉️
+            <Mail size={24}/>
           </div>
           <h1 style={{
-            fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '22px',
-            color: '#fff', marginBottom: '12px',
+            fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '22px',
+            color: 'var(--text)', marginBottom: '12px',
           }}>
             Check your email
           </h1>
-          <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: '8px' }}>
+          <p style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: 1.7, marginBottom: '8px' }}>
             We&apos;ve sent a verification link to
           </p>
-          <p style={{ fontSize: '14px', color: '#00d4ff', fontWeight: 600, marginBottom: '20px' }}>
+          <p style={{ fontSize: '14px', color: 'var(--accent)', fontWeight: 600, marginBottom: '20px' }}>
             {registeredEmail}
           </p>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, marginBottom: '28px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--muted2)', lineHeight: 1.7, marginBottom: '28px' }}>
             Click the link in that email to verify your account. Didn&apos;t get it? Check your spam folder — it can take a minute to arrive.
           </p>
-          <button
-            onClick={() => router.push(loginHref)}
-            style={{
-              padding: '12px 28px', borderRadius: '100px', border: 'none',
-              background: 'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)',
-              color: '#fff', fontFamily: 'Syne, sans-serif', fontWeight: 700,
-              fontSize: '14px', cursor: 'pointer',
-            }}
-          >
-            Go to Login →
+          <button onClick={() => router.push(loginHref)} className="btn btn-primary">
+            Go to Login
           </button>
         </div>
       </div>
@@ -113,20 +104,19 @@ function RegisterForm() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', background:'#07080c', display:'flex', alignItems:'center', justifyContent:'center', padding:'24px' }}>
+    <div style={{ minHeight:'100vh', background:'var(--bg)', display:'flex', alignItems:'center', justifyContent:'center', padding:'24px' }}>
       <div style={{ width:'100%', maxWidth:'420px' }}>
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:'10px', textDecoration:'none', marginBottom:'32px', justifyContent:'center' }}>
-          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32} />
-          <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'18px', letterSpacing:'0.1em', background:'linear-gradient(135deg,#00d4ff,#7c3aed)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>TIVRA</span>
+          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={30} height={30}/>
+          <span style={{ fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'19px', color:'var(--text)' }}>Tivra</span>
         </Link>
 
-        <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'20px', padding:'32px', position:'relative', overflow:'hidden' }}>
-          <div style={{ position:'absolute', top:0, left:0, right:0, height:'2px', background:'linear-gradient(90deg,#00d4ff,#3b5bdb,#7c3aed)' }}/>
-          <h1 style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'22px', color:'#fff', marginBottom:'6px' }}>Create your account</h1>
-          <p style={{ fontSize:'14px', color:'rgba(255,255,255,0.4)', marginBottom:'28px' }}>Join Tivra and start learning</p>
+        <div className="card card-accent-top" style={{ padding:'32px' }}>
+          <h1 style={{ fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'22px', color:'var(--text)', marginBottom:'6px' }}>Create your account</h1>
+          <p style={{ fontSize:'14px', color:'var(--muted)', marginBottom:'28px' }}>Join Tivra and start learning</p>
 
           {error && (
-            <div style={{ padding:'12px 16px', borderRadius:'10px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', fontSize:'13px', marginBottom:'20px' }}>{error}</div>
+            <div className="banner banner-warning" style={{ marginBottom:'20px' }}>{error}</div>
           )}
 
           <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
@@ -137,15 +127,14 @@ function RegisterForm() {
               { name:'password',  label:'Password',  type:'password', placeholder:'Min. 8 characters' },
             ].map(f => (
               <div key={f.name}>
-                <label style={{ display:'block', fontSize:'12px', color:'rgba(255,255,255,0.5)', marginBottom:'6px', fontWeight:600, letterSpacing:'0.04em' }}>{f.label}</label>
-                <input name={f.name} type={f.type} required={true} placeholder={f.placeholder}
-                  style={{ width:'100%', padding:'12px 16px', borderRadius:'10px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', fontSize:'14px', outline:'none', boxSizing:'border-box' }}/>
+                <label className="form-label">{f.label}</label>
+                <input name={f.name} type={f.type} required={true} placeholder={f.placeholder} className="form-input"/>
               </div>
             ))}
             {/* Referral code — optional */}
             <div>
-              <label style={{ display:'block', fontSize:'12px', color:'rgba(255,255,255,0.5)', marginBottom:'6px', fontWeight:600, letterSpacing:'0.04em' }}>
-                Referral Code <span style={{ fontWeight:400, opacity:0.6 }}>(optional)</span>
+              <label className="form-label">
+                Referral Code <span style={{ fontWeight:400, textTransform:'none', opacity:0.6 }}>(optional)</span>
               </label>
               {referralStatus !== 'valid' ? (
                 <div style={{ display:'flex', gap:'8px' }}>
@@ -154,45 +143,39 @@ function RegisterForm() {
                     onChange={e => { setReferralCode(e.target.value.toUpperCase()); setReferralStatus('idle'); setReferralFaculty('') }}
                     onBlur={e => validateReferral(e.target.value)}
                     placeholder="e.g. LAKSHIKA100"
+                    className="form-input"
                     style={{
                       flex:1,
-                      padding:'12px 16px',
-                      borderRadius:'10px',
-                      background:'rgba(255,255,255,0.05)',
-                      border: `1px solid ${referralStatus==='invalid' ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
-                      color:'#fff',
-                      fontSize:'13px',
-                      outline:'none',
+                      borderColor: referralStatus==='invalid' ? 'var(--red)' : undefined,
                       letterSpacing:'0.04em',
-                      boxSizing:'border-box' as const,
                     }}
                   />
                   <button type="button" onClick={() => validateReferral(referralCode)}
                     disabled={!referralCode.trim() || referralStatus==='checking'}
-                    style={{ padding:'12px 14px', borderRadius:'10px', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', fontSize:'12px', fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' as const }}>
+                    className="btn btn-ghost" style={{ whiteSpace:'nowrap' }}>
                     {referralStatus==='checking' ? '…' : 'Apply'}
                   </button>
                 </div>
               ) : (
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderRadius:'10px', background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.25)' }}>
-                  <span style={{ fontSize:'12px', color:'#4ade80', fontWeight:600 }}>✓ Code applied — {referralFaculty}</span>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderRadius:'var(--radius-sm)', background:'var(--green-dim)', border:'1px solid rgba(74,222,128,0.25)' }}>
+                  <span style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'12px', color:'var(--green)', fontWeight:600 }}><Check size={13}/> Code applied — {referralFaculty}</span>
                   <button type="button" onClick={() => { setReferralCode(''); setReferralStatus('idle'); setReferralFaculty('') }}
-                    style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', cursor:'pointer', fontSize:'14px' }}>✕</button>
+                    style={{ background:'none', border:'none', color:'var(--muted2)', cursor:'pointer', display:'flex' }}><X size={14}/></button>
                 </div>
               )}
               {referralStatus==='invalid' && (
-                <p style={{ fontSize:'11px', color:'#f87171', marginTop:'4px' }}>Invalid or inactive referral code.</p>
+                <p style={{ fontSize:'11px', color:'var(--red)', marginTop:'4px' }}>Invalid or inactive referral code.</p>
               )}
             </div>
 
-            <button type="submit" disabled={isPending} style={{ padding:'13px', borderRadius:'100px', background:'linear-gradient(135deg,#00d4ff,#3b5bdb,#7c3aed)', color:'#fff', border:'none', fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'14px', cursor:isPending?'wait':'pointer', marginTop:'4px', opacity:isPending?0.7:1 }}>
+            <button type="submit" disabled={isPending} className="btn btn-primary" style={{ justifyContent:'center', marginTop:'4px', width:'100%', cursor: isPending ? 'wait' : 'pointer', opacity: isPending ? 0.7 : 1 }}>
               {isPending ? 'Creating account…' : 'Create Account'}
             </button>
           </form>
 
-          <p style={{ textAlign:'center', marginTop:'20px', fontSize:'13px', color:'rgba(255,255,255,0.35)' }}>
+          <p style={{ textAlign:'center', marginTop:'20px', fontSize:'13px', color:'var(--muted2)' }}>
             Already have an account?{' '}
-            <Link href={loginHref} style={{ color:'#00d4ff', textDecoration:'none', fontWeight:600 }}>Sign In</Link>
+            <Link href={loginHref} style={{ color:'var(--accent)', textDecoration:'none', fontWeight:600 }}>Sign In</Link>
           </p>
         </div>
       </div>

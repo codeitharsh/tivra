@@ -1,46 +1,109 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
+import { Menu, X } from 'lucide-react'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
+const LINKS = [
+  { href: '/programs', label: 'Programmes' },
+  { href: '/about',    label: 'About' },
+  { href: '/contact',  label: 'Contact' },
+]
+
 export default function PublicNav() {
+  const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setOpen(false) }, [pathname])
+
   return (
     <nav style={{
-      padding: '20px 40px', display: 'flex', alignItems: 'center',
-      justifyContent: 'space-between',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
-      background: 'rgba(8,8,12,0.95)', backdropFilter: 'blur(12px)',
-      position: 'sticky', top: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '18px 40px',
+      borderBottom: '1px solid var(--border)',
+      background: 'rgba(11,11,13,0.88)', backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      position: 'sticky', top: 0, zIndex: 100,
     }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-        <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32}
-          />
-        <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '16px',
-          background: 'linear-gradient(135deg,#00c8f8,#7030d0)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text', letterSpacing: '0.08em' }}>
-          TIVRA
-        </span>
+        <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={30} height={30} style={{ flexShrink: 0 }}/>
+        <span style={{
+          fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '19px',
+          color: 'var(--text)', letterSpacing: '-0.01em',
+        }}>Tivra</span>
       </Link>
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        <Link href="/programs" style={{ fontSize: '13px', color: 'var(--muted)',
-          textDecoration: 'none', padding: '7px 14px' }}>Programs</Link>
-        <Link href="/about" style={{ fontSize: '13px', color: 'var(--muted)',
-          textDecoration: 'none', padding: '7px 14px' }}>About</Link>
-        <Link href="/contact" style={{ fontSize: '13px', color: 'var(--muted)',
-          textDecoration: 'none', padding: '7px 14px' }}>Contact</Link>
-        <Link href="/login" style={{ fontSize: '13px', color: 'var(--muted)',
-          textDecoration: 'none', padding: '7px 16px', borderRadius: '100px',
-          border: '1px solid rgba(255,255,255,0.1)' }}>Login</Link>
+
+      {/* Desktop links */}
+      <div className="nav-links" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+        {LINKS.map(l => (
+          <Link key={l.href} href={l.href} style={{
+            fontSize: '13px', color: 'var(--muted)', fontFamily: 'var(--font-sans), sans-serif',
+            textDecoration: 'none', padding: '8px 14px', borderRadius: 'var(--radius-sm)',
+            transition: 'color 0.15s',
+          }}>{l.label}</Link>
+        ))}
+        <Link href="/login" className="btn btn-ghost" style={{ marginLeft: '8px' }}>Login</Link>
         {ENROLLMENT_OPEN ? (
-          <Link href="/register" style={{ fontSize: '13px', fontWeight: 700, color: '#fff',
-            textDecoration: 'none', padding: '8px 20px', borderRadius: '100px',
-            background: 'linear-gradient(135deg,#00c8f8,#3b5bdb,#7c3aed)' }}>Enrol</Link>
+          <Link href="/register" className="btn btn-primary">Enrol Now</Link>
         ) : (
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.3)',
-            padding: '8px 20px', borderRadius: '100px', cursor: 'not-allowed',
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>Enrollments Will Start Soon</span>
+          <span className="btn" style={{
+            background: 'var(--card2)', color: 'var(--muted2)', cursor: 'not-allowed',
+            textTransform: 'uppercase', letterSpacing: '0.06em',
+          }}>Revealing Soon</span>
         )}
       </div>
+
+      {/* Mobile toggle */}
+      <button
+        onClick={() => setOpen(v => !v)}
+        aria-label={open ? 'Close menu' : 'Open menu'}
+        aria-expanded={open}
+        className="nav-mobile-btn"
+        style={{
+          display: 'none', width: '38px', height: '38px', borderRadius: 'var(--radius-sm)',
+          background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)',
+          alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        }}
+      >
+        {open ? <X size={18}/> : <Menu size={18}/>}
+      </button>
+
+      {/* Mobile panel */}
+      {open && (
+        <div style={{
+          position: 'fixed', top: '65px', left: 0, right: 0, bottom: 0, zIndex: 99,
+          background: 'var(--bg)', borderTop: '1px solid var(--border)',
+          padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '4px',
+        }}>
+          {LINKS.map(l => (
+            <Link key={l.href} href={l.href} style={{
+              fontSize: '17px', color: 'var(--text)', fontFamily: 'var(--font-sans), sans-serif',
+              textDecoration: 'none', padding: '14px 4px', borderBottom: '1px solid var(--border)',
+            }}>{l.label}</Link>
+          ))}
+          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+            <Link href="/login" className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }}>Login</Link>
+            {ENROLLMENT_OPEN ? (
+              <Link href="/register" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Enrol Now</Link>
+            ) : (
+              <span className="btn" style={{
+                flex: 1, justifyContent: 'center', background: 'var(--card2)', color: 'var(--muted2)',
+              }}>Soon</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @media (max-width: 860px) {
+          .nav-links { display: none !important; }
+          .nav-mobile-btn { display: flex !important; }
+        }
+      `}</style>
     </nav>
   )
 }
