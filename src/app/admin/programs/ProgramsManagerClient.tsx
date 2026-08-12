@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Upload, CheckCircle2, Eye, Trash2 } from 'lucide-react'
+import { Loader2, Upload, CheckCircle2, Eye, Trash2, Plus, X, Check } from 'lucide-react'
 
 interface ProgramRow {
   id: string; name: string; slug: string
@@ -13,6 +13,18 @@ interface ProgramRow {
 
 interface EditState {
   price_inr: string; duration_label: string; mode: string
+}
+
+const BLANK_CREATE = {
+  name: '', slug: '', tagline: '', description: '',
+  price_inr: '', duration_label: '', mode: 'Live Online',
+  difficulty: '' as '' | 'beginner' | 'intermediate' | 'advanced',
+  instructor_name: '', instructor_title: '',
+  placement_assistance: false, is_active: false,
+}
+
+function slugify(input: string): string {
+  return input.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
 
 export default function ProgramsManagerClient({ programs }: { programs: ProgramRow[] }) {
@@ -30,6 +42,12 @@ export default function ProgramsManagerClient({ programs }: { programs: ProgramR
   const [previewing, setPreviewing] = useState<string | null>(null)
   const [deleting,   setDeleting]   = useState<string | null>(null)
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  // ── New programme creation ────────────────────────────────
+  const [showCreate,  setShowCreate]  = useState(false)
+  const [createForm,  setCreateForm]  = useState(BLANK_CREATE)
+  const [slugTouched, setSlugTouched] = useState(false)
+  const [creating,    setCreating]    = useState(false)
 
   function showToast(msg: string, type: 'success' | 'error') {
     setToast({ msg, type })
@@ -130,15 +148,174 @@ export default function ProgramsManagerClient({ programs }: { programs: ProgramR
     }
   }
 
+  async function createProgram() {
+    if (!createForm.name.trim()) { showToast('Programme name is required', 'error'); return }
+
+    setCreating(true)
+    try {
+      const res = await fetch('/api/admin/programs', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:                  createForm.name.trim(),
+          slug:                  createForm.slug.trim() || createForm.name.trim(),
+          tagline:                createForm.tagline.trim() || undefined,
+          description:            createForm.description.trim() || undefined,
+          price_inr:              createForm.price_inr ? Number(createForm.price_inr) : undefined,
+          duration_label:         createForm.duration_label.trim() || undefined,
+          mode:                   createForm.mode.trim() || undefined,
+          difficulty:             createForm.difficulty || undefined,
+          instructor_name:        createForm.instructor_name.trim() || undefined,
+          instructor_title:       createForm.instructor_title.trim() || undefined,
+          placement_assistance:   createForm.placement_assistance,
+          is_active:              createForm.is_active,
+        }),
+      })
+      const data = await res.json() as { success?: boolean; error?: string }
+      if (!res.ok || !data.success) throw new Error(data.error ?? 'Could not create programme')
+      showToast('✓ Programme created', 'success')
+      setCreateForm(BLANK_CREATE)
+      setSlugTouched(false)
+      setShowCreate(false)
+      router.refresh()
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed', 'error')
+    } finally {
+      setCreating(false)
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+      {/* New programme */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button className="btn btn-primary" onClick={() => setShowCreate(v => !v)} style={{ fontSize: '13px' }}>
+          {showCreate ? <><X size={14}/> Cancel</> : <><Plus size={14}/> New programme</>}
+        </button>
+      </div>
+
+      {showCreate && (
+        <div className="card" style={{ padding: '24px', border: '1px solid var(--accent-ring)' }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '16px', marginBottom: '18px' }}>
+            New programme
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="r-grid-2" style={{ gap: '12px' }}>
+              <div>
+                <label className="form-label">Name *</label>
+                <input className="form-input" placeholder="e.g. Cloud LaunchPad"
+                  value={createForm.name}
+                  onChange={e => {
+                    const name = e.target.value
+                    setCreateForm(f => ({ ...f, name, slug: slugTouched ? f.slug : slugify(name) }))
+                  }}/>
+              </div>
+              <div>
+                <label className="form-label">Slug</label>
+                <input className="form-input" placeholder="auto-generated from name"
+                  value={createForm.slug}
+                  onChange={e => { setSlugTouched(true); setCreateForm(f => ({ ...f, slug: slugify(e.target.value) })) }}/>
+              </div>
+            </div>
+
+            <div>
+              <label className="form-label">Tagline</label>
+              <input className="form-input" placeholder="Short one-line hook shown on the site"
+                value={createForm.tagline}
+                onChange={e => setCreateForm(f => ({ ...f, tagline: e.target.value }))}/>
+            </div>
+
+            <div>
+              <label className="form-label">Description</label>
+              <textarea className="form-input" rows={3} placeholder="What this programme covers…"
+                value={createForm.description}
+                onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))}
+                style={{ resize: 'vertical' }}/>
+            </div>
+
+            <div className="r-grid-3" style={{ gap: '12px' }}>
+              <div>
+                <label className="form-label">Price (₹)</label>
+                <input className="form-input" type="number" min="0" placeholder="blank = Revealing Soon"
+                  value={createForm.price_inr}
+                  onChange={e => setCreateForm(f => ({ ...f, price_inr: e.target.value }))}/>
+              </div>
+              <div>
+                <label className="form-label">Duration</label>
+                <input className="form-input" placeholder="e.g. 6 Months"
+                  value={createForm.duration_label}
+                  onChange={e => setCreateForm(f => ({ ...f, duration_label: e.target.value }))}/>
+              </div>
+              <div>
+                <label className="form-label">Mode</label>
+                <input className="form-input" placeholder="e.g. Live Online"
+                  value={createForm.mode}
+                  onChange={e => setCreateForm(f => ({ ...f, mode: e.target.value }))}/>
+              </div>
+            </div>
+
+            <div className="r-grid-3" style={{ gap: '12px' }}>
+              <div>
+                <label className="form-label">Difficulty</label>
+                <select className="form-select" value={createForm.difficulty}
+                  onChange={e => setCreateForm(f => ({ ...f, difficulty: e.target.value as typeof f.difficulty }))}>
+                  <option value="">Not set</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Instructor name</label>
+                <input className="form-input" placeholder="e.g. Rahul Sharma"
+                  value={createForm.instructor_name}
+                  onChange={e => setCreateForm(f => ({ ...f, instructor_name: e.target.value }))}/>
+              </div>
+              <div>
+                <label className="form-label">Instructor title</label>
+                <input className="form-input" placeholder="e.g. Senior Cloud Architect"
+                  value={createForm.instructor_title}
+                  onChange={e => setCreateForm(f => ({ ...f, instructor_title: e.target.value }))}/>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--muted)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={createForm.placement_assistance}
+                  onChange={e => setCreateForm(f => ({ ...f, placement_assistance: e.target.checked }))}/>
+                Placement assistance
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--muted)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={createForm.is_active}
+                  onChange={e => setCreateForm(f => ({ ...f, is_active: e.target.checked }))}/>
+                Active (visible on site immediately)
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button className="btn btn-primary" onClick={createProgram} disabled={creating}
+                style={{ fontSize: '13px', padding: '10px 22px' }}>
+                {creating
+                  ? <><Loader2 size={14} className="spin"/> Creating…</>
+                  : <><Check size={14}/> Create programme</>}
+              </button>
+              <button className="btn btn-ghost" onClick={() => { setShowCreate(false); setCreateForm(BLANK_CREATE); setSlugTouched(false) }}
+                style={{ fontSize: '13px' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {programs.map(p => {
         const edit = edits[p.id]
         return (
           <div key={p.id} className="card" style={{ padding: '20px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '16px' }}>
               <div>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '16px', color: '#fff' }}>{p.name}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '16px', color: 'var(--text)' }}>{p.name}</div>
                 <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>/programs/{p.slug}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
@@ -184,7 +361,7 @@ export default function ProgramsManagerClient({ programs }: { programs: ProgramR
               </button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: p.curriculum_url ? 'var(--green)' : 'var(--muted)' }}>
                 {p.curriculum_url ? <CheckCircle2 size={14}/> : <Upload size={14}/>}
                 {p.curriculum_url ? 'Curriculum PDF uploaded' : 'No curriculum PDF yet'}
