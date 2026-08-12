@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import type { Profile } from '@/types/database'
+import { Flame } from 'lucide-react'
 
 export default async function AdminStudentsPage() {
   const supabase = await createClient()
@@ -100,7 +101,7 @@ export default async function AdminStudentsPage() {
   })
 
   const roleColors: Record<string, string> = {
-    student:'var(--cyan)', teacher:'#a78bfa', parent:'#93c5fd', admin:'var(--green)',
+    student:'var(--accent-2)', teacher:'#c3b1ea', parent:'#a9c0e8', admin:'var(--accent)',
   }
   const statusColors: Record<string, string> = {
     active:'var(--green)', pending_payment:'var(--amber)', restricted:'var(--red)',
@@ -128,15 +129,15 @@ export default async function AdminStudentsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {enriched.map((s, i) => (
-                    <tr key={s.id as string} style={{ background: i%2===0?'transparent':'rgba(255,255,255,0.015)' }}>
+                  {enriched.map((s) => (
+                    <tr key={s.id as string}>
                       <td>
                         <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
                           <div style={{
-                            width:'32px', height:'32px', borderRadius:'50%', flexShrink:0,
-                            background:'linear-gradient(135deg,#00c8f8,#7030d0)',
+                            width:'32px', height:'32px', borderRadius:'6px', flexShrink:0,
+                            background:'var(--card2)', border:'1px solid var(--border)',
                             display:'flex', alignItems:'center', justifyContent:'center',
-                            fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'11px', color:'#fff',
+                            fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'11px', color:'var(--text)',
                           }}>
                             {String(s.full_name??'?').split(' ').map((w:string)=>w[0]).join('').slice(0,2).toUpperCase()}
                           </div>
@@ -147,28 +148,26 @@ export default async function AdminStudentsPage() {
                         </div>
                       </td>
                       <td>
-                        <span style={{
-                          padding:'3px 10px', borderRadius:'20px', fontSize:'10px', fontWeight:700,
-                          background:`${roleColors[s.role as string]??'var(--cyan)'}18`,
-                          color: roleColors[s.role as string]??'var(--cyan)',
+                        <span className="pill" style={{
+                          background:'rgba(255,255,255,0.06)',
+                          color: roleColors[s.role as string]??'var(--accent-2)',
                         }}>
-                          {String(s.role??'student').toUpperCase()}
+                          {String(s.role??'student')}
                         </span>
                       </td>
                       <td>
-                        <span style={{
-                          padding:'3px 10px', borderRadius:'20px', fontSize:'10px', fontWeight:700,
-                          background:`${statusColors[s.access_status as string]??'var(--muted)'}18`,
+                        <span className="pill" style={{
+                          background:'rgba(255,255,255,0.06)',
                           color: statusColors[s.access_status as string]??'var(--muted)',
                         }}>
-                          {s.access_status==='pending_payment'?'PENDING':String(s.access_status??'').toUpperCase()}
+                          {s.access_status==='pending_payment'?'pending':String(s.access_status??'')}
                         </span>
                       </td>
                       <td>
                         <div style={{minWidth:'80px'}}>
                           <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px'}}>
                             <span style={{fontSize:'10px',color:'var(--muted)'}}>{s.modules_done as number}/{s.modules_total as number}</span>
-                            <span style={{fontSize:'10px',color:'var(--cyan)'}}>{s.progress_percent as number}%</span>
+                            <span style={{fontSize:'10px',color:'var(--accent-2)'}}>{s.progress_percent as number}%</span>
                           </div>
                           <div className="progress-track">
                             <div className="progress-fill" style={{width:`${s.progress_percent as number}%`}}/>
@@ -176,11 +175,13 @@ export default async function AdminStudentsPage() {
                         </div>
                       </td>
                       <td style={{textAlign:'center'}}>
-                        <div style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'14px'}}>{s.tests_taken as number}</div>
+                        <div style={{fontFamily:'var(--font-serif)',fontWeight:600,fontSize:'14px'}}>{s.tests_taken as number}</div>
                         {(s.avg_score as number|null)!==null&&<div style={{fontSize:'10px',color:'var(--muted)'}}>avg {s.avg_score as number}%</div>}
                       </td>
                       <td>
-                        <span style={{fontSize:'13px'}}>🔥 {s.streak_count as number ?? 0}</span>
+                        <span style={{fontSize:'13px',display:'inline-flex',alignItems:'center',gap:'4px'}}>
+                          <Flame size={12} color="var(--amber)"/> {s.streak_count as number ?? 0}
+                        </span>
                       </td>
                       <td style={{fontSize:'11px',color:'var(--muted)',whiteSpace:'nowrap'}}>
                         {s.last_login_date?new Date(s.last_login_date as string).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'Never'}

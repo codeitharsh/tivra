@@ -55,8 +55,8 @@ export default async function AdminEnrollmentsPage() {
                   {enrollments.length === 0 && (
                     <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--muted)', padding: '32px' }}>No enrollments yet.</td></tr>
                   )}
-                  {enrollments.map((e, i) => (
-                    <tr key={e.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
+                  {enrollments.map((e) => (
+                    <tr key={e.id}>
                       <td>
                         <div style={{ fontSize: '13px', fontWeight: 500 }}>{e.profiles?.full_name ?? '—'}</div>
                         <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{e.profiles?.email ?? ''}</div>

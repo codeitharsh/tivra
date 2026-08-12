@@ -108,15 +108,15 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
   return (
     <div>
       {/* Summary cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'14px', marginBottom:'24px' }}>
+      <div className="r-grid-3" style={{ marginBottom:'24px' }}>
         {[
-          { label:'Total Faculty Codes', value: totalReferrals, color:'var(--cyan)' },
-          { label:'Total Enrollments',   value: totalEnrollments, color:'var(--green)' },
-          { label:'Total Revenue',       value: `₹${totalRevenue.toLocaleString('en-IN')}`, color:'#a78bfa' },
+          { label:'Total faculty codes', value: totalReferrals, color:'var(--accent-2)' },
+          { label:'Total enrollments',   value: totalEnrollments, color:'var(--green)' },
+          { label:'Total revenue',       value: `₹${totalRevenue.toLocaleString('en-IN')}`, color:'var(--accent)' },
         ].map(s => (
-          <div key={s.label} className="card card-accent-top" style={{ padding:'18px 20px' }}>
-            <div style={{ fontSize:'11px', color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'6px' }}>{s.label}</div>
-            <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'26px', color: s.color }}>{s.value}</div>
+          <div key={s.label} className="stat-card">
+            <div className="stat-label">{s.label}</div>
+            <div className="stat-value" style={{ fontSize:'26px', color: s.color }}>{s.value}</div>
           </div>
         ))}
       </div>
@@ -124,31 +124,31 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
       {/* Create button */}
       <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:'16px' }}>
         <button className="btn btn-primary" onClick={openCreate} style={{ fontSize:'13px', display:'flex', alignItems:'center', gap:'6px' }}>
-          <Plus size={14}/> New Referral Code
+          <Plus size={14}/> New referral code
         </button>
       </div>
 
       {/* Create/Edit form */}
       {showForm && (
-        <div className="card" style={{ marginBottom:'20px', border:'1px solid rgba(0,212,255,0.25)', background:'rgba(0,212,255,0.04)' }}>
-          <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'15px', marginBottom:'16px' }}>
-            {editId ? 'Edit Referral Code' : 'Create New Referral Code'}
+        <div className="card" style={{ marginBottom:'20px', border:'1px solid var(--accent-2)', background:'var(--accent-2-dim)' }}>
+          <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px', marginBottom:'16px' }}>
+            {editId ? 'Edit referral code' : 'Create new referral code'}
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px', marginBottom:'14px' }}>
             <div>
-              <label className="form-label">Faculty Name *</label>
+              <label className="form-label">Faculty name *</label>
               <input className="form-input" placeholder="e.g. Rahul Sharma"
                 value={form.faculty_name}
                 onChange={e => setForm(p => ({ ...p, faculty_name: e.target.value }))}/>
             </div>
             <div>
-              <label className="form-label">Faculty Email</label>
+              <label className="form-label">Faculty email</label>
               <input className="form-input" type="email" placeholder="optional"
                 value={form.faculty_email}
                 onChange={e => setForm(p => ({ ...p, faculty_email: e.target.value }))}/>
             </div>
             <div>
-              <label className="form-label">Referral Code *</label>
+              <label className="form-label">Referral code *</label>
               <div style={{ display:'flex', gap:'8px' }}>
                 <input className="form-input" placeholder="e.g. RAHUL100" style={{ flex:1 }}
                   value={form.referral_code}
@@ -160,7 +160,7 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
               </div>
             </div>
             <div>
-              <label className="form-label">Discount Amount (₹)</label>
+              <label className="form-label">Discount amount (₹)</label>
               <input className="form-input" type="number" min="0" max="5000"
                 value={form.discount_amount}
                 onChange={e => setForm(p => ({ ...p, discount_amount: Number(e.target.value) }))}/>
@@ -171,7 +171,7 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
           </div>
           <div style={{ display:'flex', gap:'10px' }}>
             <button className="btn btn-primary" disabled={!!actionId} onClick={handleSave} style={{ fontSize:'13px' }}>
-              {actionId === 'saving' ? 'Saving…' : editId ? 'Update' : 'Create Code'}
+              {actionId === 'saving' ? 'Saving…' : editId ? 'Update' : 'Create code'}
             </button>
             <button className="btn btn-ghost" onClick={() => setShowForm(false)} style={{ fontSize:'13px' }}>Cancel</button>
           </div>
@@ -207,7 +207,7 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
                   </td>
                   <td>
                     <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-                      <code style={{ fontFamily:'monospace', fontSize:'13px', fontWeight:700, color:'var(--cyan)', background:'rgba(0,212,255,0.08)', padding:'3px 8px', borderRadius:'5px' }}>
+                      <code style={{ fontFamily:'var(--font-mono)', fontSize:'13px', fontWeight:700, color:'var(--accent-2)', background:'var(--accent-2-dim)', padding:'3px 8px', borderRadius:'5px' }}>
                         {r.referral_code}
                       </code>
                       <button onClick={() => copyCode(r.id, r.referral_code)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--muted)', padding:'2px' }}>
@@ -216,16 +216,15 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
                     </div>
                   </td>
                   <td style={{ fontSize:'13px' }}>₹{r.discount_amount}</td>
-                  <td style={{ fontFamily:'Syne,sans-serif', fontWeight:700, color:'var(--cyan)' }}>{s.total}</td>
-                  <td style={{ fontFamily:'Syne,sans-serif', fontWeight:700, color:'var(--green)' }}>{s.approved}</td>
-                  <td style={{ fontFamily:'Syne,sans-serif', fontWeight:700, color:'#a78bfa' }}>₹{s.revenue.toLocaleString('en-IN')}</td>
+                  <td style={{ fontFamily:'var(--font-serif)', fontWeight:600, color:'var(--accent-2)' }}>{s.total}</td>
+                  <td style={{ fontFamily:'var(--font-serif)', fontWeight:600, color:'var(--green)' }}>{s.approved}</td>
+                  <td style={{ fontFamily:'var(--font-serif)', fontWeight:600, color:'var(--accent)' }}>₹{s.revenue.toLocaleString('en-IN')}</td>
                   <td>
-                    <span style={{
-                      padding:'3px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:600,
-                      background: r.is_active ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)',
+                    <span className="pill" style={{
+                      background: r.is_active ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
                       color: r.is_active ? 'var(--green)' : 'var(--muted)',
                     }}>
-                      {r.is_active ? '● Active' : '○ Inactive'}
+                      {r.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td style={{ textAlign:'right' }}>
@@ -257,8 +256,8 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
 
       {/* Enrollments detail table */}
       <div style={{ marginTop:'32px' }}>
-        <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'16px', marginBottom:'14px' }}>
-          All Referral Enrollments
+        <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'16px', marginBottom:'14px' }}>
+          All referral enrollments
         </div>
         <div className="card" style={{ padding:0, overflow:'hidden' }}>
           <table className="data-table">
@@ -290,23 +289,22 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
                       {profile?.phone && <div style={{ fontSize:'11px', color:'var(--muted)' }}>{profile.phone}</div>}
                     </td>
                     <td style={{ fontSize:'13px' }}>{plan}</td>
-                    <td style={{ fontFamily:'Syne,sans-serif', fontWeight:700, color:'var(--green)', fontSize:'13px' }}>
+                    <td style={{ fontFamily:'var(--font-serif)', fontWeight:600, color:'var(--green)', fontSize:'13px' }}>
                       {e.amount ? `₹${e.amount.toLocaleString('en-IN')}` : '—'}
                     </td>
                     <td>
-                      <code style={{ fontFamily:'monospace', fontSize:'12px', fontWeight:700, color:'var(--cyan)', background:'rgba(0,212,255,0.08)', padding:'2px 7px', borderRadius:'4px' }}>
+                      <code style={{ fontFamily:'var(--font-mono)', fontSize:'12px', fontWeight:700, color:'var(--accent-2)', background:'var(--accent-2-dim)', padding:'2px 7px', borderRadius:'4px' }}>
                         {e.referral_code ?? '—'}
                       </code>
                     </td>
                     <td style={{ fontSize:'13px' }}>{e.faculty_referrals?.faculty_name ?? '—'}</td>
                     <td style={{ fontSize:'12px', color:'var(--muted)' }}>{date}</td>
                     <td>
-                      <span style={{
-                        padding:'3px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:600,
-                        background: e.status === 'approved' ? 'rgba(34,197,94,0.12)' : e.status === 'pending' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.1)',
+                      <span className="pill" style={{
+                        background: e.status === 'approved' ? 'var(--green-dim)' : e.status === 'pending' ? 'var(--amber-dim)' : 'var(--red-dim)',
                         color: e.status === 'approved' ? 'var(--green)' : e.status === 'pending' ? 'var(--amber)' : 'var(--red)',
                       }}>
-                        {e.status.charAt(0).toUpperCase() + e.status.slice(1)}
+                        {e.status}
                       </span>
                     </td>
                   </tr>

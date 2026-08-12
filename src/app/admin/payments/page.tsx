@@ -41,15 +41,15 @@ export default async function AdminPaymentsPage() {
         <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
 
           {/* Stats */}
-          <div className='r-grid-3' style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'14px', marginBottom:'24px' }}>
+          <div className='r-grid-3' style={{ marginBottom:'24px' }}>
             {[
-              { label:'Pending Review', value:pending,  color:'var(--amber)', bg:'rgba(245,158,11,0.08)', border:'rgba(245,158,11,0.2)' },
-              { label:'Approved',       value:approved, color:'var(--green)', bg:'rgba(34,197,94,0.08)',  border:'rgba(34,197,94,0.2)'  },
-              { label:'Rejected',       value:rejected, color:'var(--red)',   bg:'rgba(239,68,68,0.08)', border:'rgba(239,68,68,0.2)'  },
+              { label:'Pending review', value:pending,  color:'var(--amber)' },
+              { label:'Approved',       value:approved, color:'var(--green)' },
+              { label:'Rejected',       value:rejected, color:'var(--red)'   },
             ].map(s => (
-              <div key={s.label} style={{ background:s.bg, border:`1px solid ${s.border}`, borderRadius:'var(--radius)', padding:'16px 20px' }}>
-                <div style={{ fontSize:'10px', color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'6px' }}>{s.label}</div>
-                <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'28px', color:s.color, lineHeight:1 }}>{s.value}</div>
+              <div key={s.label} className="stat-card">
+                <div className="stat-label">{s.label}</div>
+                <div className="stat-value" style={{ color:s.color }}>{s.value}</div>
               </div>
             ))}
           </div>

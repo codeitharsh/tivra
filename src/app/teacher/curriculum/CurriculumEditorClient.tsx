@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Plus, Trash2, Loader2, Edit2, Check, X,
-  ChevronUp, ChevronDown, GripVertical, Lock, Unlock,
+  ChevronUp, ChevronDown, GripVertical, Lock, Unlock, FileText,
 } from 'lucide-react'
 
 interface Module {
@@ -203,7 +203,7 @@ export default function CurriculumEditorClient({
           }}>
             <div style={{
               width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, marginTop: '6px',
-              background: phase.phase_number === 1 ? '#f59e0b' : 'var(--cyan)',
+              background: phase.phase_number === 1 ? 'var(--amber)' : 'var(--accent-2)',
             }}/>
 
             <div style={{ flex: 1 }}>
@@ -236,15 +236,15 @@ export default function CurriculumEditorClient({
                 <>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{
-                      fontFamily: 'Space Mono,monospace', fontSize: '10px',
-                      color: phase.phase_number === 1 ? '#f59e0b' : 'var(--cyan)',
+                      fontFamily: 'var(--font-mono)', fontSize: '10px',
+                      color: phase.phase_number === 1 ? 'var(--amber)' : 'var(--accent-2)',
                       letterSpacing: '0.1em', textTransform: 'uppercase',
                     }}>
                       Phase {phase.phase_number}
                     </span>
                   </div>
-                  <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700,
-                    fontSize: '16px', color: '#fff', marginTop: '2px' }}>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600,
+                    fontSize: '16px', color: 'var(--text)', marginTop: '2px' }}>
                     {phase.title}
                   </div>
                   {phase.description && (
@@ -288,9 +288,9 @@ export default function CurriculumEditorClient({
               {phase.modules.map((mod, i) => (
                 <div key={mod.id} style={{
                   display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '10px 14px', borderRadius: '8px',
-                  background: 'rgba(255,255,255,0.025)',
-                  border: `1px solid ${mod.is_unlocked ? 'rgba(34,197,94,0.2)' : 'var(--border)'}`,
+                  padding: '10px 14px', borderRadius: 'var(--radius-sm)',
+                  background: 'var(--card2)',
+                  border: `1px solid ${mod.is_unlocked ? 'rgba(74,222,128,0.2)' : 'var(--border)'}`,
                 }}>
                   {/* Grip / reorder */}
                   <GripVertical size={14} style={{ color: 'var(--muted)', flexShrink: 0 }}/>
@@ -298,9 +298,9 @@ export default function CurriculumEditorClient({
                   {/* Module number */}
                   <div style={{
                     width: '24px', height: '24px', borderRadius: '6px', flexShrink: 0,
-                    background: mod.is_unlocked ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)',
+                    background: mod.is_unlocked ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '10px',
+                    fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '10px',
                     color: mod.is_unlocked ? 'var(--green)' : 'var(--muted)',
                   }}>
                     {mod.module_number}
@@ -329,7 +329,7 @@ export default function CurriculumEditorClient({
                       <div style={{ fontSize: '13px', fontWeight: 500 }}>{mod.title}</div>
                       <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '1px' }}>
                         {mod.notes_url
-                          ? <span style={{ color: 'var(--green)' }}>📄 Notes uploaded</span>
+                          ? <span style={{ color: 'var(--green)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}><FileText size={10}/> Notes uploaded</span>
                           : <span>No notes</span>}
                       </div>
                     </div>
@@ -386,10 +386,10 @@ export default function CurriculumEditorClient({
             {addingToPhase === phase.id ? (
               <div style={{
                 display: 'flex', gap: '8px', alignItems: 'center', marginTop: '10px',
-                padding: '12px 14px', borderRadius: '8px',
-                background: 'rgba(0,200,248,0.04)', border: '1px dashed rgba(0,200,248,0.3)',
+                padding: '12px 14px', borderRadius: 'var(--radius-sm)',
+                background: 'var(--accent-2-dim)', border: '1px dashed rgba(23,174,224,0.3)',
               }}>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '11px',
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '11px',
                   color: 'var(--muted)', flexShrink: 0 }}>
                   {phase.modules.length + 1}.
                 </div>
@@ -414,7 +414,7 @@ export default function CurriculumEditorClient({
                 onClick={() => { setAddingToPhase(phase.id); setNewModTitle('') }}
                 style={{ fontSize: '12px', marginTop: '10px', width: '100%',
                   justifyContent: 'center', borderStyle: 'dashed' }}>
-                <Plus size={13}/> Add Module to Phase {phase.phase_number}
+                <Plus size={13}/> Add module to Phase {phase.phase_number}
               </button>
             )}
           </div>
@@ -424,11 +424,11 @@ export default function CurriculumEditorClient({
       {/* Add new phase */}
       {addingPhase ? (
         <div className="card" style={{
-          padding: '20px', border: '1px dashed rgba(0,200,248,0.3)',
-          background: 'rgba(0,200,248,0.03)',
+          padding: '20px', border: '1px dashed rgba(23,174,224,0.3)',
+          background: 'var(--accent-2-dim)',
         }}>
-          <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '14px', marginBottom: '12px' }}>
-            New Phase — Phase {phases.length + 1}
+          <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px', marginBottom: '12px' }}>
+            New phase — Phase {phases.length + 1}
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <input className="form-input" placeholder="Phase title (e.g. AWS DevOps)"
@@ -439,7 +439,7 @@ export default function CurriculumEditorClient({
               disabled={saving === 'new-phase' && isPending}>
               {saving === 'new-phase' && isPending
                 ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }}/>
-                : <><Check size={13}/> Add Phase</>}
+                : <><Check size={13}/> Add phase</>}
             </button>
             <button className="btn btn-ghost" style={{ fontSize: '13px', flexShrink: 0 }}
               onClick={() => { setAddingPhase(false); setNewPhaseTitle('') }}>
@@ -451,7 +451,7 @@ export default function CurriculumEditorClient({
         <button className="btn btn-ghost"
           onClick={() => setAddingPhase(true)}
           style={{ width: '100%', justifyContent: 'center', borderStyle: 'dashed', fontSize: '13px' }}>
-          <Plus size={14}/> Add New Phase
+          <Plus size={14}/> Add new phase
         </button>
       )}
 

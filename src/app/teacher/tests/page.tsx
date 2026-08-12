@@ -120,17 +120,15 @@ export default async function TeacherTestsPage({
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px', marginBottom: '24px' }}>
+          <div className="r-grid-3" style={{ marginBottom: '24px' }}>
             {[
-              { label: 'Tests Created',   value: totalTests,     color: 'var(--cyan)'  },
-              { label: 'Total Questions', value: totalQuestions, color: 'var(--green)' },
-              { label: 'Total Attempts',  value: totalAttempts,  color: '#a78bfa'      },
+              { label: 'Tests created',   value: totalTests,     color: 'var(--accent-2)' },
+              { label: 'Total questions', value: totalQuestions, color: 'var(--green)'    },
+              { label: 'Total attempts',  value: totalAttempts,  color: 'var(--accent)'   },
             ].map(s => (
-              <div key={s.label} className="card card-accent-top" style={{ padding: '16px 20px' }}>
-                <div style={{ fontSize: '10px', color: 'var(--muted)', textTransform: 'uppercase',
-                  letterSpacing: '0.08em', marginBottom: '6px' }}>{s.label}</div>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '28px',
-                  color: s.color, lineHeight: 1 }}>{s.value}</div>
+              <div key={s.label} className="stat-card">
+                <div className="stat-label">{s.label}</div>
+                <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
               </div>
             ))}
           </div>

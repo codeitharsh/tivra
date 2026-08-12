@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, Clock, CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Download, Clock, CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react'
 
 // ── Calls the edge-compatible /api/admin route (migrated off Server Actions) ──
 async function callAdminApi(payload: Record<string, unknown>): Promise<{ error?: string; csv?: string | null }> {
@@ -71,7 +71,7 @@ export default function AttendanceClient({ sessions, attendanceMap, totalStudent
           style={{ fontSize:'13px' }}
         >
           <Download size={14}/>
-          {exporting === 'all' ? 'Exporting…' : 'Export All Sessions CSV'}
+          {exporting === 'all' ? 'Exporting…' : 'Export all sessions CSV'}
         </button>
       </div>
 
@@ -102,14 +102,17 @@ export default function AttendanceClient({ sessions, attendanceMap, totalStudent
                 onClick={() => setExpanded(isOpen ? null : sid)}
               >
                 {/* Status dot */}
-                <div style={{
-                  width:'8px', height:'8px', borderRadius:'50%', flexShrink:0,
-                  background: session.is_live ? 'var(--green)' : session.is_completed ? 'var(--muted)' : 'var(--amber)',
-                  boxShadow: session.is_live ? '0 0 8px var(--green)' : 'none',
-                }}/>
+                {session.is_live ? (
+                  <div className="pulse-dot pulse-green"/>
+                ) : (
+                  <div style={{
+                    width:'8px', height:'8px', borderRadius:'50%', flexShrink:0,
+                    background: session.is_completed ? 'var(--muted)' : 'var(--amber)',
+                  }}/>
+                )}
 
                 <div style={{ flex:1 }}>
-                  <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'14px' }}>
+                  <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'14px' }}>
                     {String(session.title)}
                   </div>
                   <div style={{ fontSize:'12px', color:'var(--muted)', marginTop:'2px' }}>
@@ -120,7 +123,7 @@ export default function AttendanceClient({ sessions, attendanceMap, totalStudent
                       : 'Not scheduled'}
                     {' · '}
                     {String(session.duration_minutes)} mins
-                    {session.is_live ? <span style={{ color:'var(--green)', marginLeft:'8px', fontWeight:600 }}>● LIVE NOW</span> : null}
+                    {session.is_live ? <span style={{ color:'var(--green)', marginLeft:'8px', fontWeight:600, fontFamily:'var(--font-mono)' }}>LIVE NOW</span> : null}
                     {session.is_completed ? <span style={{ color:'var(--muted)', marginLeft:'8px' }}>Completed</span> : null}
                   </div>
                 </div>
@@ -128,7 +131,7 @@ export default function AttendanceClient({ sessions, attendanceMap, totalStudent
                 {/* Attendance rate */}
                 <div style={{ textAlign:'right', minWidth:'120px' }}>
                   <div style={{
-                    fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'22px',
+                    fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'22px',
                     color: rate >= 75 ? 'var(--green)' : rate >= 50 ? 'var(--amber)' : 'var(--red)',
                   }}>
                     {summary ? `${rate}%` : '—'}
@@ -179,19 +182,19 @@ export default function AttendanceClient({ sessions, attendanceMap, totalStudent
                   ) : (
                     <div>
                       {/* Stats row */}
-                      <div className='r-grid-4' style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'12px', marginBottom:'16px' }}>
+                      <div className='r-grid-4' style={{ marginBottom:'16px' }}>
                         {[
-                          { label:'Present',      value:summary.present,  color:'var(--green)', icon:'✓' },
-                          { label:'Partial (<50%)',value:summary.partial,  color:'var(--amber)', icon:'⚡' },
-                          { label:'Absent',        value:summary.absent,   color:'var(--red)',   icon:'✗' },
-                          { label:'Attendance Rate',value:`${rate}%`,      color: rate>=75?'var(--green)':rate>=50?'var(--amber)':'var(--red)', icon:'📊' },
+                          { label:'Present',        value:summary.present,  color:'var(--green)', Icon:CheckCircle2 },
+                          { label:'Partial (<50%)',  value:summary.partial,  color:'var(--amber)', Icon:AlertCircle },
+                          { label:'Absent',          value:summary.absent,   color:'var(--red)',   Icon:XCircle },
+                          { label:'Attendance rate', value:`${rate}%`,       color: rate>=75?'var(--green)':rate>=50?'var(--amber)':'var(--red)', Icon:BarChart3 },
                         ].map(s => (
-                          <div key={s.label} style={{
-                            background:'rgba(255,255,255,0.03)', borderRadius:'8px', padding:'12px',
-                            border:'1px solid var(--border)',
-                          }}>
-                            <div style={{ fontSize:'9px', color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'4px' }}>{s.label}</div>
-                            <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'22px', color:s.color }}>{s.value}</div>
+                          <div key={s.label} className="stat-card" style={{ padding:'12px' }}>
+                            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'4px' }}>
+                              <div className="stat-label" style={{ marginBottom:0, fontSize:'9px' }}>{s.label}</div>
+                              <s.Icon size={12} color="var(--muted2)"/>
+                            </div>
+                            <div className="stat-value" style={{ fontSize:'22px', color:s.color }}>{s.value}</div>
                           </div>
                         ))}
                       </div>
@@ -199,11 +202,9 @@ export default function AttendanceClient({ sessions, attendanceMap, totalStudent
                       {/* Progress bar */}
                       <div className="progress-track" style={{ marginBottom:'12px' }}>
                         <div style={{
-                          height:'100%', borderRadius:'3px',
+                          height:'100%', borderRadius:'inherit',
                           width:`${rate}%`,
-                          background: rate>=75
-                            ? 'var(--green)'
-                            : 'linear-gradient(135deg,var(--cyan),var(--purple))',
+                          background: rate>=75 ? 'var(--green)' : 'var(--accent-2)',
                           transition:'width 0.6s ease',
                         }}/>
                       </div>

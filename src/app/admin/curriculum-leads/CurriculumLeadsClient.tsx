@@ -106,8 +106,8 @@ export default function CurriculumLeadsClient({ leads }: { leads: Lead[] }) {
                   {leads.length === 0 ? 'No curriculum leads yet.' : 'No leads match your search/filter.'}
                 </td></tr>
               )}
-              {filtered.map((l, i) => (
-                <tr key={l.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
+              {filtered.map((l) => (
+                <tr key={l.id}>
                   <td style={{ fontSize: '13px', fontWeight: 500 }}>{l.full_name}</td>
                   <td style={{ fontSize: '13px' }}>{l.programs?.name ?? '—'}</td>
                   <td>

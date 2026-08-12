@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import { Loader2, Lock, Unlock } from 'lucide-react'
+import { Loader2, Lock, Unlock, CircleDot } from 'lucide-react'
 
 export default function TestSchedulerClient({ tests }: { tests: Record<string,unknown>[] }) {
   const router = useRouter()
@@ -95,8 +95,8 @@ function TestGroup({
 }) {
   return (
     <div style={{ marginBottom:'28px' }}>
-      <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'15px', marginBottom:'14px' }}>
-        Phase {phaseNum} Weekly Tests
+      <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px', marginBottom:'14px' }}>
+        Phase {phaseNum} weekly tests
       </div>
       <div className="card" style={{ padding:0, overflow:'hidden' }}>
         <table className="data-table">
@@ -120,7 +120,7 @@ function TestGroup({
 
               return (
                 <tr key={t.id as string}>
-                  <td style={{ fontFamily:'Syne,sans-serif', fontWeight:700, color:'var(--muted)', fontSize:'13px' }}>
+                  <td style={{ fontFamily:'var(--font-mono)', fontWeight:600, color:'var(--muted)', fontSize:'13px' }}>
                     W{String(t.week_number)}
                   </td>
                   <td style={{ fontSize:'13px', fontWeight:500 }}>
@@ -144,12 +144,11 @@ function TestGroup({
                       onChange={e=>setDates(p=>({...p,[t.id as string]:{...p[t.id as string],time:e.target.value}}))}/>
                   </td>
                   <td>
-                    <span style={{
-                      padding:'3px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:600,
-                      background: isUnlocked ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)',
+                    <span className="pill" style={{
+                      background: isUnlocked ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
                       color: isUnlocked ? 'var(--green)' : 'var(--muted)',
                     }}>
-                      {isUnlocked ? '● Open' : '🔒 Locked'}
+                      {isUnlocked ? <><CircleDot size={11}/> Open</> : <><Lock size={11}/> Locked</>}
                     </span>
                   </td>
                   <td style={{textAlign:'right'}}>
@@ -168,7 +167,7 @@ function TestGroup({
                             style={{fontSize:'11px',padding:'5px 12px'}}>
                             {t.is_manually_unlocked
                               ? <><Lock size={11}/> Re-lock</>
-                              : <><Unlock size={11}/> Unlock Now</>}
+                              : <><Unlock size={11}/> Unlock now</>}
                           </button>
                         </>
                       )}

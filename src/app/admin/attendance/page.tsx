@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import AttendanceClient from './AttendanceClient'
 import type { Profile } from '@/types/database'
+import { Bot } from 'lucide-react'
 
 export default async function AdminAttendancePage() {
   const supabase = await createClient()
@@ -62,12 +63,12 @@ export default async function AdminAttendancePage() {
         <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
 
           {/* Info banner */}
-          <div className="banner banner-info" style={{ marginBottom:'24px' }}>
-            <span style={{ fontSize:'18px', flexShrink:0 }}>🤖</span>
+          <div className="banner banner-info">
+            <Bot size={18} style={{ flexShrink:0 }}/>
             <div style={{ fontSize:'13px' }}>
-              <strong style={{ color:'#fff' }}>Automatic attendance:</strong> When a student joins a live class, their
-              <strong style={{ color:'#93c5fd' }}> join time</strong> is recorded. When they leave,
-              the <strong style={{ color:'#93c5fd' }}>leave time and total duration</strong> are saved.
+              <strong style={{ color:'var(--text)' }}>Automatic attendance:</strong> When a student joins a live class, their
+              <strong style={{ color:'#a9c0e8' }}> join time</strong> is recorded. When they leave,
+              the <strong style={{ color:'#a9c0e8' }}>leave time and total duration</strong> are saved.
               Students attending &lt;50% of duration are marked <strong>Partial</strong>.
               Admin and teachers can manually override any record.
             </div>

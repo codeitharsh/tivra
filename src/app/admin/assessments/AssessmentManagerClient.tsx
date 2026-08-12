@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Loader2, Lock, Unlock, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Trash2, Loader2, Lock, Unlock, ChevronDown, ChevronUp, AlertTriangle, Check, CircleDot } from 'lucide-react'
 
 interface Phase { id: string; title: string; phase_number: number }
 
@@ -140,11 +140,15 @@ export default function AssessmentManagerClient({
               display:'flex', alignItems:'center', gap:'14px', cursor:'pointer',
             }} onClick={() => setExpanded(isOpen ? null : phase.id)}>
               <div style={{
-                width:'8px', height:'8px', borderRadius:'50%', flexShrink:0,
-                background: assessment ? (isUnlocked ? 'var(--green)' : 'var(--amber)') : 'var(--red)',
-              }}/>
+                width:'28px', height:'28px', borderRadius:'6px', flexShrink:0,
+                background: assessment ? (isUnlocked ? 'var(--green-dim)' : 'var(--amber-dim)') : 'var(--red-dim)',
+                color: assessment ? (isUnlocked ? 'var(--green)' : 'var(--amber)') : 'var(--red)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                {assessment ? (isUnlocked ? <CircleDot size={13}/> : <Lock size={13}/>) : <AlertTriangle size={13}/>}
+              </div>
               <div style={{ flex:1 }}>
-                <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'15px' }}>
+                <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px' }}>
                   Phase {phase.phase_number}: {phase.title}
                 </div>
                 <div style={{ fontSize:'12px', color:'var(--muted)', marginTop:'2px' }}>
@@ -153,16 +157,15 @@ export default function AssessmentManagerClient({
                     : 'No assessment created yet'}
                 </div>
               </div>
-              <span style={{
-                padding:'3px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:600,
+              <span className="pill" style={{
                 background: assessment
-                  ? isUnlocked ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)'
-                  : 'rgba(239,68,68,0.12)',
+                  ? isUnlocked ? 'var(--green-dim)' : 'var(--amber-dim)'
+                  : 'var(--red-dim)',
                 color: assessment
                   ? isUnlocked ? 'var(--green)' : 'var(--amber)'
                   : 'var(--red)',
               }}>
-                {assessment ? (isUnlocked ? '● Open' : '🔒 Locked') : '⚠ Not set up'}
+                {assessment ? (isUnlocked ? 'Open' : 'Locked') : 'Not set up'}
               </span>
               {isOpen ? <ChevronUp size={16} style={{color:'var(--muted)'}}/> : <ChevronDown size={16} style={{color:'var(--muted)'}}/> }
             </div>
@@ -174,7 +177,7 @@ export default function AssessmentManagerClient({
                 {/* Create assessment if missing */}
                 {!assessment && (
                   <div className="banner banner-warning" style={{ marginBottom:'20px' }}>
-                    <span style={{ flexShrink:0 }}>⚠️</span>
+                    <AlertTriangle size={16} style={{ flexShrink:0 }}/>
                     <div style={{ flex:1 }}>
                       No assessment exists for Phase {phase.phase_number} yet.
                     </div>
@@ -183,7 +186,7 @@ export default function AssessmentManagerClient({
                       disabled={saving === phase.id && isPending}>
                       {saving === phase.id && isPending
                         ? <Loader2 size={13} style={{animation:'spin 1s linear infinite'}}/>
-                        : <><Plus size={13}/> Create Assessment</>}
+                        : <><Plus size={13}/> Create assessment</>}
                     </button>
                   </div>
                 )}
@@ -192,26 +195,25 @@ export default function AssessmentManagerClient({
                   <>
                     {/* Schedule */}
                     <div style={{ marginBottom:'24px' }}>
-                      <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'13px',
-                        textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--muted)', marginBottom:'12px' }}>
-                        Unlock Schedule
+                      <div className="stat-label" style={{ marginBottom:'12px' }}>
+                        Unlock schedule
                       </div>
                       <div style={{ display:'flex', gap:'10px', alignItems:'flex-end', flexWrap:'wrap' }}>
                         <div>
-                          <label className="form-label">Unlock Date</label>
+                          <label className="form-label">Unlock date</label>
                           <input type="date" className="form-input" style={{ fontSize:'13px', padding:'8px 12px' }}
                             value={dates[aId]?.date ?? ''}
                             onChange={e => setDates(p => ({...p, [aId]: {...p[aId], date: e.target.value}}))}/>
                         </div>
                         <div>
-                          <label className="form-label">Unlock Time</label>
+                          <label className="form-label">Unlock time</label>
                           <input type="time" className="form-input" style={{ fontSize:'13px', padding:'8px 12px' }}
                             value={dates[aId]?.time ?? ''}
                             onChange={e => setDates(p => ({...p, [aId]: {...p[aId], time: e.target.value}}))}/>
                         </div>
                         <button className="btn btn-ghost" onClick={() => saveSchedule(aId)}
                           disabled={saving === aId && isPending} style={{ fontSize:'12px', padding:'9px 16px' }}>
-                          {saving === aId && isPending ? <Loader2 size={13} style={{animation:'spin 1s linear infinite'}}/> : 'Save Schedule'}
+                          {saving === aId && isPending ? <Loader2 size={13} style={{animation:'spin 1s linear infinite'}}/> : 'Save schedule'}
                         </button>
                         <button
                           className={assessment.is_manually_unlocked ? 'btn btn-danger' : 'btn btn-success'}
@@ -220,7 +222,7 @@ export default function AssessmentManagerClient({
                           style={{ fontSize:'12px', padding:'9px 16px' }}>
                           {assessment.is_manually_unlocked
                             ? <><Lock size={12}/> Re-lock</>
-                            : <><Unlock size={12}/> Unlock Now</>}
+                            : <><Unlock size={12}/> Unlock now</>}
                         </button>
                       </div>
                       {assessment.unlock_datetime ? (
@@ -234,29 +236,27 @@ export default function AssessmentManagerClient({
 
                     {/* Questions list */}
                     <div style={{ marginBottom:'20px' }}>
-                      <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'13px',
-                        textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--muted)', marginBottom:'12px',
-                        display:'flex', justifyContent:'space-between' }}>
+                      <div className="stat-label" style={{ marginBottom:'12px', display:'flex', justifyContent:'space-between' }}>
                         <span>Questions ({phaseQs.length})</span>
-                        <span style={{ color: phaseQs.length < 5 ? 'var(--red)' : 'var(--green)', fontWeight:400, fontSize:'11px' }}>
-                          {phaseQs.length < 5 ? '⚠ Add more questions before going live' : '✓ Good to go'}
+                        <span style={{ color: phaseQs.length < 5 ? 'var(--red)' : 'var(--green)', fontWeight:400, fontSize:'11px', textTransform:'none', letterSpacing:0, display:'flex', alignItems:'center', gap:'4px' }}>
+                          {phaseQs.length < 5 ? <><AlertTriangle size={11}/> Add more questions before going live</> : <><Check size={11}/> Good to go</>}
                         </span>
                       </div>
 
                       {phaseQs.length === 0 ? (
                         <div style={{ padding:'20px', textAlign:'center', color:'var(--muted)', fontSize:'13px',
-                          background:'rgba(255,255,255,0.02)', borderRadius:'8px', border:'1px solid var(--border)' }}>
+                          background:'var(--card2)', borderRadius:'var(--radius-sm)', border:'1px solid var(--border)' }}>
                           No questions yet. Add your first question below.
                         </div>
                       ) : (
                         <div style={{ display:'flex', flexDirection:'column', gap:'8px', maxHeight:'400px', overflowY:'auto' }}>
                           {phaseQs.map((q, i) => (
                             <div key={q.id as string} style={{
-                              padding:'12px 16px', borderRadius:'8px',
-                              background:'rgba(255,255,255,0.03)', border:'1px solid var(--border)',
+                              padding:'12px 16px', borderRadius:'var(--radius-sm)',
+                              background:'var(--card2)', border:'1px solid var(--border)',
                               display:'flex', gap:'12px', alignItems:'flex-start',
                             }}>
-                              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'12px',
+                              <div style={{ fontFamily:'var(--font-mono)', fontWeight:600, fontSize:'12px',
                                 color:'var(--muted)', flexShrink:0, minWidth:'24px' }}>
                                 {i+1}.
                               </div>
@@ -267,15 +267,17 @@ export default function AssessmentManagerClient({
                                 <div style={{ display:'flex', gap:'6px', flexWrap:'wrap' }}>
                                   {(q.options as string[]).map((opt, oi) => {
                                     const letter = String.fromCharCode(65+oi)
+                                    const isCorrect = letter === q.correct_answer
                                     return (
                                       <span key={oi} style={{
                                         fontSize:'11px', padding:'2px 8px', borderRadius:'6px',
-                                        background: letter === q.correct_answer ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)',
-                                        color: letter === q.correct_answer ? 'var(--green)' : 'var(--muted)',
-                                        border: `1px solid ${letter === q.correct_answer ? 'rgba(34,197,94,0.2)' : 'transparent'}`,
+                                        display:'inline-flex', alignItems:'center', gap:'4px',
+                                        background: isCorrect ? 'var(--green-dim)' : 'rgba(255,255,255,0.05)',
+                                        color: isCorrect ? 'var(--green)' : 'var(--muted)',
+                                        border: `1px solid ${isCorrect ? 'rgba(74,222,128,0.2)' : 'transparent'}`,
                                       }}>
                                         {letter}. {opt}
-                                        {letter === q.correct_answer && ' ✓'}
+                                        {isCorrect && <Check size={10}/>}
                                       </span>
                                     )
                                   })}
@@ -294,16 +296,16 @@ export default function AssessmentManagerClient({
 
                     {/* Add question form */}
                     <div style={{
-                      padding:'18px', borderRadius:'10px',
-                      background:'rgba(0,200,248,0.04)', border:'1px solid rgba(0,200,248,0.15)',
+                      padding:'18px', borderRadius:'var(--radius)',
+                      background:'var(--accent-2-dim)', border:'1px solid rgba(23,174,224,0.2)',
                     }}>
-                      <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'13px',
-                        marginBottom:'14px', color:'var(--teal)' }}>
-                        + Add New Question
+                      <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'13px',
+                        marginBottom:'14px', color:'var(--accent-2)', display:'flex', alignItems:'center', gap:'6px' }}>
+                        <Plus size={13}/> Add new question
                       </div>
                       <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
                         <div>
-                          <label className="form-label">Question Text *</label>
+                          <label className="form-label">Question text *</label>
                           <textarea className="form-input" rows={2} placeholder="Type the question here…"
                             value={newQ[aId]?.question_text ?? ''}
                             onChange={e => setNewQ(p => ({...p, [aId]: {...p[aId] ?? {options:['','','',''],correct_answer:'',explanation:''}, question_text: e.target.value}}))}
@@ -327,7 +329,7 @@ export default function AssessmentManagerClient({
 
                         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr' }}>
                           <div>
-                            <label className="form-label">Correct Answer *</label>
+                            <label className="form-label">Correct answer *</label>
                             <select className="form-select"
                               value={newQ[aId]?.correct_answer ?? ''}
                               onChange={e => setNewQ(p => ({...p, [aId]: {...p[aId] ?? {question_text:'',options:['','','',''],explanation:''}, correct_answer: e.target.value}}))}>
@@ -351,7 +353,7 @@ export default function AssessmentManagerClient({
                           style={{ fontSize:'13px', padding:'10px 20px', alignSelf:'flex-start' }}>
                           {saving === `q-${aId}` && isPending
                             ? <><Loader2 size={13} style={{animation:'spin 1s linear infinite'}}/> Adding…</>
-                            : <><Plus size={13}/> Add Question</>}
+                            : <><Plus size={13}/> Add question</>}
                         </button>
                       </div>
                     </div>

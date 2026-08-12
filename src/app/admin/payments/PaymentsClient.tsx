@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { CheckCircle2, XCircle, Loader2, Search } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, Search, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 // ── Calls the edge-compatible /api/admin route. The caller's admin identity
@@ -76,9 +76,9 @@ export default function PaymentsClient({ rows }: { rows: Record<string,unknown>[
   }
 
   const statusMeta: Record<string,{color:string;bg:string;label:string}> = {
-    pending:  { color:'var(--amber)', bg:'rgba(245,158,11,0.12)', label:'Pending'  },
-    approved: { color:'var(--green)', bg:'rgba(34,197,94,0.12)',  label:'Approved' },
-    rejected: { color:'var(--red)',   bg:'rgba(239,68,68,0.12)',  label:'Rejected' },
+    pending:  { color:'var(--amber)', bg:'var(--amber-dim)', label:'Pending'  },
+    approved: { color:'var(--green)', bg:'var(--green-dim)', label:'Approved' },
+    rejected: { color:'var(--red)',   bg:'var(--red-dim)',   label:'Rejected' },
   }
 
   return (
@@ -92,15 +92,15 @@ export default function PaymentsClient({ rows }: { rows: Record<string,unknown>[
         </div>
         {(['all','pending','approved','rejected'] as FilterStatus[]).map(f=>(
           <button key={f} onClick={()=>setFilter(f)} style={{
-            padding:'6px 14px',borderRadius:'20px',border:'none',cursor:'pointer',
-            fontSize:'11px',fontWeight:600,fontFamily:'DM Sans,sans-serif',transition:'all 0.15s',
-            background:filter===f?'linear-gradient(135deg,#00c8f8,#7030d0)':'rgba(255,255,255,0.06)',
-            color:filter===f?'#fff':'var(--muted)',
+            padding:'6px 14px',borderRadius:'var(--radius-pill)',border:'none',cursor:'pointer',
+            fontSize:'11px',fontWeight:600,fontFamily:'var(--font-sans)',transition:'all 0.15s',
+            background:filter===f?'var(--accent)':'rgba(255,255,255,0.06)',
+            color:filter===f?'var(--on-accent)':'var(--muted)',
           }}>
             {f==='all'?`All (${rows.length})`:
-             f==='pending'?`⏳ Pending (${rows.filter(r=>r.status==='pending').length})`:
-             f==='approved'?`✓ Approved (${rows.filter(r=>r.status==='approved').length})`:
-             `✗ Rejected (${rows.filter(r=>r.status==='rejected').length})`}
+             f==='pending'?`Pending (${rows.filter(r=>r.status==='pending').length})`:
+             f==='approved'?`Approved (${rows.filter(r=>r.status==='approved').length})`:
+             `Rejected (${rows.filter(r=>r.status==='rejected').length})`}
           </button>
         ))}
       </div>
@@ -136,7 +136,7 @@ export default function PaymentsClient({ rows }: { rows: Record<string,unknown>[
                     </td>
                     <td style={{fontSize:'12px',color:'var(--muted)',textTransform:'capitalize'}}>{String(row.payment_method??'—')}</td>
                     <td>
-                      <span style={{fontFamily:'monospace',fontSize:'12px',color:row.transaction_ref?'var(--cyan)':'var(--muted)'}}>
+                      <span style={{fontFamily:'var(--font-mono)',fontSize:'12px',color:row.transaction_ref?'var(--accent-2)':'var(--muted)'}}>
                         {String(row.transaction_ref??'—')}
                       </span>
                     </td>
@@ -147,7 +147,10 @@ export default function PaymentsClient({ rows }: { rows: Record<string,unknown>[
                       {row.created_at?new Date(row.created_at as string).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'}):'—'}
                     </td>
                     <td>
-                      <span style={{padding:'3px 10px',borderRadius:'20px',fontSize:'11px',fontWeight:600,background:sm.bg,color:sm.color}}>
+                      <span className="pill" style={{background:sm.bg,color:sm.color}}>
+                        {row.status==='pending' && <Clock size={11}/>}
+                        {row.status==='approved' && <CheckCircle2 size={11}/>}
+                        {row.status==='rejected' && <XCircle size={11}/>}
                         {sm.label}
                       </span>
                       {row.rejection_note?<div style={{fontSize:'10px',color:'var(--red)',marginTop:'2px'}}>{String(row.rejection_note)}</div>:null}
@@ -178,12 +181,12 @@ export default function PaymentsClient({ rows }: { rows: Record<string,unknown>[
 
       {/* Reject modal */}
       {rejectModal&&(
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100,backdropFilter:'blur(4px)'}}
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}}
           onClick={e=>{if(e.target===e.currentTarget)setRejectModal(null)}}>
           <div className="glass" style={{width:'100%',maxWidth:'420px',padding:'28px',margin:'16px'}}>
-            <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'18px',marginBottom:'8px'}}>Reject Payment?</h2>
+            <h2 style={{fontFamily:'var(--font-serif)',fontWeight:600,fontSize:'18px',marginBottom:'8px'}}>Reject payment?</h2>
             <p style={{fontSize:'13px',color:'var(--muted)',marginBottom:'18px'}}>
-              This will reject the request from <strong style={{color:'#fff'}}>
+              This will reject the request from <strong style={{color:'var(--text)'}}>
                 {String((rejectModal.profiles as Record<string,string>|null)?.full_name??'')}
               </strong>. They will remain in pending state.
             </p>

@@ -47,39 +47,39 @@ export default function SettingsClient({ colleges }: { colleges: Record<string,u
 
       {/* Batch management link */}
       <div className="card" style={{ marginBottom:'24px', padding:'20px',
-        background:'rgba(0,200,248,0.05)', border:'1px solid rgba(0,200,248,0.2)' }}>
-        <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'15px', marginBottom:'6px' }}>
-          Batch Management
+        background:'var(--accent-2-dim)', border:'1px solid rgba(23,174,224,0.2)' }}>
+        <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px', marginBottom:'6px' }}>
+          Batch management
         </div>
         <div style={{ fontSize:'13px', color:'var(--muted)', marginBottom:'14px' }}>
           Create open and private batches, set enrolment windows, and manage cohorts.
         </div>
         <Link href="/admin/batches" className="btn btn-primary" style={{ fontSize:'13px', padding:'9px 20px' }}>
-          Go to Batch Manager →
+          Go to batch manager →
         </Link>
       </div>
 
       {/* Domain records — internal use only */}
-      <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'16px', marginBottom:'6px' }}>
-        Organisation Domain Records
+      <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'16px', marginBottom:'6px' }}>
+        Organisation domain records
       </div>
       <div style={{ fontSize:'13px', color:'var(--muted)', marginBottom:'16px' }}>
-        Internal record-keeping only. These domains do <strong style={{color:'#fff'}}>not</strong> grant
+        Internal record-keeping only. These domains do <strong style={{color:'var(--text)'}}>not</strong> grant
         any automatic access — all students are still activated manually by admin.
       </div>
 
       <div className="card" style={{ marginBottom:'20px', padding:'18px' }}>
-        <div style={{ fontFamily:'Syne,sans-serif', fontWeight:600, fontSize:'13px', marginBottom:'12px' }}>
-          Add Domain Record
+        <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'13px', marginBottom:'12px' }}>
+          Add domain record
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr auto', gap:'10px', alignItems:'end' }}>
           <div>
-            <label className="form-label">Organisation Name</label>
+            <label className="form-label">Organisation name</label>
             <input className="form-input" placeholder="e.g. NGF College of Engineering"
               value={newName} onChange={e=>setNewName(e.target.value)}/>
           </div>
           <div>
-            <label className="form-label">Email Domain</label>
+            <label className="form-label">Email domain</label>
             <input className="form-input" placeholder="ngf.ac.in"
               value={newDomain} onChange={e=>setNewDomain(e.target.value)}/>
           </div>
@@ -100,7 +100,7 @@ export default function SettingsClient({ colleges }: { colleges: Record<string,u
             <thead>
               <tr>
                 <th>Organisation</th>
-                <th>Email Domain</th>
+                <th>Email domain</th>
                 <th style={{textAlign:'right'}}>Action</th>
               </tr>
             </thead>
@@ -108,7 +108,7 @@ export default function SettingsClient({ colleges }: { colleges: Record<string,u
               {colleges.map(c=>(
                 <tr key={c.id as string}>
                   <td style={{fontWeight:500}}>{String(c.college_name??'')} </td>
-                  <td><span style={{fontFamily:'monospace',fontSize:'12px',color:'var(--cyan)'}}>{String(c.email_domain??'')} </span></td>
+                  <td><span style={{fontFamily:'var(--font-mono)',fontSize:'12px',color:'var(--accent-2)'}}>{String(c.email_domain??'')} </span></td>
                   <td style={{textAlign:'right'}}>
                     <button className="btn btn-danger" onClick={()=>removeDomain(c.id as string)}
                       style={{fontSize:'11px',padding:'4px 10px'}} disabled={isPending}>

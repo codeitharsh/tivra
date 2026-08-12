@@ -64,17 +64,15 @@ export default async function AdminBatchesPage() {
         <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
 
           {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px', marginBottom: '24px' }}>
+          <div className="r-grid-3" style={{ marginBottom: '24px' }}>
             {[
-              { label: 'Total Batches',   value: total,   color: 'var(--cyan)'  },
-              { label: 'Active Now',      value: active,  color: 'var(--green)' },
-              { label: 'Upcoming',        value: upcoming, color: 'var(--amber)' },
+              { label: 'Total batches',   value: total,   color: 'var(--accent-2)' },
+              { label: 'Active now',      value: active,  color: 'var(--green)'    },
+              { label: 'Upcoming',        value: upcoming, color: 'var(--amber)'   },
             ].map(s => (
-              <div key={s.label} className="card card-accent-top" style={{ padding: '16px 20px' }}>
-                <div style={{ fontSize: '10px', color: 'var(--muted)', textTransform: 'uppercase',
-                  letterSpacing: '0.08em', marginBottom: '6px' }}>{s.label}</div>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800,
-                  fontSize: '28px', color: s.color, lineHeight: 1 }}>{s.value}</div>
+              <div key={s.label} className="stat-card">
+                <div className="stat-label">{s.label}</div>
+                <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
               </div>
             ))}
           </div>

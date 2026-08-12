@@ -4,7 +4,8 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Plus, Trash2, Loader2, Lock, Unlock,
-  ChevronDown, ChevronUp, X, Check,
+  ChevronDown, ChevronUp, X, Check, CircleDot, Clock3, Pencil,
+  AlertTriangle, Lightbulb, Info, ClipboardList,
 } from 'lucide-react'
 import { createClient as createSBClient } from '@supabase/supabase-js'
 
@@ -244,10 +245,10 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
     return now >= new Date(t.unlock_datetime as string) ? 'open' : 'scheduled'
   }
 
-  const statusCfg: Record<string, { label: string; color: string; bg: string }> = {
-    open:      { label: '● Open',      color: 'var(--green)', bg: 'rgba(34,197,94,0.12)'  },
-    scheduled: { label: '⏰ Scheduled', color: 'var(--amber)', bg: 'rgba(245,158,11,0.12)' },
-    draft:     { label: '✏ Draft',     color: 'var(--muted)', bg: 'rgba(255,255,255,0.06)' },
+  const statusCfg: Record<string, { label: string; color: string; bg: string; Icon: typeof CircleDot }> = {
+    open:      { label: 'Open',      color: 'var(--green)', bg: 'var(--green-dim)', Icon: CircleDot },
+    scheduled: { label: 'Scheduled', color: 'var(--amber)', bg: 'var(--amber-dim)', Icon: Clock3 },
+    draft:     { label: 'Draft',     color: 'var(--muted)', bg: 'rgba(255,255,255,0.06)', Icon: Pencil },
   }
 
   const phase1Tests = tests.filter(t => (t.phases as Record<string,unknown>|null)?.phase_number === 1)
@@ -299,7 +300,7 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
           borderBottom: isOpen ? '1px solid var(--border)' : 'none',
         }} onClick={() => toggleExpand(tid)}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '14px', marginBottom: '3px' }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px', marginBottom: '3px' }}>
               Week {String(t.week_number)} — {String(t.topic ?? t.title ?? '')}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
@@ -309,11 +310,8 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
             </div>
           </div>
 
-          <span style={{
-            padding: '3px 10px', borderRadius: '20px', fontSize: '11px',
-            fontWeight: 600, background: cfg.bg, color: cfg.color,
-          }}>
-            {cfg.label}
+          <span className="pill" style={{ background: cfg.bg, color: cfg.color }}>
+            <cfg.Icon size={11}/> {cfg.label}
           </span>
 
           <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
@@ -346,12 +344,10 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
           <div style={{ padding: '20px' }}>
 
             {/* Schedule */}
-            <div style={{ marginBottom: '20px', padding: '14px', borderRadius: '10px',
-              background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
-              <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '12px',
-                textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)',
-                marginBottom: '10px' }}>
-                Unlock Schedule
+            <div style={{ marginBottom: '20px', padding: '14px', borderRadius: 'var(--radius-sm)',
+              background: 'var(--card2)', border: '1px solid var(--border)' }}>
+              <div className="stat-label" style={{ marginBottom: '10px' }}>
+                Unlock schedule
               </div>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                 <div>
@@ -384,19 +380,17 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
 
             {/* Questions list */}
             <div style={{ marginBottom: '16px' }}>
-              <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '12px',
-                textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)',
-                marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+              <div className="stat-label" style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
                 <span>Questions ({qs.length})</span>
-                {qs.length === 0 && <span style={{ color: 'var(--red)', fontWeight: 400, fontSize: '11px' }}>
-                  ⚠ No questions yet
+                {qs.length === 0 && <span style={{ color: 'var(--red)', fontWeight: 400, fontSize: '11px', textTransform: 'none', letterSpacing: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <AlertTriangle size={11}/> No questions yet
                 </span>}
               </div>
 
               {qs.length === 0 ? (
                 <div style={{ padding: '16px', textAlign: 'center', color: 'var(--muted)',
-                  fontSize: '13px', background: 'rgba(255,255,255,0.02)',
-                  borderRadius: '8px', border: '1px dashed var(--border)' }}>
+                  fontSize: '13px', background: 'var(--card2)',
+                  borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)' }}>
                   No questions added yet. Add your first question below.
                 </div>
               ) : (
@@ -404,12 +398,12 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
                   maxHeight: '360px', overflowY: 'auto' }}>
                   {qs.map((q, i) => (
                     <div key={q.id as string} style={{
-                      padding: '12px 14px', borderRadius: '8px',
-                      background: 'rgba(255,255,255,0.025)',
+                      padding: '12px 14px', borderRadius: 'var(--radius-sm)',
+                      background: 'var(--card2)',
                       border: '1px solid var(--border)',
                       display: 'flex', gap: '10px', alignItems: 'flex-start',
                     }}>
-                      <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700,
+                      <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 600,
                         fontSize: '11px', color: 'var(--muted)', flexShrink: 0, minWidth: '20px' }}>
                         {i + 1}.
                       </div>
@@ -424,18 +418,19 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
                             return (
                               <span key={oi} style={{
                                 fontSize: '11px', padding: '2px 8px', borderRadius: '6px',
-                                background: isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)',
+                                display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                background: isCorrect ? 'var(--green-dim)' : 'rgba(255,255,255,0.05)',
                                 color: isCorrect ? 'var(--green)' : 'var(--muted)',
-                                border: `1px solid ${isCorrect ? 'rgba(34,197,94,0.2)' : 'transparent'}`,
+                                border: `1px solid ${isCorrect ? 'rgba(74,222,128,0.2)' : 'transparent'}`,
                               }}>
-                                {letter}. {opt}{isCorrect ? ' ✓' : ''}
+                                {letter}. {opt}{isCorrect && <Check size={10}/>}
                               </span>
                             )
                           })}
                         </div>
                         {q.explanation ? (
-                          <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px', fontStyle: 'italic' }}>
-                            💡 {String(q.explanation)}
+                          <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px', fontStyle: 'italic', display: 'flex', alignItems: 'flex-start', gap: '4px' }}>
+                            <Lightbulb size={11} style={{ flexShrink: 0, marginTop: '1px' }}/> {String(q.explanation)}
                           </div>
                         ) : null}
                       </div>
@@ -452,11 +447,11 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
             </div>
 
             {/* Add question to existing test */}
-            <div style={{ padding: '16px', borderRadius: '10px',
-              background: 'rgba(0,200,248,0.04)', border: '1px solid rgba(0,200,248,0.15)' }}>
-              <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '12px',
-                color: 'var(--teal)', marginBottom: '12px' }}>
-                + Add Question
+            <div style={{ padding: '16px', borderRadius: 'var(--radius)',
+              background: 'var(--accent-2-dim)', border: '1px solid rgba(23,174,224,0.2)' }}>
+              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '12px',
+                color: 'var(--accent-2)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Plus size={12}/> Add question
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <textarea className="form-input" rows={2} placeholder="Question text…"
@@ -525,13 +520,11 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
         {([['tests','All Tests'], ['create','Create New Test']] as [Tab, string][]).map(([t, l]) => (
           <button key={t} onClick={() => setTab(t)} style={{
-            padding: '9px 20px', borderRadius: '100px', border: 'none',
+            padding: '9px 20px', borderRadius: 'var(--radius-pill)', border: 'none',
             cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-            fontFamily: 'DM Sans,sans-serif', transition: 'all 0.15s',
-            background: tab === t
-              ? 'linear-gradient(135deg,#00c8f8,#7030d0)'
-              : 'rgba(255,255,255,0.06)',
-            color: tab === t ? '#fff' : 'var(--muted)',
+            fontFamily: 'var(--font-sans)', transition: 'all 0.15s',
+            background: tab === t ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
+            color: tab === t ? 'var(--on-accent)' : 'var(--muted)',
           }}>
             {t === 'create' && <Plus size={13} style={{ marginRight: '5px', verticalAlign: 'middle' }}/>}
             {l}
@@ -542,9 +535,9 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
       {/* ── CREATE TEST TAB ── */}
       {tab === 'create' && (
         <div className="card" style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
-          <h2 style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '18px',
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '18px',
             marginBottom: '22px' }}>
-            Create New Weekly Test
+            Create new weekly test
           </h2>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px' }}>
@@ -604,9 +597,9 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
             </div>
 
             <div className="banner banner-info" style={{ margin: 0 }}>
-              <span style={{ flexShrink: 0 }}>ℹ️</span>
+              <Info size={16} style={{ flexShrink: 0 }}/>
               <span style={{ fontSize: '13px' }}>
-                If no unlock date is set, the test will be <strong style={{ color: '#fff' }}>available immediately</strong> after creation.
+                If no unlock date is set, the test will be <strong style={{ color: 'var(--text)' }}>available immediately</strong> after creation.
                 Set a date to schedule it for later.
               </span>
             </div>
@@ -616,26 +609,26 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
           <div style={{ marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               marginBottom: '14px' }}>
-              <h3 style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '15px' }}>
+              <h3 style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px' }}>
                 Questions ({questions.length})
               </h3>
               <button className="btn btn-ghost" onClick={addQuestion}
                 style={{ fontSize: '12px', padding: '7px 14px' }}>
-                <Plus size={13}/> Add Another
+                <Plus size={13}/> Add another
               </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {questions.map((q, i) => (
                 <div key={i} style={{
-                  padding: '18px', borderRadius: '10px',
-                  background: 'rgba(255,255,255,0.025)',
+                  padding: '18px', borderRadius: 'var(--radius)',
+                  background: 'var(--card2)',
                   border: '1px solid var(--border)',
                   position: 'relative',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between',
                     alignItems: 'center', marginBottom: '12px' }}>
-                    <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700,
+                    <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600,
                       fontSize: '13px', color: 'var(--muted)' }}>
                       Question {i + 1}
                     </div>
@@ -662,9 +655,9 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
                           <span style={{
                             width: '22px', height: '22px', borderRadius: '6px', flexShrink: 0,
                             background: q.correct_answer === letter
-                              ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)',
+                              ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '10px',
+                            fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '10px',
                             color: q.correct_answer === letter ? 'var(--green)' : 'var(--muted)',
                           }}>
                             {letter}
@@ -704,7 +697,7 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
               style={{ fontSize: '14px', padding: '12px 28px' }}>
               {creating
                 ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }}/> Creating…</>
-                : <><Check size={14}/> Create Test ({questions.length} question{questions.length !== 1 ? 's' : ''})</>}
+                : <><Check size={14}/> Create test ({questions.length} question{questions.length !== 1 ? 's' : ''})</>}
             </button>
             <button className="btn btn-ghost" onClick={() => setTab('tests')}
               style={{ fontSize: '13px' }}>
@@ -719,20 +712,20 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
         <div>
           {tests.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '48px', color: 'var(--muted)' }}>
-              <div style={{ fontSize: '32px', marginBottom: '12px' }}>📋</div>
+              <ClipboardList size={28} color="var(--muted2)" style={{ marginBottom: '12px' }}/>
               <div style={{ fontSize: '14px', marginBottom: '8px' }}>No tests created yet.</div>
               <button className="btn btn-primary" onClick={() => setTab('create')}
                 style={{ fontSize: '13px', marginTop: '12px' }}>
-                <Plus size={13}/> Create First Test
+                <Plus size={13}/> Create first test
               </button>
             </div>
           ) : (
             <>
               {phase1Tests.length > 0 && (
                 <div style={{ marginBottom: '24px' }}>
-                  <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '14px',
-                    color: '#f59e0b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#f59e0b' }}/>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px',
+                    color: 'var(--amber)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: 'var(--amber)' }}/>
                     Phase 1 — AWS industry certifications
                     <span style={{ fontWeight: 400, fontSize: '12px', color: 'var(--muted)' }}>
                       ({phase1Tests.length} test{phase1Tests.length !== 1 ? 's' : ''})
@@ -744,9 +737,9 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
 
               {phase2Tests.length > 0 && (
                 <div>
-                  <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '14px',
-                    color: '#00d4ff', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#00d4ff' }}/>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px',
+                    color: 'var(--accent-2)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: 'var(--accent-2)' }}/>
                     Phase 2 — professional certifications Associate
                     <span style={{ fontWeight: 400, fontSize: '12px', color: 'var(--muted)' }}>
                       ({phase2Tests.length} test{phase2Tests.length !== 1 ? 's' : ''})

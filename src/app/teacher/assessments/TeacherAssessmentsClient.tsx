@@ -5,7 +5,7 @@ import { createClient as createSBClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import {
   Plus, Trash2, Loader2, Lock, Unlock,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, CircleDot, AlertTriangle, Check, Lightbulb,
 } from 'lucide-react'
 
 interface Phase {
@@ -210,13 +210,16 @@ export default function TeacherAssessmentsClient({
               cursor: 'pointer',
             }} onClick={() => aId ? toggleExpand(aId) : toggleExpand(phase.id)}>
               <div style={{
-                width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
-                background: !assessment ? 'var(--red)'
-                  : isUnlocked ? 'var(--green)' : 'var(--amber)',
-              }}/>
+                width: '28px', height: '28px', borderRadius: '6px', flexShrink: 0,
+                background: !assessment ? 'var(--red-dim)' : isUnlocked ? 'var(--green-dim)' : 'var(--amber-dim)',
+                color: !assessment ? 'var(--red)' : isUnlocked ? 'var(--green)' : 'var(--amber)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {!assessment ? <AlertTriangle size={13}/> : isUnlocked ? <CircleDot size={13}/> : <Lock size={13}/>}
+              </div>
 
               <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '15px' }}>
+                <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px' }}>
                   {phase.programs?.name ? `${phase.programs.name} — ` : ''}Phase {phase.phase_number}: {phase.title}
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
@@ -228,12 +231,11 @@ export default function TeacherAssessmentsClient({
 
               {assessment && (
                 <>
-                  <span style={{
-                    padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600,
-                    background: isUnlocked ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)',
+                  <span className="pill" style={{
+                    background: isUnlocked ? 'var(--green-dim)' : 'var(--amber-dim)',
                     color: isUnlocked ? 'var(--green)' : 'var(--amber)',
                   }}>
-                    {isUnlocked ? '● Open' : '🔒 Locked'}
+                    {isUnlocked ? <><CircleDot size={11}/> Open</> : <><Lock size={11}/> Locked</>}
                   </span>
 
                   <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
@@ -264,20 +266,20 @@ export default function TeacherAssessmentsClient({
                 {!assessment && (
                   <div>
                     <div className="banner banner-warning" style={{ marginBottom: '20px' }}>
-                      <span style={{ flexShrink: 0 }}>⚠️</span>
+                      <AlertTriangle size={16} style={{ flexShrink: 0 }}/>
                       <span>No assessment exists for Phase {phase.phase_number}. Configure and create one below.</span>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                       <div>
-                        <label className="form-label">Assessment Title</label>
+                        <label className="form-label">Assessment title</label>
                         <input className="form-input"
                           placeholder={`Phase ${phase.phase_number} Final Assessment`}
                           value={cf.title}
                           onChange={e => setCreateForm(p => ({ ...p, [phase.id]: { ...cf, title: e.target.value } }))}/>
                       </div>
                       <div>
-                        <label className="form-label">Total Questions</label>
+                        <label className="form-label">Total questions</label>
                         <input className="form-input" type="number"
                           placeholder="e.g. 60"
                           value={cf.totalQ}
@@ -291,7 +293,7 @@ export default function TeacherAssessmentsClient({
                           onChange={e => setCreateForm(p => ({ ...p, [phase.id]: { ...cf, duration: e.target.value } }))}/>
                       </div>
                       <div>
-                        <label className="form-label">Pass Mark (%)</label>
+                        <label className="form-label">Pass mark (%)</label>
                         <input className="form-input" type="number" placeholder="75"
                           value={cf.passing}
                           onChange={e => setCreateForm(p => ({ ...p, [phase.id]: { ...cf, passing: e.target.value } }))}/>
@@ -304,7 +306,7 @@ export default function TeacherAssessmentsClient({
                       style={{ fontSize: '13px', padding: '10px 22px' }}>
                       {creating === phase.id
                         ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }}/> Creating…</>
-                        : <><Plus size={13}/> Create Assessment</>}
+                        : <><Plus size={13}/> Create assessment</>}
                     </button>
                   </div>
                 )}
@@ -315,7 +317,7 @@ export default function TeacherAssessmentsClient({
                     {/* Settings row */}
                     <div style={{
                       display: 'flex', gap: '20px', padding: '12px 16px',
-                      background: 'rgba(255,255,255,0.03)', borderRadius: '10px',
+                      background: 'var(--card2)', borderRadius: 'var(--radius-sm)',
                       border: '1px solid var(--border)', marginBottom: '20px',
                       flexWrap: 'wrap',
                     }}>
@@ -323,11 +325,10 @@ export default function TeacherAssessmentsClient({
                         ['Title',     String(assessment.title ?? '')],
                         ['Questions', String(assessment.total_questions ?? '')],
                         ['Duration',  `${String(assessment.duration_minutes ?? '')} min`],
-                        ['Pass Mark', `${String(assessment.passing_percent ?? '')}%`],
+                        ['Pass mark', `${String(assessment.passing_percent ?? '')}%`],
                       ].map(([label, val]) => (
                         <div key={label}>
-                          <div style={{ fontSize: '10px', color: 'var(--muted)', textTransform: 'uppercase',
-                            letterSpacing: '0.07em', marginBottom: '3px' }}>{label}</div>
+                          <div className="stat-label" style={{ marginBottom: '3px' }}>{label}</div>
                           <div style={{ fontSize: '13px', fontWeight: 600 }}>{val}</div>
                         </div>
                       ))}
@@ -335,14 +336,12 @@ export default function TeacherAssessmentsClient({
 
                     {/* Schedule */}
                     <div style={{
-                      padding: '14px 16px', borderRadius: '10px',
-                      background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+                      padding: '14px 16px', borderRadius: 'var(--radius-sm)',
+                      background: 'var(--card2)', border: '1px solid var(--border)',
                       marginBottom: '20px',
                     }}>
-                      <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '12px',
-                        textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)',
-                        marginBottom: '10px' }}>
-                        Unlock Schedule
+                      <div className="stat-label" style={{ marginBottom: '10px' }}>
+                        Unlock schedule
                       </div>
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                         <div>
@@ -361,7 +360,7 @@ export default function TeacherAssessmentsClient({
                           disabled={schBusy} style={{ fontSize: '12px', padding: '8px 14px' }}>
                           {schBusy
                             ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }}/>
-                            : 'Save Schedule'}
+                            : 'Save schedule'}
                         </button>
                       </div>
                       {assessment.unlock_datetime && !assessment.is_manually_unlocked ? (
@@ -376,25 +375,24 @@ export default function TeacherAssessmentsClient({
 
                     {/* Questions list */}
                     <div style={{ marginBottom: '16px' }}>
-                      <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '12px',
-                        textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)',
-                        marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                      <div className="stat-label" style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
                         <span>Questions ({questions.length})</span>
                         <span style={{
                           color: questions.length < 5 ? 'var(--red)' : 'var(--green)',
-                          fontWeight: 400, fontSize: '11px',
+                          fontWeight: 400, fontSize: '11px', textTransform: 'none', letterSpacing: 0,
+                          display: 'flex', alignItems: 'center', gap: '4px',
                         }}>
                           {questions.length < 5
-                            ? `⚠ Add at least ${5 - questions.length} more before going live`
-                            : `✓ ${questions.length} question${questions.length !== 1 ? 's' : ''} ready`}
+                            ? <><AlertTriangle size={11}/> Add at least {5 - questions.length} more before going live</>
+                            : <><Check size={11}/> {questions.length} question{questions.length !== 1 ? 's' : ''} ready</>}
                         </span>
                       </div>
 
                       {questions.length === 0 ? (
                         <div style={{
                           padding: '16px', textAlign: 'center', color: 'var(--muted)',
-                          fontSize: '13px', background: 'rgba(255,255,255,0.02)',
-                          borderRadius: '8px', border: '1px dashed var(--border)',
+                          fontSize: '13px', background: 'var(--card2)',
+                          borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)',
                         }}>
                           No questions yet. Add your first question below.
                         </div>
@@ -403,12 +401,12 @@ export default function TeacherAssessmentsClient({
                           maxHeight: '380px', overflowY: 'auto' }}>
                           {questions.map((q, i) => (
                             <div key={q.id as string} style={{
-                              padding: '12px 14px', borderRadius: '8px',
-                              background: 'rgba(255,255,255,0.025)',
+                              padding: '12px 14px', borderRadius: 'var(--radius-sm)',
+                              background: 'var(--card2)',
                               border: '1px solid var(--border)',
                               display: 'flex', gap: '10px', alignItems: 'flex-start',
                             }}>
-                              <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700,
+                              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 600,
                                 fontSize: '11px', color: 'var(--muted)', flexShrink: 0,
                                 minWidth: '20px' }}>
                                 {i + 1}.
@@ -424,21 +422,22 @@ export default function TeacherAssessmentsClient({
                                     return (
                                       <span key={oi} style={{
                                         fontSize: '11px', padding: '2px 8px', borderRadius: '6px',
+                                        display: 'inline-flex', alignItems: 'center', gap: '3px',
                                         background: isCorrect
-                                          ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)',
+                                          ? 'var(--green-dim)' : 'rgba(255,255,255,0.05)',
                                         color:      isCorrect ? 'var(--green)' : 'var(--muted)',
                                         border: `1px solid ${isCorrect
-                                          ? 'rgba(34,197,94,0.2)' : 'transparent'}`,
+                                          ? 'rgba(74,222,128,0.2)' : 'transparent'}`,
                                       }}>
-                                        {letter}. {opt}{isCorrect ? ' ✓' : ''}
+                                        {letter}. {opt}{isCorrect && <Check size={10}/>}
                                       </span>
                                     )
                                   })}
                                 </div>
                                 {q.explanation
                                   ? <div style={{ fontSize: '11px', color: 'var(--muted)',
-                                      marginTop: '4px', fontStyle: 'italic' }}>
-                                      💡 {String(q.explanation)}
+                                      marginTop: '4px', fontStyle: 'italic', display: 'flex', alignItems: 'flex-start', gap: '4px' }}>
+                                      <Lightbulb size={11} style={{ flexShrink: 0, marginTop: '1px' }}/> {String(q.explanation)}
                                     </div>
                                   : null}
                               </div>
@@ -456,13 +455,13 @@ export default function TeacherAssessmentsClient({
 
                     {/* Add question form */}
                     <div style={{
-                      padding: '16px', borderRadius: '10px',
-                      background: 'rgba(0,200,248,0.04)',
-                      border: '1px solid rgba(0,200,248,0.15)',
+                      padding: '16px', borderRadius: 'var(--radius)',
+                      background: 'var(--accent-2-dim)',
+                      border: '1px solid rgba(23,174,224,0.2)',
                     }}>
-                      <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '12px',
-                        color: 'var(--teal)', marginBottom: '12px' }}>
-                        + Add Question
+                      <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '12px',
+                        color: 'var(--accent-2)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Plus size={12}/> Add question
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <textarea className="form-input" rows={2}
@@ -479,9 +478,9 @@ export default function TeacherAssessmentsClient({
                               <span style={{
                                 width: '20px', height: '20px', borderRadius: '5px', flexShrink: 0,
                                 background: editQ[aId]?.correct_answer === letter
-                                  ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)',
+                                  ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '10px',
+                                fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '10px',
                                 color: editQ[aId]?.correct_answer === letter
                                   ? 'var(--green)' : 'var(--muted)',
                               }}>
@@ -527,7 +526,7 @@ export default function TeacherAssessmentsClient({
                           style={{ fontSize: '12px', padding: '9px 18px', alignSelf: 'flex-start' }}>
                           {addBusy
                             ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }}/> Adding…</>
-                            : <><Plus size={13}/> Add Question</>}
+                            : <><Plus size={13}/> Add question</>}
                         </button>
                       </div>
                     </div>

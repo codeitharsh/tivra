@@ -94,8 +94,8 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
 
         {/* ── Upload form ── */}
         <div className="card" style={{ padding: '20px' }}>
-          <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '15px', marginBottom: '18px' }}>
-            Upload Notes PDF
+          <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', marginBottom: '18px' }}>
+            Upload notes PDF
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -129,7 +129,7 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
 
             {/* Drop zone */}
             <div>
-              <label className="form-label">PDF File (max 50 MB)</label>
+              <label className="form-label">PDF file (max 50 MB)</label>
               <div
                 onClick={() => fileRef.current?.click()}
                 onDragOver={e => e.preventDefault()}
@@ -140,14 +140,14 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
                   else showToast('Only PDF files allowed', 'error')
                 }}
                 style={{
-                  border: `2px dashed ${file ? 'rgba(0,200,248,0.4)' : 'var(--border)'}`,
+                  border: `2px dashed ${file ? 'var(--accent-ring)' : 'var(--border)'}`,
                   borderRadius: 'var(--radius)', padding: '24px', textAlign: 'center',
                   cursor: 'pointer', transition: 'all 0.15s',
-                  background: file ? 'rgba(0,200,248,0.05)' : 'rgba(255,255,255,0.02)',
+                  background: file ? 'var(--accent-dim)' : 'rgba(255,255,255,0.02)',
                 }}
               >
-                <Upload size={24} style={{ color: file ? 'var(--cyan)' : 'var(--muted)', marginBottom: '8px' }}/>
-                <div style={{ fontSize: '13px', color: file ? '#fff' : 'var(--muted)' }}>
+                <Upload size={24} style={{ color: file ? 'var(--accent-2)' : 'var(--muted)', marginBottom: '8px' }}/>
+                <div style={{ fontSize: '13px', color: file ? 'var(--text)' : 'var(--muted)' }}>
                   {file ? file.name : 'Click or drag & drop PDF here'}
                 </div>
                 {file && (
@@ -163,16 +163,16 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
             {/* Current status for selected module */}
             {currentModule && (
               <div style={{
-                padding: '10px 14px', borderRadius: '8px', fontSize: '12px',
-                background: currentModule.notes_url ? 'rgba(34,197,94,0.08)' : 'rgba(245,158,11,0.08)',
-                border: `1px solid ${currentModule.notes_url ? 'rgba(34,197,94,0.2)' : 'rgba(245,158,11,0.2)'}`,
+                padding: '10px 14px', borderRadius: 'var(--radius-sm)', fontSize: '12px',
+                background: currentModule.notes_url ? 'var(--green-dim)' : 'var(--amber-dim)',
+                border: `1px solid ${currentModule.notes_url ? 'rgba(74,222,128,0.2)' : 'rgba(245,166,35,0.2)'}`,
                 color: currentModule.notes_url ? 'var(--green)' : 'var(--amber)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                  <span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {currentModule.notes_url
-                      ? '✓ Notes already uploaded — uploading will replace the current file'
-                      : '⚠ No notes uploaded yet for this module'}
+                      ? <><CheckCircle2 size={13}/> Notes already uploaded — uploading will replace the current file</>
+                      : <><AlertCircle size={13}/> No notes uploaded yet for this module</>}
                   </span>
                   {currentModule.notes_url && confirmDelete !== currentModule.id && (
                     <button
@@ -191,7 +191,7 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
                 {currentModule.notes_url && confirmDelete === currentModule.id && (
                   <div style={{
                     marginTop: '10px', paddingTop: '10px',
-                    borderTop: '1px solid rgba(239,68,68,0.2)',
+                    borderTop: '1px solid rgba(240,69,58,0.2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
                   }}>
                     <span style={{ color: 'var(--red)', fontSize: '11px' }}>
@@ -201,12 +201,8 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
                       <button
                         onClick={() => handleDelete(currentModule.id, currentModule.title)}
                         disabled={deleting === currentModule.id}
-                        className="btn"
-                        style={{
-                          fontSize: '11px', padding: '5px 10px',
-                          background: 'rgba(239,68,68,0.15)', color: 'var(--red)',
-                          border: '1px solid rgba(239,68,68,0.3)',
-                        }}
+                        className="btn btn-danger"
+                        style={{ fontSize: '11px', padding: '5px 10px' }}
                       >
                         {deleting === currentModule.id
                           ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }}/>
@@ -233,7 +229,7 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
             >
               {uploading
                 ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }}/> Uploading…</>
-                : <><Upload size={14}/> Upload Notes</>
+                : <><Upload size={14}/> Upload notes</>
               }
             </button>
           </div>
@@ -243,7 +239,7 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
         <div>
           {phases.map(phase => (
             <div key={phase.id} style={{ marginBottom: '20px' }}>
-              <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '14px', marginBottom: '10px' }}>
+              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px', marginBottom: '10px' }}>
                 {phase.programs?.name ?? 'Programme'} — Phase {phase.phase_number}: {phase.title}
                 <span style={{ fontSize: '12px', color: 'var(--muted)', marginLeft: '10px', fontWeight: 400 }}>
                   {phase.modules.filter(m => m.notes_url).length}/{phase.modules.length} uploaded
@@ -254,10 +250,10 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
                   <div key={m.id}
                     onClick={() => { setSelectedPhase(phase.id); setSelectedModule(m.id) }}
                     style={{
-                      padding: '10px 14px', borderRadius: '8px', cursor: 'pointer',
-                      background: m.notes_url ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${m.notes_url ? 'rgba(34,197,94,0.2)' : 'var(--border)'}`,
-                      outline: selectedModule === m.id ? '2px solid var(--cyan)' : 'none',
+                      padding: '10px 14px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                      background: m.notes_url ? 'var(--green-dim)' : 'var(--card2)',
+                      border: `1px solid ${m.notes_url ? 'rgba(74,222,128,0.2)' : 'var(--border)'}`,
+                      outline: selectedModule === m.id ? '2px solid var(--accent-2)' : 'none',
                       display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.15s',
                     }}
                   >
@@ -270,7 +266,7 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
                         {m.module_number}. {m.title.length > 22 ? m.title.slice(0,22)+'…' : m.title}
                       </div>
                       <div style={{ fontSize: '10px', color: m.notes_url ? 'var(--green)' : 'var(--muted)' }}>
-                        {m.notes_url ? 'Uploaded ✓' : 'Not uploaded'}
+                        {m.notes_url ? 'Uploaded' : 'Not uploaded'}
                       </div>
                     </div>
                   </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { CheckCircle2, XCircle, Loader2, Search, ChevronDown, RefreshCw } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, Search, ChevronDown, RefreshCw, Clock, Lock, GraduationCap, Zap, Eye, BookOpen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 // ── Calls the edge-compatible /api/admin route (migrated off Server Actions,
@@ -15,17 +15,17 @@ async function callAdminApi(payload: Record<string, unknown>): Promise<{ error?:
   return res.json()
 }
 
-const STATUS_META: Record<string, { color:string; bg:string; dot:string; label:string }> = {
-  active:          { color:'var(--green)', bg:'rgba(34,197,94,0.12)',  dot:'●',  label:'Active'     },
-  pending_payment: { color:'var(--amber)', bg:'rgba(245,158,11,0.12)', dot:'⏳', label:'Pending'    },
-  restricted:      { color:'var(--red)',   bg:'rgba(239,68,68,0.12)',  dot:'🔒', label:'Restricted' },
+const STATUS_META: Record<string, { color:string; bg:string; Icon:typeof CheckCircle2; label:string }> = {
+  active:          { color:'var(--green)', bg:'var(--green-dim)', Icon:CheckCircle2, label:'Active'     },
+  pending_payment: { color:'var(--amber)', bg:'var(--amber-dim)', Icon:Clock,        label:'Pending'    },
+  restricted:      { color:'var(--red)',   bg:'var(--red-dim)',   Icon:Lock,         label:'Restricted' },
 }
 
 const ROLE_META: Record<string, { color:string; bg:string }> = {
-  student: { color:'#00c8f8', bg:'rgba(0,200,248,0.1)'   },
-  teacher: { color:'#a78bfa', bg:'rgba(124,58,237,0.15)' },
-  parent:  { color:'#93c5fd', bg:'rgba(59,91,219,0.15)'  },
-  admin:   { color:'#fff',    bg:'rgba(59,91,219,0.3)'   },
+  student: { color:'var(--accent-2)', bg:'rgba(23,174,224,0.12)' },
+  teacher: { color:'#c3b1ea',         bg:'rgba(167,139,218,0.14)' },
+  parent:  { color:'#a9c0e8',         bg:'rgba(107,143,209,0.14)' },
+  admin:   { color:'var(--accent)',   bg:'var(--accent-dim)' },
 }
 
 type FS = 'all'|'pending_payment'|'active'|'restricted'
@@ -118,15 +118,15 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
         <div style={{display:'flex',gap:'6px',flexWrap:'wrap'}}>
           {(['all','pending_payment','active','restricted'] as FS[]).map(f=>(
             <button key={f} onClick={()=>setSf(f)} style={{
-              padding:'6px 12px',borderRadius:'20px',border:'none',cursor:'pointer',
-              fontSize:'11px',fontWeight:600,fontFamily:'DM Sans,sans-serif',transition:'all 0.15s',
-              background:sf===f?'linear-gradient(135deg,#00c8f8,#7030d0)':'rgba(255,255,255,0.06)',
-              color:sf===f?'#fff':'var(--muted)',
+              padding:'6px 12px',borderRadius:'var(--radius-pill)',border:'none',cursor:'pointer',
+              fontSize:'11px',fontWeight:600,fontFamily:'var(--font-sans)',transition:'all 0.15s',
+              background:sf===f?'var(--accent)':'rgba(255,255,255,0.06)',
+              color:sf===f?'var(--on-accent)':'var(--muted)',
             }}>
               {f==='all'?`All (${rows.length})`:
-               f==='pending_payment'?`⏳ Pending (${cntS('pending_payment')})`:
-               f==='active'?`✓ Active (${cntS('active')})`:
-               `🔒 Restricted (${cntS('restricted')})`}
+               f==='pending_payment'?`Pending (${cntS('pending_payment')})`:
+               f==='active'?`Active (${cntS('active')})`:
+               `Restricted (${cntS('restricted')})`}
             </button>
           ))}
         </div>
@@ -135,12 +135,12 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
         <div style={{display:'flex',gap:'6px',flexWrap:'wrap'}}>
           {(['all','student','teacher','parent','admin'] as FR[]).map(r=>(
             <button key={r} onClick={()=>setRf(r)} style={{
-              padding:'6px 12px',borderRadius:'20px',
-              border:`1px solid ${rf===r?'rgba(255,255,255,0.2)':'var(--border)'}`,
+              padding:'6px 12px',borderRadius:'var(--radius-pill)',
+              border:`1px solid ${rf===r?'var(--border2)':'var(--border)'}`,
               cursor:'pointer',fontSize:'11px',fontWeight:600,
-              fontFamily:'DM Sans,sans-serif',transition:'all 0.15s',
+              fontFamily:'var(--font-sans)',transition:'all 0.15s',
               background:rf===r?'rgba(255,255,255,0.08)':'transparent',
-              color:rf===r?'#fff':'var(--muted)',
+              color:rf===r?'var(--text)':'var(--muted)',
             }}>
               {r==='all'?'All roles':`${r.charAt(0).toUpperCase()+r.slice(1)} (${cntR(r)})`}
             </button>
@@ -183,10 +183,10 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
                     <td>
                       <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
                         <div style={{
-                          width:'34px',height:'34px',borderRadius:'50%',flexShrink:0,
-                          background:'linear-gradient(135deg,#00c8f8,#7030d0)',
+                          width:'32px',height:'32px',borderRadius:'6px',flexShrink:0,
+                          background:'var(--card2)',border:'1px solid var(--border)',
                           display:'flex',alignItems:'center',justifyContent:'center',
-                          fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',color:'#fff',
+                          fontFamily:'var(--font-serif)',fontWeight:600,fontSize:'11px',color:'var(--text)',
                         }}>{ini}</div>
                         <div style={{minWidth:0}}>
                           <div style={{fontWeight:500,fontSize:'13px'}}>{String(row.full_name??'—')}</div>
@@ -208,10 +208,10 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
                           style={{
                             appearance:'none',WebkitAppearance:'none',
                             background:rm.bg,color:rm.color,
-                            border:'1px solid rgba(255,255,255,0.1)',
-                            borderRadius:'20px',padding:'4px 26px 4px 10px',
+                            border:'1px solid var(--border2)',
+                            borderRadius:'var(--radius-pill)',padding:'4px 26px 4px 10px',
                             fontSize:'11px',fontWeight:600,cursor:'pointer',
-                            outline:'none',fontFamily:'DM Sans,sans-serif',
+                            outline:'none',fontFamily:'var(--font-sans)',
                           }}
                         >
                           <option value="student">Student</option>
@@ -231,10 +231,10 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
                     <td>
                       <span style={{
                         display:'inline-flex',alignItems:'center',gap:'5px',
-                        padding:'3px 10px',borderRadius:'20px',
+                        padding:'3px 10px',borderRadius:'var(--radius-pill)',
                         fontSize:'11px',fontWeight:600,background:sm.bg,color:sm.color,
                       }}>
-                        {sm.dot} {sm.label}
+                        <sm.Icon size={11}/> {sm.label}
                       </span>
                       {row.payment_verified_at
                         ?<div style={{fontSize:'10px',color:'var(--muted)',marginTop:'2px'}}>
@@ -247,7 +247,7 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
                     <td>
                       {row.payment_request_status?(
                         <div>
-                          <span style={{fontSize:'11px',fontWeight:600,
+                          <span style={{fontSize:'11px',fontWeight:600,fontFamily:'var(--font-mono)',
                             color:row.payment_request_status==='approved'?'var(--green)':
                                   row.payment_request_status==='rejected'?'var(--red)':'var(--amber)'}}>
                             {String(row.payment_request_status).toUpperCase()}
@@ -257,7 +257,7 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
                             :null}
                         </div>
                       ):<span style={{fontSize:'11px',color:'var(--muted)'}}>—</span>}
-                      {row.payment_notes?<div style={{fontSize:'10px',color:'var(--teal)'}}>{String(row.payment_notes)}</div>:null}
+                      {row.payment_notes?<div style={{fontSize:'10px',color:'var(--accent-2)'}}>{String(row.payment_notes)}</div>:null}
                     </td>
 
                     {/* Progress */}
@@ -265,7 +265,7 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
                       <div style={{minWidth:'80px'}}>
                         <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px'}}>
                           <span style={{fontSize:'10px',color:'var(--muted)'}}>{row.modules_done??0}/24</span>
-                          <span style={{fontSize:'10px',color:'var(--cyan)'}}>{row.progress_percent??0}%</span>
+                          <span style={{fontSize:'10px',color:'var(--accent-2)'}}>{row.progress_percent??0}%</span>
                         </div>
                         <div className="progress-track">
                           <div className="progress-fill" style={{width:`${row.progress_percent??0}%`}}/>
@@ -315,13 +315,13 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
 
       {/* Grant modal */}
       {grantM&&(
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',
-          display:'flex',alignItems:'center',justifyContent:'center',zIndex:100,backdropFilter:'blur(4px)'}}
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',
+          display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}}
           onClick={e=>{if(e.target===e.currentTarget)setGrantM(null)}}>
           <div className="glass" style={{width:'100%',maxWidth:'440px',padding:'28px',margin:'16px'}}>
-            <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'20px',marginBottom:'6px'}}>Grant Access</h2>
+            <h2 style={{fontFamily:'var(--font-serif)',fontWeight:600,fontSize:'20px',marginBottom:'6px'}}>Grant access</h2>
             <p style={{fontSize:'13px',color:'var(--muted)',marginBottom:'22px'}}>
-              Granting access to <strong style={{color:'#fff'}}>{String(grantM.full_name??'')}</strong>
+              Granting access to <strong style={{color:'var(--text)'}}>{String(grantM.full_name??'')}</strong>
               <span style={{fontSize:'12px',color:'var(--muted)'}}> ({String(grantM.email??'')})</span>
             </p>
             <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
@@ -333,11 +333,11 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
                   <option value="parent">Parent</option>
                   <option value="admin">Admin</option>
                 </select>
-                <div style={{fontSize:'11px',color:'var(--muted)',marginTop:'5px'}}>
-                  {grantRole==='teacher'&&'🎓 Can upload notes, schedule classes, resolve doubts.'}
-                  {grantRole==='admin'  &&'⚡ Full platform access including this admin panel.'}
-                  {grantRole==='parent' &&'👁 Read-only view of a linked student\'s progress.'}
-                  {grantRole==='student'&&'📚 Access to all content, tests, and live classes.'}
+                <div style={{fontSize:'11px',color:'var(--muted)',marginTop:'5px',display:'flex',alignItems:'center',gap:'6px'}}>
+                  {grantRole==='teacher'&&<><GraduationCap size={12}/> Can upload notes, schedule classes, resolve doubts.</>}
+                  {grantRole==='admin'  &&<><Zap size={12}/> Full platform access including this admin panel.</>}
+                  {grantRole==='parent' &&<><Eye size={12}/> Read-only view of a linked student&apos;s progress.</>}
+                  {grantRole==='student'&&<><BookOpen size={12}/> Access to all content, tests, and live classes.</>}
                 </div>
               </div>
               {grantRole === 'student' && (
@@ -367,7 +367,7 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
                   onClick={doGrant} disabled={isPending}>
                   {isPending
                     ?<><Loader2 size={14} style={{animation:'spin 1s linear infinite'}}/> Granting…</>
-                    :<><CheckCircle2 size={14}/> Confirm Grant Access</>}
+                    :<><CheckCircle2 size={14}/> Confirm grant access</>}
                 </button>
                 <button className="btn btn-ghost" onClick={()=>setGrantM(null)}>Cancel</button>
               </div>
@@ -378,14 +378,14 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
 
       {/* Revoke confirmation modal */}
       {revokeM&&(
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',
-          display:'flex',alignItems:'center',justifyContent:'center',zIndex:100,backdropFilter:'blur(4px)'}}
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',
+          display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}}
           onClick={e=>{if(e.target===e.currentTarget)setRevokeM(null)}}>
           <div className="glass" style={{width:'100%',maxWidth:'400px',padding:'28px',margin:'16px',textAlign:'center'}}>
-            <div style={{fontSize:'40px',marginBottom:'12px'}}>🔒</div>
-            <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'18px',marginBottom:'8px'}}>Revoke Access?</h2>
+            <Lock size={32} color="var(--red)" style={{marginBottom:'12px'}}/>
+            <h2 style={{fontFamily:'var(--font-serif)',fontWeight:600,fontSize:'18px',marginBottom:'8px'}}>Revoke access?</h2>
             <p style={{fontSize:'13px',color:'var(--muted)',marginBottom:'20px'}}>
-              <strong style={{color:'#fff'}}>{String(revokeM.full_name??'')}</strong> will immediately
+              <strong style={{color:'var(--text)'}}>{String(revokeM.full_name??'')}</strong> will immediately
               lose access to all content, tests, and live classes. You can re-grant at any time.
             </p>
             <div style={{display:'flex',gap:'10px',justifyContent:'center'}}>
@@ -393,7 +393,7 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
                 onClick={doRevoke} disabled={isPending}>
                 {isPending
                   ?<><Loader2 size={14} style={{animation:'spin 1s linear infinite'}}/> Revoking…</>
-                  :<><XCircle size={14}/> Yes, Revoke Access</>}
+                  :<><XCircle size={14}/> Yes, revoke access</>}
               </button>
               <button className="btn btn-ghost" onClick={()=>setRevokeM(null)}>Cancel</button>
             </div>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Plus, X, Loader2, Lock, Unlock,
   ChevronDown, ChevronUp, Edit2, Check, Archive,
+  Clock, CircleDot, Square, Package, Play, Info, Users, Globe,
 } from 'lucide-react'
 
 interface Program { id: string; name: string; slug: string }
@@ -13,18 +14,18 @@ interface Program { id: string; name: string; slug: string }
 type BatchStatus = 'upcoming' | 'active' | 'closed' | 'archived'
 type BatchType   = 'open' | 'college' | 'corporate' | 'custom'
 
-const STATUS_CFG: Record<BatchStatus, { label: string; color: string; bg: string; dot: string }> = {
-  upcoming: { label: 'Upcoming', color: 'var(--amber)', bg: 'rgba(245,158,11,0.12)', dot: '⏳' },
-  active:   { label: 'Active',   color: 'var(--green)', bg: 'rgba(34,197,94,0.12)',  dot: '●'  },
-  closed:   { label: 'Closed',   color: 'var(--red)',   bg: 'rgba(239,68,68,0.12)',  dot: '■'  },
-  archived: { label: 'Archived', color: 'var(--muted)', bg: 'rgba(255,255,255,0.06)',dot: '📦' },
+const STATUS_CFG: Record<BatchStatus, { label: string; color: string; bg: string; Icon: typeof Clock }> = {
+  upcoming: { label: 'Upcoming', color: 'var(--amber)', bg: 'var(--amber-dim)', Icon: Clock },
+  active:   { label: 'Active',   color: 'var(--green)', bg: 'var(--green-dim)', Icon: CircleDot },
+  closed:   { label: 'Closed',   color: 'var(--red)',   bg: 'var(--red-dim)',   Icon: Square },
+  archived: { label: 'Archived', color: 'var(--muted)', bg: 'rgba(255,255,255,0.06)', Icon: Package },
 }
 
-const TYPE_CFG: Record<BatchType, { label: string; color: string; note: string }> = {
-  open:      { label: 'Open',      color: 'var(--cyan)',  note: 'Publicly visible — anyone can register' },
-  college:   { label: 'College',   color: '#a78bfa',      note: 'Hidden — admin assigns students manually' },
-  corporate: { label: 'Corporate', color: '#f59e0b',      note: 'Hidden — admin assigns students manually' },
-  custom:    { label: 'Custom',    color: '#93c5fd',      note: 'Hidden — admin assigns students manually' },
+const TYPE_CFG: Record<BatchType, { label: string; color: string; bg: string; note: string }> = {
+  open:      { label: 'Open',      color: 'var(--accent-2)', bg: 'rgba(23,174,224,0.12)', note: 'Publicly visible — anyone can register' },
+  college:   { label: 'College',   color: '#c3b1ea',         bg: 'rgba(167,139,218,0.14)', note: 'Hidden — admin assigns students manually' },
+  corporate: { label: 'Corporate', color: 'var(--amber)',    bg: 'var(--amber-dim)',       note: 'Hidden — admin assigns students manually' },
+  custom:    { label: 'Custom',    color: '#a9c0e8',         bg: 'rgba(107,143,209,0.14)', note: 'Hidden — admin assigns students manually' },
 }
 
 function sb() {
@@ -190,10 +191,10 @@ export default function BatchManagerClient({
       {/* Create form */}
       {showCreate && (
         <div className="card" style={{ marginBottom: '20px', padding: '24px',
-          border: '1px solid rgba(0,200,248,0.2)' }}>
-          <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800,
+          border: '1px solid var(--accent-ring)' }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600,
             fontSize: '16px', marginBottom: '18px' }}>
-            New Batch
+            New batch
           </div>
           <FormFields f={form} set={u => setForm(p => ({ ...p, ...u }))} programs={programs}/>
           <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
@@ -201,7 +202,7 @@ export default function BatchManagerClient({
               disabled={creating} style={{ fontSize: '13px', padding: '10px 22px' }}>
               {creating
                 ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }}/> Creating…</>
-                : <><Check size={13}/> Create Batch</>}
+                : <><Check size={13}/> Create batch</>}
             </button>
             <button className="btn btn-ghost" onClick={() => setShowCreate(false)}
               style={{ fontSize: '13px' }}>Cancel</button>
@@ -212,7 +213,7 @@ export default function BatchManagerClient({
       {/* Batches list */}
       {batches.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '48px', color: 'var(--muted)' }}>
-          <div style={{ fontSize: '32px', marginBottom: '12px' }}>📦</div>
+          <Package size={28} color="var(--muted2)" style={{ marginBottom: '12px' }}/>
           <div style={{ fontSize: '14px' }}>No batches yet. Create your first batch above.</div>
         </div>
       ) : (
@@ -239,30 +240,26 @@ export default function BatchManagerClient({
                   borderBottom: isExpanded ? '1px solid var(--border)' : 'none',
                 }} onClick={() => setExpandedId(isExpanded ? null : bid)}>
 
-                  {/* Status dot */}
+                  {/* Status icon */}
                   <div style={{
-                    width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
-                    background: stCfg.color,
-                    boxShadow: status === 'active' ? `0 0 8px ${stCfg.color}` : 'none',
-                  }}/>
+                    width: '28px', height: '28px', borderRadius: '6px', flexShrink: 0,
+                    background: stCfg.bg, color: stCfg.color,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <stCfg.Icon size={13}/>
+                  </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '14px' }}>
+                      <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px' }}>
                         {String(b.name ?? '')}
                       </div>
-                      <span style={{
-                        padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: 700,
-                        background: `${tyCfg.color}18`, color: tyCfg.color,
-                      }}>
+                      <span className="pill" style={{ background: tyCfg.bg, color: tyCfg.color }}>
                         {tyCfg.label}
                       </span>
                       {!b.is_visible && (
-                        <span style={{
-                          padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: 600,
-                          background: 'rgba(255,255,255,0.06)', color: 'var(--muted)',
-                        }}>
-                          🔒 Hidden
+                        <span className="pill" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--muted)' }}>
+                          <Lock size={10}/> Hidden
                         </span>
                       )}
                     </div>
@@ -274,11 +271,8 @@ export default function BatchManagerClient({
                     </div>
                   </div>
 
-                  <span style={{
-                    padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600,
-                    background: stCfg.bg, color: stCfg.color, flexShrink: 0,
-                  }}>
-                    {stCfg.dot} {stCfg.label}
+                  <span className="pill" style={{ background: stCfg.bg, color: stCfg.color, flexShrink: 0 }}>
+                    <stCfg.Icon size={11}/> {stCfg.label}
                   </span>
 
                   {/* Quick actions */}
@@ -288,7 +282,7 @@ export default function BatchManagerClient({
                         style={{ fontSize: '11px', padding: '5px 12px' }}
                         onClick={() => setStatus(bid, 'active')}
                         disabled={stBusy}>
-                        {stBusy ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }}/> : '▶ Open'}
+                        {stBusy ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }}/> : <><Play size={11}/> Open</>}
                       </button>
                     )}
                     {status === 'active' && (
@@ -296,7 +290,7 @@ export default function BatchManagerClient({
                         style={{ fontSize: '11px', padding: '5px 12px' }}
                         onClick={() => setStatus(bid, 'closed')}
                         disabled={stBusy}>
-                        {stBusy ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }}/> : '■ Close'}
+                        {stBusy ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }}/> : <><Square size={11}/> Close</>}
                       </button>
                     )}
                     {status === 'closed' && (
@@ -335,8 +329,8 @@ export default function BatchManagerClient({
                   <div style={{ padding: '20px' }}>
                     {isEditing ? (
                       <>
-                        <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700,
-                          fontSize: '13px', marginBottom: '14px', color: 'var(--teal)' }}>
+                        <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600,
+                          fontSize: '13px', marginBottom: '14px', color: 'var(--accent-2)' }}>
                           Editing: {String(b.name ?? '')}
                         </div>
                         <FormFields
@@ -349,7 +343,7 @@ export default function BatchManagerClient({
                             disabled={edBusy} style={{ fontSize: '13px' }}>
                             {edBusy
                               ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }}/> Saving…</>
-                              : <><Check size={13}/> Save Changes</>}
+                              : <><Check size={13}/> Save changes</>}
                           </button>
                           <button className="btn btn-ghost"
                             onClick={() => setEditId(null)} style={{ fontSize: '13px' }}>
@@ -360,26 +354,27 @@ export default function BatchManagerClient({
                     ) : (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px' }}>
                         {[
-                          { label: 'Type',          value: tyCfg.label },
-                          { label: 'Visibility',    value: b.is_visible ? '🌐 Public' : '🔒 Hidden' },
-                          { label: 'Max Students',  value: b.max_students ? String(b.max_students) : 'Unlimited' },
-                          { label: 'Price',         value: b.price_inr ? `₹${Number(b.price_inr).toLocaleString('en-IN')}` : 'Not set' },
-                          { label: 'Reg Opens',     value: fmtDate(b.registration_opens_at) },
-                          { label: 'Reg Closes',    value: fmtDate(b.registration_closes_at) },
-                          { label: 'Starts',        value: fmtDate(b.starts_at) },
-                          { label: 'Ends',          value: fmtDate(b.ends_at) },
-                          { label: 'Students',      value: String(b.student_count as number) },
-                        ].map(({ label, value }) => (
+                          { label: 'Type',          value: tyCfg.label, Icon: null },
+                          { label: 'Visibility',    value: b.is_visible ? 'Public' : 'Hidden', Icon: b.is_visible ? Globe : Lock },
+                          { label: 'Max students',  value: b.max_students ? String(b.max_students) : 'Unlimited', Icon: null },
+                          { label: 'Price',         value: b.price_inr ? `₹${Number(b.price_inr).toLocaleString('en-IN')}` : 'Not set', Icon: null },
+                          { label: 'Reg opens',     value: fmtDate(b.registration_opens_at), Icon: null },
+                          { label: 'Reg closes',    value: fmtDate(b.registration_closes_at), Icon: null },
+                          { label: 'Starts',        value: fmtDate(b.starts_at), Icon: null },
+                          { label: 'Ends',          value: fmtDate(b.ends_at), Icon: null },
+                          { label: 'Students',      value: String(b.student_count as number), Icon: null },
+                        ].map(({ label, value, Icon }) => (
                           <div key={label} style={{
-                            padding: '10px 14px', borderRadius: '8px',
-                            background: 'rgba(255,255,255,0.03)',
+                            padding: '10px 14px', borderRadius: 'var(--radius-sm)',
+                            background: 'var(--card2)',
                             border: '1px solid var(--border)',
                           }}>
-                            <div style={{ fontSize: '10px', color: 'var(--muted)',
-                              textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '4px' }}>
+                            <div className="stat-label" style={{ marginBottom: '4px' }}>
                               {label}
                             </div>
-                            <div style={{ fontSize: '13px', fontWeight: 500 }}>{value}</div>
+                            <div style={{ fontSize: '13px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              {Icon && <Icon size={11}/>} {value}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -388,10 +383,10 @@ export default function BatchManagerClient({
                     {/* Assign students to batch (for hidden/private batches) */}
                     {!b.is_visible && !isEditing && (
                       <div className="banner banner-info" style={{ marginTop: '14px' }}>
-                        <span>👥</span>
+                        <Users size={16} style={{ flexShrink: 0 }}/>
                         <span style={{ fontSize: '13px' }}>
                           This is a hidden batch. Assign students from the{' '}
-                          <a href="/admin/access" style={{ color: 'var(--teal)', textDecoration: 'none' }}>
+                          <a href="/admin/access" style={{ color: 'var(--accent-2)', textDecoration: 'none' }}>
                             Access Management
                           </a>
                           {' '}page — grant access and set their batch when activating.
@@ -445,9 +440,9 @@ function FormFields({
 
       {/* Type explanation */}
       <div className="banner banner-info" style={{ margin: 0 }}>
-        <span style={{ flexShrink: 0 }}>ℹ️</span>
+        <Info size={15} style={{ flexShrink: 0 }}/>
         <span style={{ fontSize: '12px' }}>
-          <strong style={{ color: '#fff' }}>{TYPE_CFG[f.batch_type].label}:</strong>{' '}
+          <strong style={{ color: 'var(--text)' }}>{TYPE_CFG[f.batch_type].label}:</strong>{' '}
           {TYPE_CFG[f.batch_type].note}
         </span>
       </div>

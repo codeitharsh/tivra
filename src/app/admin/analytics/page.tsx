@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import type { Profile } from '@/types/database'
+import { Medal } from 'lucide-react'
 
 export default async function AdminAnalyticsPage() {
   const supabase = await createClient()
@@ -64,11 +65,11 @@ export default async function AdminAnalyticsPage() {
 
   // Score buckets
   const buckets = [
-    { label: '0–24%',   count: attempts.filter(a => a.score_percent < 25).length,                    color: 'var(--red)'  },
-    { label: '25–49%',  count: attempts.filter(a => a.score_percent >= 25 && a.score_percent < 50).length, color: '#f97316' },
+    { label: '0–24%',   count: attempts.filter(a => a.score_percent < 25).length,                    color: 'var(--red)'    },
+    { label: '25–49%',  count: attempts.filter(a => a.score_percent >= 25 && a.score_percent < 50).length, color: '#c9724a' },
     { label: '50–74%',  count: attempts.filter(a => a.score_percent >= 50 && a.score_percent < 75).length, color: 'var(--amber)' },
-    { label: '75–89%',  count: attempts.filter(a => a.score_percent >= 75 && a.score_percent < 90).length, color: 'var(--teal)'  },
-    { label: '90–100%', count: attempts.filter(a => a.score_percent >= 90).length,                   color: 'var(--green)' },
+    { label: '75–89%',  count: attempts.filter(a => a.score_percent >= 75 && a.score_percent < 90).length, color: 'var(--accent-2)' },
+    { label: '90–100%', count: attempts.filter(a => a.score_percent >= 90).length,                   color: 'var(--green)'  },
   ]
   const maxBucket = Math.max(...buckets.map(b => b.count), 1)
 
@@ -127,30 +128,28 @@ export default async function AdminAnalyticsPage() {
         <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
 
           {/* ── Top stats ── */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px', marginBottom:'24px' }}>
+          <div className="r-grid-4" style={{ marginBottom:'24px' }}>
             {[
-              { label:'Total Students',    value:totalStudents??0,  color:'var(--cyan)',   sub:`${activeStudents??0} active · ${pendingStudents??0} pending` },
-              { label:'New This Week',      value:recentSignups??0,  color:'#a78bfa',       sub:'Signups in last 7 days' },
-              { label:'Certificates Issued',value:totalCerts??0,    color:'var(--green)',   sub:`${assessPassRate}% assessment pass rate` },
-              { label:'Test Attempts',      value:totalAttempts??0,  color:'var(--amber)',   sub:`${avgScore}% average score` },
+              { label:'Total students',    value:totalStudents??0,  color:'var(--accent-2)', sub:`${activeStudents??0} active · ${pendingStudents??0} pending` },
+              { label:'New this week',      value:recentSignups??0,  color:'var(--accent)',   sub:'Signups in last 7 days' },
+              { label:'Certificates issued',value:totalCerts??0,    color:'var(--green)',    sub:`${assessPassRate}% assessment pass rate` },
+              { label:'Test attempts',      value:totalAttempts??0,  color:'var(--amber)',    sub:`${avgScore}% average score` },
             ].map(s => (
-              <div key={s.label} className="card card-accent-top" style={{ padding:'16px 20px' }}>
-                <div style={{ fontSize:'10px', color:'var(--muted)', textTransform:'uppercase',
-                  letterSpacing:'0.08em', marginBottom:'6px' }}>{s.label}</div>
-                <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'30px',
-                  color:s.color, lineHeight:1, marginBottom:'4px' }}>{s.value}</div>
+              <div key={s.label} className="stat-card">
+                <div className="stat-label">{s.label}</div>
+                <div className="stat-value" style={{ color:s.color, fontSize:'26px', marginBottom:'4px' }}>{s.value}</div>
                 <div style={{ fontSize:'11px', color:'var(--muted)' }}>{s.sub}</div>
               </div>
             ))}
           </div>
 
-          <div style={{ display:'grid', marginBottom:'20px' }}>
+          <div className="r-grid-2" style={{ marginBottom:'20px' }}>
 
             {/* ── Test Score Distribution ── */}
             <div className="card" style={{ padding:'20px' }}>
-              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'15px', marginBottom:'20px' }}>
-                Test Score Distribution
-                <span style={{ fontFamily:'DM Sans,sans-serif', fontWeight:400, fontSize:'12px',
+              <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px', marginBottom:'20px' }}>
+                Test score distribution
+                <span style={{ fontFamily:'var(--font-sans)', fontWeight:400, fontSize:'12px',
                   color:'var(--muted)', marginLeft:'10px' }}>
                   {attempts.length} total attempts · {passRate}% pass rate
                 </span>
@@ -176,31 +175,31 @@ export default async function AdminAnalyticsPage() {
 
             {/* ── Platform health ── */}
             <div className="card" style={{ padding:'20px' }}>
-              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'15px', marginBottom:'20px' }}>
-                Platform Health
+              <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px', marginBottom:'20px' }}>
+                Platform health
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
                 {[
                   {
-                    label: 'Student Activation Rate',
+                    label: 'Student activation rate',
                     pct:   totalStudents ? Math.round(((activeStudents??0) / (totalStudents??1)) * 100) : 0,
-                    color: 'var(--cyan)',
+                    color: 'var(--accent-2)',
                     note:  `${activeStudents??0} of ${totalStudents??0} students active`,
                   },
                   {
-                    label: 'Doubt Resolution Rate',
+                    label: 'Doubt resolution rate',
                     pct:   totalDoubts ? Math.round(((resolvedDoubts??0) / (totalDoubts??1)) * 100) : 0,
-                    color: 'var(--teal)',
+                    color: 'var(--accent-2)',
                     note:  `${resolvedDoubts??0} of ${totalDoubts??0} doubts answered`,
                   },
                   {
-                    label: 'Assessment Pass Rate',
+                    label: 'Assessment pass rate',
                     pct:   assessPassRate,
                     color: assessPassRate >= 70 ? 'var(--green)' : assessPassRate >= 50 ? 'var(--amber)' : 'var(--red)',
                     note:  `${assAttempts.filter(a=>a.passed).length} of ${assAttempts.length} attempts passed`,
                   },
                   {
-                    label: 'Average Test Score',
+                    label: 'Average test score',
                     pct:   avgScore,
                     color: avgScore >= 75 ? 'var(--green)' : avgScore >= 50 ? 'var(--amber)' : 'var(--red)',
                     note:  `${avgScore}% across all ${attempts.length} test attempts`,
@@ -224,12 +223,12 @@ export default async function AdminAnalyticsPage() {
             </div>
           </div>
 
-          <div style={{ display:'grid' }}>
+          <div className="r-grid-2">
 
             {/* ── Top students ── */}
             <div className="card" style={{ padding:'20px' }}>
-              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'15px', marginBottom:'16px' }}>
-                Top Students (by avg test score)
+              <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px', marginBottom:'16px' }}>
+                Top students (by avg test score)
               </div>
               {topStudents.length === 0 ? (
                 <div style={{ fontSize:'13px', color:'var(--muted)', textAlign:'center', padding:'16px' }}>
@@ -240,22 +239,22 @@ export default async function AdminAnalyticsPage() {
                   {topStudents.map((s, i) => (
                     <div key={s.id} style={{
                       display:'flex', alignItems:'center', gap:'12px',
-                      padding:'10px 12px', borderRadius:'8px',
-                      background:'rgba(255,255,255,0.03)',
+                      padding:'10px 12px', borderRadius:'var(--radius-sm)',
+                      background:'var(--card2)',
                     }}>
                       <div style={{
-                        fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'16px',
-                        color: i===0?'var(--amber)':i===1?'#94a3b8':i===2?'#cd7c3f':'var(--muted)',
+                        fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px',
+                        color: i===0?'var(--amber)':i===1?'#b8bfc9':i===2?'#c9905b':'var(--muted)',
                         width:'28px', textAlign:'center',
                       }}>
-                        {i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`}
+                        {i<3?<Medal size={17}/>:`#${i+1}`}
                       </div>
                       <div style={{ flex:1 }}>
                         <div style={{ fontSize:'13px', fontWeight:500 }}>{s.name}</div>
                         <div style={{ fontSize:'11px', color:'var(--muted)' }}>{s.count} test{s.count!==1?'s':''} taken</div>
                       </div>
                       <div style={{
-                        fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'18px',
+                        fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'17px',
                         color: s.avg >= 75 ? 'var(--green)' : s.avg >= 50 ? 'var(--amber)' : 'var(--red)',
                       }}>
                         {s.avg}%
@@ -268,18 +267,18 @@ export default async function AdminAnalyticsPage() {
 
             {/* ── Summary numbers ── */}
             <div className="card" style={{ padding:'20px' }}>
-              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'15px', marginBottom:'16px' }}>
-                Content Summary
+              <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px', marginBottom:'16px' }}>
+                Content summary
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:'0' }}>
                 {[
-                  { label:'Weekly Tests Created',  value: totalTests??0 },
-                  { label:'Total Test Attempts',   value: totalAttempts??0 },
-                  { label:'Module Completions',    value: totalCompletions },
-                  { label:'Certificates Issued',   value: totalCerts??0 },
-                  { label:'Live Sessions',         value: totalSessions??0 },
-                  { label:'Doubts Posted',         value: totalDoubts??0 },
-                  { label:'Doubts Resolved',       value: resolvedDoubts??0 },
+                  { label:'Weekly tests created',  value: totalTests??0 },
+                  { label:'Total test attempts',   value: totalAttempts??0 },
+                  { label:'Module completions',    value: totalCompletions },
+                  { label:'Certificates issued',   value: totalCerts??0 },
+                  { label:'Live sessions',         value: totalSessions??0 },
+                  { label:'Doubts posted',         value: totalDoubts??0 },
+                  { label:'Doubts resolved',       value: resolvedDoubts??0 },
                 ].map((s, i, arr) => (
                   <div key={s.label} style={{
                     display:'flex', justifyContent:'space-between', alignItems:'center',
@@ -287,7 +286,7 @@ export default async function AdminAnalyticsPage() {
                     borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
                   }}>
                     <span style={{ fontSize:'13px', color:'var(--muted)' }}>{s.label}</span>
-                    <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'16px' }}>{s.value}</span>
+                    <span style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'16px' }}>{s.value}</span>
                   </div>
                 ))}
               </div>

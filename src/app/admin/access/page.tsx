@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import AccessTable from './AccessTable'
 import type { Profile } from '@/types/database'
+import { Info } from 'lucide-react'
 
 export default async function AdminAccessPage() {
   const supabase = await createClient()
@@ -85,32 +86,25 @@ export default async function AdminAccessPage() {
         <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
 
           {/* Stats */}
-          <div className='r-grid-4' style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'14px', marginBottom:'24px' }}>
+          <div className='r-grid-4' style={{ marginBottom:'24px' }}>
             {[
-              { label:'Total Users',      value:rows.length, color:'var(--cyan)',  bg:'rgba(0,200,248,0.08)',  border:'rgba(0,200,248,0.2)'  },
-              { label:'Pending Approval', value:pending,     color:'var(--amber)', bg:'rgba(245,158,11,0.08)', border:'rgba(245,158,11,0.2)' },
-              { label:'Active',           value:active,      color:'var(--green)', bg:'rgba(34,197,94,0.08)',  border:'rgba(34,197,94,0.2)'  },
-              { label:'Restricted',       value:restricted,  color:'var(--red)',   bg:'rgba(239,68,68,0.08)',  border:'rgba(239,68,68,0.2)'  },
+              { label:'Total users',      value:rows.length, color:'var(--accent-2)' },
+              { label:'Pending approval', value:pending,     color:'var(--amber)'   },
+              { label:'Active',           value:active,      color:'var(--green)'   },
+              { label:'Restricted',       value:restricted,  color:'var(--red)'     },
             ].map(s => (
-              <div key={s.label} style={{
-                background:s.bg, border:`1px solid ${s.border}`,
-                borderRadius:'var(--radius)', padding:'16px 20px',
-              }}>
-                <div style={{ fontSize:'10px', color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'6px' }}>
-                  {s.label}
-                </div>
-                <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'28px', color:s.color, lineHeight:1 }}>
-                  {s.value}
-                </div>
+              <div key={s.label} className="stat-card">
+                <div className="stat-label">{s.label}</div>
+                <div className="stat-value" style={{ color:s.color }}>{s.value}</div>
               </div>
             ))}
           </div>
 
           {/* Info */}
-          <div className="banner banner-brand" style={{ marginBottom:'24px' }}>
-            <span style={{ fontSize:'18px', flexShrink:0 }}>ℹ️</span>
+          <div className="banner banner-brand">
+            <Info size={16} style={{ flexShrink:0 }}/>
             <div style={{ fontSize:'13px' }}>
-              <strong style={{ color:'#fff' }}>All users are shown here</strong> — students, teachers, parents, and admins.
+              <strong style={{ color:'var(--text)' }}>All users are shown here</strong> — students, teachers, parents, and admins.
               Use the role dropdown to change any user&apos;s role, and Grant / Revoke to control access.
             </div>
           </div>
