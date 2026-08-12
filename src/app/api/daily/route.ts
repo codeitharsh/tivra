@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { checkLiveSessionAccess } from '@/lib/live-session-access'
 
 // ── Jitsi config ──────────────────────────────────────────────
 // Uses meet.jit.si — free, no API key, no subscription needed
@@ -26,9 +27,9 @@ async function getAuthUser() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
   const { data: profile } = await supabase
-    .from('profiles').select('role, full_name').eq('id', user.id).single()
-  const p = profile as { role: string; full_name: string } | null
-  return p ? { ...user, role: p.role, full_name: p.full_name } : null
+    .from('profiles').select('role, full_name, batch_id').eq('id', user.id).single()
+  const p = profile as { role: string; full_name: string; batch_id: string | null } | null
+  return p ? { ...user, role: p.role, full_name: p.full_name, batch_id: p.batch_id } : null
 }
 
 async function requireStaff() {
@@ -38,10 +39,18 @@ async function requireStaff() {
 }
 
 // ── Generate a unique Jitsi room name ─────────────────────────
-// Uses sessionId so it's deterministic — same session always gets same room
-function getRoomName(sessionId: string): string {
-  const short = sessionId.replace(/-/g, '').slice(0, 24)
-  return `tivra-${short}`
+// Previously derived from the session's own (publicly-visible-in-URL)
+// UUID, which meant the room name was never actually secret — anyone
+// who could see a session's id (e.g. from its /live/[sessionId] URL)
+// could compute the exact meet.jit.si room without ever going through
+// an authorized endpoint. Generated randomly instead, once per session,
+// the first time a room is created — unrelated to the session id, so
+// it can only be learned via the authorized create_room/get_student_token
+// flow.
+function getRoomName(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(12))
+  const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+  return `tivra-${hex}`
 }
 
 // Password derived via HMAC keyed by a server-only secret, not just a
@@ -61,7 +70,13 @@ function getRoomName(sessionId: string): string {
 // completely defeating the protection. Now throws instead, so a
 // misconfigured deployment fails loudly (every live-class action
 // returns a 500) rather than silently shipping a guessable password.
-async function getRoomPassword(sessionId: string): Promise<string> {
+//
+// `nonce` is a random value regenerated each time a NEW room is created
+// for a session (see create_room below) — folding it in means a
+// password leaked during one go-live cycle stops working once that
+// session ends and a fresh room/nonce is created for the next one,
+// instead of being valid forever for that session's lifetime.
+async function getRoomPassword(sessionId: string, nonce: string | null): Promise<string> {
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!secret) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured — cannot derive a secure room password.')
@@ -70,9 +85,14 @@ async function getRoomPassword(sessionId: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   )
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(sessionId))
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(`${sessionId}:${nonce ?? ''}`))
   const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
   return hex.slice(0, 16)
+}
+
+function generateNonce(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(12))
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
 function getJitsiUrls(roomName: string, password: string) {
@@ -143,7 +163,7 @@ export async function POST(req: NextRequest) {
       // Check if room already assigned
       const { data: sessionData } = await sb
         .from('live_sessions')
-        .select('title, duration_minutes, daily_room_name, join_url')
+        .select('title, duration_minutes, daily_room_name, join_url, room_nonce')
         .eq('id', sessionId)
         .single()
 
@@ -152,11 +172,16 @@ export async function POST(req: NextRequest) {
       const s = sessionData as {
         title: string; duration_minutes: number
         daily_room_name: string | null; join_url: string | null
+        room_nonce: string | null
       }
 
-      // Use existing room name or generate a new one
-      const roomName   = s.daily_room_name ?? getRoomName(sessionId)
-      const password   = await getRoomPassword(sessionId)
+      // Use existing room name/nonce or generate fresh ones. A new nonce
+      // here — only when there's no room yet, i.e. once per go-live cycle
+      // — is what makes the derived password stop working once this
+      // session ends and a later one gets a new room (see end_session).
+      const roomName = s.daily_room_name ?? getRoomName()
+      const nonce    = s.daily_room_name ? s.room_nonce : generateNonce()
+      const password   = await getRoomPassword(sessionId, nonce)
       const { roomUrl } = getJitsiUrls(roomName, password)
 
       // Teacher URL — moderator with password set automatically
@@ -168,6 +193,7 @@ export async function POST(req: NextRequest) {
           daily_room_name: roomName,
           daily_room_url:  roomUrl,
           join_url:        roomUrl,
+          room_nonce:      nonce,
           platform:        'jitsi',
         }).eq('id', sessionId)
       }
@@ -193,9 +219,19 @@ export async function POST(req: NextRequest) {
       const user = await requireStaff()
       if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+      // Clear the room mapping once a session truly ends — a completed
+      // session's teacher/student UI never offers a "rejoin" path back
+      // into it, so there's no reason for its room name/URL to keep
+      // resolving forever. This shrinks how long a leaked link stays
+      // useful: once the class ends, that link stops working, even if
+      // it was shared outside Tivra while the class was live.
       await sb.from('live_sessions').update({
-        is_live:      false,
-        is_completed: true,
+        is_live:         false,
+        is_completed:    true,
+        daily_room_name: null,
+        daily_room_url:  null,
+        join_url:        null,
+        room_nonce:      null,
       }).eq('id', sessionId)
 
       return NextResponse.json({ success: true, recordingUrl: null })
@@ -217,7 +253,7 @@ export async function POST(req: NextRequest) {
 
       const { data: sessionData } = await sb
         .from('live_sessions')
-        .select('daily_room_name, is_live, is_completed')
+        .select('daily_room_name, is_live, is_completed, batch_id, phase_id, program_id, room_nonce')
         .eq('id', sessionId)
         .single()
 
@@ -226,12 +262,25 @@ export async function POST(req: NextRequest) {
       const s = sessionData as {
         daily_room_name: string | null
         is_live: boolean; is_completed: boolean
+        batch_id: string | null; phase_id: string | null; program_id: string | null
+        room_nonce: string | null
+      }
+
+      // Sessions scoped to a batch and/or programme are only joinable by
+      // students who belong to that batch / are enrolled in that
+      // programme — previously any active student could fetch a valid
+      // room URL for ANY session just by knowing its id. Sessions with
+      // no batch/programme signal stay open to any active student,
+      // matching the scheduler UI's "All batches" / "No phase" options.
+      if (user.role === 'student') {
+        const access = await checkLiveSessionAccess(sb, user.id, user.batch_id, s)
+        if (!access.ok) return NextResponse.json({ error: access.reason }, { status: 403 })
       }
 
       if (s.is_completed) return NextResponse.json({ error: 'Session has ended' }, { status: 410 })
       if (!s.daily_room_name) return NextResponse.json({ error: 'Room not ready yet' }, { status: 404 })
 
-      const password   = await getRoomPassword(sessionId)
+      const password   = await getRoomPassword(sessionId, s.room_nonce)
       const { roomUrl } = getJitsiUrls(s.daily_room_name, password)
 
       // Student URL — muted, no video, password passed silently

@@ -56,7 +56,7 @@ export interface Database {
           role: UserRole; access_type:AccessType|null; access_status:AccessStatus
           payment_verified_at:string|null; payment_verified_by:string|null; payment_notes:string|null
           college_id:string|null; enrolled_program_id:string|null
-          linked_student_id:string|null
+          linked_student_id:string|null; batch_id:string|null
           leaderboard_opt_in:boolean; streak_count:number; last_login_date:string|null
           phone:string|null; created_at:string
         }
@@ -143,7 +143,7 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['doubt_answers']['Insert']>
       }
       live_sessions: {
-        Row: { id:string; program_id:string|null; phase_id:string|null; module_id:string|null; title:string; description:string|null; scheduled_at:string; duration_minutes:number; join_url:string|null; recording_url:string|null; platform:'zoom'|'meet'|'daily'|'livekit'; is_live:boolean; is_completed:boolean; host_id:string|null; created_by:string|null; created_at:string }
+        Row: { id:string; program_id:string|null; phase_id:string|null; module_id:string|null; title:string; description:string|null; scheduled_at:string; duration_minutes:number; join_url:string|null; recording_url:string|null; platform:'zoom'|'meet'|'daily'|'livekit'|'jitsi'; is_live:boolean; is_completed:boolean; host_id:string|null; created_by:string|null; created_at:string; daily_room_name:string|null; daily_room_url:string|null; room_nonce:string|null }
         Insert: Omit<Database['public']['Tables']['live_sessions']['Row'],'id'|'created_at'>
         Update: Partial<Database['public']['Tables']['live_sessions']['Insert']>
       }

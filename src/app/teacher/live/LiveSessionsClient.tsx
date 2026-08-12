@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Loader2, Plus, X, Video, Radio,
-  Square, ExternalLink, RefreshCw,
+  Square, ExternalLink, RefreshCw, Globe, PlayCircle, Clock,
 } from 'lucide-react'
 
 interface Batch { id: string; name: string; batch_type: string; status: string }
@@ -15,9 +15,13 @@ interface Props {
   batches:  Batch[]
 }
 
-const BATCH_COLOR: Record<string, string> = {
-  open:'var(--cyan)', college:'#a78bfa', corporate:'#f59e0b', custom:'#93c5fd',
+const BATCH_META: Record<string, { color: string; bg: string }> = {
+  open:      { color: 'var(--accent-2)', bg: 'rgba(23,174,224,0.14)'  },
+  college:   { color: '#c3b1ea',         bg: 'rgba(167,139,218,0.16)' },
+  corporate: { color: 'var(--amber)',    bg: 'var(--amber-dim)'       },
+  custom:    { color: '#a9c0e8',         bg: 'rgba(107,143,209,0.16)' },
 }
+const batchMeta = (type: string) => BATCH_META[type] ?? BATCH_META.open
 
 // all writes go through /api/daily — no direct Supabase client needed
 
@@ -37,6 +41,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
   const [actionId,    setActionId]    = useState<string|null>(null)
   const [recordingId, setRecordingId] = useState<string|null>(null)
   const [manualUrl,   setManualUrl]   = useState('')
+  const [lobbyTip,     setLobbyTip]   = useState<string|null>(null)
   const [form, setForm] = useState({
     title:'', description:'', phase_id:'', module_id:'',
     batch_id:'', date:'', time:'', duration:'60',
@@ -87,6 +92,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
         await callDaily('go_live', sessionId)
         window.open(data.teacherUrl,'_blank','noopener,noreferrer')
         showToast('🔴 Live! Room opened in new tab — students can now join Tivra.','success')
+        setLobbyTip(sessionId)
         router.refresh()
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Network error'
@@ -156,11 +162,11 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
   }
 
   const STATUS: Record<string,{label:string;color:string;bg:string}> = {
-    live:     {label:'🔴 Live Now',    color:'var(--green)',bg:'rgba(34,197,94,0.12)'},
-    starting: {label:'⏳ Starting Soon',color:'var(--amber)',bg:'rgba(245,158,11,0.12)'},
-    upcoming: {label:'Scheduled',      color:'var(--muted)',bg:'rgba(255,255,255,0.06)'},
-    ended:    {label:'Ended',          color:'var(--muted)',bg:'rgba(255,255,255,0.04)'},
-    missed:   {label:'Missed',         color:'var(--red)',  bg:'rgba(239,68,68,0.08)'},
+    live:     {label:'Live now',      color:'var(--green)',bg:'var(--green-dim)'},
+    starting: {label:'Starting soon', color:'var(--amber)',bg:'var(--amber-dim)'},
+    upcoming: {label:'Scheduled',     color:'var(--muted)',bg:'rgba(255,255,255,0.06)'},
+    ended:    {label:'Ended',         color:'var(--muted)',bg:'rgba(255,255,255,0.04)'},
+    missed:   {label:'Missed',        color:'var(--red)',  bg:'var(--red-dim)'},
   }
 
   return (
@@ -168,23 +174,23 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
       {/* Header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}}>
         <div style={{fontSize:'13px',color:'var(--muted)'}}>
-          Powered by <span style={{color:'var(--cyan)',fontWeight:600}}>Jitsi Meet</span>
+          Powered by <span style={{color:'var(--accent-2)',fontWeight:600}}>Jitsi Meet</span>
           {' '}— free, open source, students stay inside Tivra
         </div>
         <button className="btn btn-primary" onClick={()=>setShowForm(v=>!v)} style={{fontSize:'13px'}}>
-          {showForm?<><X size={14}/> Cancel</>:<><Plus size={14}/> Schedule Class</>}
+          {showForm?<><X size={14}/> Cancel</>:<><Plus size={14}/> Schedule class</>}
         </button>
       </div>
 
       {/* Schedule form */}
       {showForm?(
-        <div className="card" style={{marginBottom:'20px',padding:'24px',border:'1px solid rgba(0,200,248,0.2)'}}>
-          <div style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'15px',marginBottom:'18px'}}>
-            Schedule New Class
+        <div className="card" style={{marginBottom:'20px',padding:'24px',border:'1px solid var(--accent-ring)'}}>
+          <div style={{fontFamily:'var(--font-serif)',fontWeight:600,fontSize:'15px',marginBottom:'18px'}}>
+            Schedule new class
           </div>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px'}}>
             <div style={{gridColumn:'span 2'}}>
-              <label className="form-label">Class Title *</label>
+              <label className="form-label">Class title *</label>
               <input className="form-input" placeholder="e.g. IAM & Security — Week 3"
                 value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/>
             </div>
@@ -194,25 +200,29 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
               <label className="form-label">Batch *</label>
               <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
                 <button type="button" onClick={()=>setForm(f=>({...f,batch_id:''}))} style={{
-                  padding:'8px 16px',borderRadius:'100px',cursor:'pointer',
-                  fontSize:'12px',fontWeight:600,fontFamily:'DM Sans,sans-serif',
-                  border:form.batch_id===''?'1px solid rgba(0,200,248,0.5)':'1px solid var(--border)',
-                  background:form.batch_id===''?'rgba(0,200,248,0.12)':'rgba(255,255,255,0.04)',
-                  color:form.batch_id===''?'var(--cyan)':'var(--muted)',
-                }}>🌐 All Batches</button>
-                {batches.map(b=>(
+                  padding:'8px 16px',borderRadius:'var(--radius-pill)',cursor:'pointer',
+                  fontSize:'12px',fontWeight:600,fontFamily:'var(--font-sans)',
+                  border:form.batch_id===''?'1px solid var(--accent-ring)':'1px solid var(--border)',
+                  background:form.batch_id===''?'var(--accent-2-dim)':'rgba(255,255,255,0.04)',
+                  color:form.batch_id===''?'var(--accent-2)':'var(--muted)',
+                  display:'flex',alignItems:'center',gap:'6px',
+                }}><Globe size={12}/> All batches</button>
+                {batches.map(b=>{
+                  const meta = batchMeta(b.batch_type)
+                  return (
                   <button key={b.id} type="button" onClick={()=>setForm(f=>({...f,batch_id:b.id}))} style={{
-                    padding:'8px 16px',borderRadius:'100px',cursor:'pointer',
-                    fontSize:'12px',fontWeight:600,fontFamily:'DM Sans,sans-serif',
-                    border:form.batch_id===b.id?`1px solid ${BATCH_COLOR[b.batch_type]??'var(--cyan)'}80`:'1px solid var(--border)',
-                    background:form.batch_id===b.id?`${BATCH_COLOR[b.batch_type]??'var(--cyan)'}18`:'rgba(255,255,255,0.04)',
-                    color:form.batch_id===b.id?(BATCH_COLOR[b.batch_type]??'var(--cyan)'):'var(--muted)',
+                    padding:'8px 16px',borderRadius:'var(--radius-pill)',cursor:'pointer',
+                    fontSize:'12px',fontWeight:600,fontFamily:'var(--font-sans)',
+                    border:form.batch_id===b.id?`1px solid ${meta.color}`:'1px solid var(--border)',
+                    background:form.batch_id===b.id?meta.bg:'rgba(255,255,255,0.04)',
+                    color:form.batch_id===b.id?meta.color:'var(--muted)',
                     display:'flex',alignItems:'center',gap:'6px',
                   }}>
-                    <span style={{width:'6px',height:'6px',borderRadius:'50%',background:BATCH_COLOR[b.batch_type]??'var(--cyan)',flexShrink:0}}/>
+                    <span style={{width:'6px',height:'6px',borderRadius:'50%',background:meta.color,flexShrink:0}}/>
                     {b.name}
                   </button>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
@@ -264,10 +274,15 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
           </div>
 
           <div className="banner banner-info" style={{marginTop:'14px'}}>
-            <Video size={14} style={{flexShrink:0,color:'var(--cyan)'}}/>
+            <Video size={14} style={{flexShrink:0,color:'var(--accent-2)'}}/>
             <span style={{fontSize:'13px'}}>
-              A Jitsi room is created automatically when you click <strong style={{color:'#fff'}}>Go Live</strong>.
+              A Jitsi room is created automatically when you click <strong style={{color:'var(--text)'}}>Go Live</strong>.
               Students join inside Tivra — completely free, no subscription needed.
+              Only students in the selected batch can join through Tivra, but the raw Jitsi
+              link itself has no per-person check — if it gets forwarded outside Tivra, anyone
+              with it can enter. For extra protection, once you&apos;re in the call open{' '}
+              <strong style={{color:'var(--text)'}}>Security Options → Enable Lobby</strong> so
+              new joiners need your approval before entering.
             </span>
           </div>
 
@@ -275,7 +290,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
             style={{marginTop:'16px',fontSize:'13px',padding:'11px 24px'}}>
             {isPending
               ?<><Loader2 size={14} style={{animation:'spin 1s linear infinite'}}/> Scheduling…</>
-              :<><Video size={14}/> Schedule Class</>}
+              :<><Video size={14}/> Schedule class</>}
           </button>
         </div>
       ) : null}
@@ -283,10 +298,10 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
       {/* Sessions list */}
       {sessions.length===0?(
         <div className="card" style={{textAlign:'center',padding:'48px',color:'var(--muted)'}}>
-          <div style={{fontSize:'32px',marginBottom:'12px'}}>🎥</div>
+          <Video size={28} color="var(--muted2)" style={{marginBottom:'12px'}}/>
           <div style={{fontSize:'14px',marginBottom:'16px'}}>No sessions scheduled yet.</div>
           <button className="btn btn-primary" onClick={()=>setShowForm(true)} style={{fontSize:'13px'}}>
-            <Plus size={13}/> Schedule First Class
+            <Plus size={13}/> Schedule first class
           </button>
         </div>
       ):(
@@ -305,40 +320,40 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
               <div key={sid} className="card" style={{padding:'18px 20px'}}>
                 <div style={{display:'flex',alignItems:'flex-start',gap:'14px',flexWrap:'wrap'}}>
                   {/* Live pulse dot */}
-                  <div style={{
-                    width:'8px',height:'8px',borderRadius:'50%',flexShrink:0,marginTop:'6px',
-                    background:st==='live'?'var(--green)':st==='starting'?'var(--amber)':st==='missed'?'var(--red)':'rgba(255,255,255,0.2)',
-                    boxShadow:st==='live'?'0 0 8px var(--green)':'none',
-                    animation:st==='live'?'pulse 2s ease-in-out infinite':'none',
-                  }}/>
+                  {st==='live' ? (
+                    <div className="pulse-dot pulse-green" style={{marginTop:'6px'}}/>
+                  ) : (
+                    <div style={{
+                      width:'8px',height:'8px',borderRadius:'50%',flexShrink:0,marginTop:'6px',
+                      background:st==='starting'?'var(--amber)':st==='missed'?'var(--red)':'rgba(255,255,255,0.2)',
+                    }}/>
+                  )}
 
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'14px',marginBottom:'4px'}}>
+                    <div style={{fontFamily:'var(--font-serif)',fontWeight:600,fontSize:'14px',marginBottom:'4px'}}>
                       {String(s.title??'')}
                     </div>
                     <div style={{fontSize:'12px',color:'var(--muted)',display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
                       {batch?(
-                        <span style={{padding:'1px 8px',borderRadius:'10px',fontSize:'10px',fontWeight:600,
-                          background:`${BATCH_COLOR[batch.batch_type]??'var(--cyan)'}18`,
-                          color:BATCH_COLOR[batch.batch_type]??'var(--cyan)'}}>
+                        <span className="pill" style={{
+                          background:batchMeta(batch.batch_type).bg,
+                          color:batchMeta(batch.batch_type).color}}>
                           {batch.name}
                         </span>
                       ):(
-                        <span style={{padding:'1px 8px',borderRadius:'10px',fontSize:'10px',
-                          background:'rgba(255,255,255,0.06)',color:'var(--muted)'}}>All batches</span>
+                        <span className="pill" style={{background:'rgba(255,255,255,0.06)',color:'var(--muted)'}}>All batches</span>
                       )}
                       {phase&&<span>Phase {String(phase.phase_number)} · </span>}
                       <span>{new Date(s.scheduled_at as string).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span>
                       <span>at {new Date(s.scheduled_at as string).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</span>
                       <span>· {String(s.duration_minutes??60)} min</span>
-                      {hasRoom&&<span style={{color:'var(--cyan)',fontSize:'10px',fontWeight:600}}>📡 Jitsi room ready</span>}
+                      {hasRoom&&<span style={{color:'var(--accent-2)',fontSize:'10px',fontWeight:600,display:'inline-flex',alignItems:'center',gap:'3px'}}><Radio size={10}/> Jitsi room ready</span>}
                     </div>
                   </div>
 
-                  <span style={{
-                    padding:'3px 10px',borderRadius:'20px',fontSize:'11px',fontWeight:600,
-                    background:cfg.bg,color:cfg.color,flexShrink:0,whiteSpace:'nowrap',
-                  }}>{cfg.label}</span>
+                  <span className="pill" style={{background:cfg.bg,color:cfg.color,flexShrink:0,whiteSpace:'nowrap'}}>
+                    {st==='starting' && <Clock size={11}/>} {cfg.label}
+                  </span>
 
                   {/* Action buttons */}
                   <div style={{display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
@@ -348,7 +363,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
                         disabled={busy} style={{fontSize:'12px',padding:'7px 16px',display:'flex',alignItems:'center',gap:'6px'}}>
                         {busy
                           ?<><Loader2 size={12} style={{animation:'spin 1s linear infinite'}}/> Creating…</>
-                          :<><Radio size={12}/> Go Live</>}
+                          :<><Radio size={12}/> Go live</>}
                       </button>
                     ) : null}
 
@@ -370,24 +385,41 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
                     {s.is_completed?(
                       s.recording_url?(
                         <a href={s.recording_url as string} target="_blank" rel="noreferrer"
-                          className="btn btn-ghost" style={{fontSize:'12px',padding:'7px 14px'}}>
-                          ▶ Recording
+                          className="btn btn-ghost" style={{fontSize:'12px',padding:'7px 14px',display:'flex',alignItems:'center',gap:'6px'}}>
+                          <PlayCircle size={12}/> Recording
                         </a>
                       ):(
                         <>
                           <button className="btn btn-ghost" onClick={()=>fetchRecording(sid)}
                             disabled={busy} style={{fontSize:'12px',padding:'7px 14px',display:'flex',alignItems:'center',gap:'6px'}}>
-                            {busy?<Loader2 size={12} style={{animation:'spin 1s linear infinite'}}/>:<><RefreshCw size={12}/> Check Recording</>}
+                            {busy?<Loader2 size={12} style={{animation:'spin 1s linear infinite'}}/>:<><RefreshCw size={12}/> Check recording</>}
                           </button>
                           <button className="btn btn-ghost" onClick={()=>setRecordingId(recordingId===sid?null:sid)}
                             style={{fontSize:'12px',padding:'7px 12px'}}>
-                            + Manual URL
+                            <Plus size={12}/> Manual URL
                           </button>
                         </>
                       )
                     ) : null}
                   </div>
                 </div>
+
+                {/* Lobby reminder — shown right after this session goes live */}
+                {lobbyTip===sid?(
+                  <div className="banner banner-info" style={{marginTop:'12px'}}>
+                    <Video size={14} style={{flexShrink:0,color:'var(--accent-2)'}}/>
+                    <span style={{fontSize:'13px',flex:1}}>
+                      Room opened in a new tab. To stop the link from working for anyone it
+                      gets forwarded to, open <strong style={{color:'var(--text)'}}>Security
+                      Options → Enable Lobby</strong> inside that tab — new joiners will then
+                      need your approval before entering.
+                    </span>
+                    <button className="btn btn-ghost" onClick={()=>setLobbyTip(null)}
+                      style={{fontSize:'11px',padding:'4px 10px',flexShrink:0}}>
+                      <X size={12}/>
+                    </button>
+                  </div>
+                ) : null}
 
                 {/* Manual recording input */}
                 {recordingId===sid?(
@@ -414,7 +446,6 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
       ) : null}
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
       `}</style>
     </div>
   )

@@ -1,6 +1,7 @@
 export const runtime = 'edge'
 
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
@@ -37,11 +38,44 @@ export default async function LivePage() {
 
   const { data: sessionsRaw } = await admin
     .from('live_sessions')
-    .select('*, phases!phase_id(title, phase_number)')
+    .select('*, phases!phase_id(title, phase_number, program_id)')
     .order('scheduled_at', { ascending: false })
     .limit(20)
 
-  const sessions = (sessionsRaw ?? []) as Record<string, unknown>[]
+  // Only show sessions open to everyone (batch_id null) or scheduled for
+  // this student's own batch — a student should never even see, let
+  // alone be able to join, a class scheduled for a batch they're not in.
+  const batchEligible = ((sessionsRaw ?? []) as Record<string, unknown>[])
+    .filter(s => !s.batch_id || s.batch_id === profile.batch_id)
+
+  // Further narrow to sessions whose programme (direct, via phase, or via
+  // batch) the student is actually enrolled in — sessions with no
+  // programme signal at all stay open to any active student.
+  const { data: enrolledRaw } = await admin
+    .from('enrolled_programs')
+    .select('program_id')
+    .eq('student_id', user.id)
+  const enrolledSet = new Set(((enrolledRaw ?? []) as { program_id: string }[]).map(e => e.program_id))
+
+  const batchIdsNeedingProgram = Array.from(new Set(
+    batchEligible
+      .filter(s => !s.program_id && !(s.phases as { program_id?: string } | null)?.program_id && s.batch_id)
+      .map(s => s.batch_id as string)
+  ))
+  const { data: batchProgramsRaw } = batchIdsNeedingProgram.length
+    ? await admin.from('batches').select('id, program_id').in('id', batchIdsNeedingProgram)
+    : { data: [] as { id: string; program_id: string | null }[] }
+  const batchProgramMap = new Map(
+    ((batchProgramsRaw ?? []) as { id: string; program_id: string | null }[]).map(b => [b.id, b.program_id])
+  )
+
+  const sessions = batchEligible.filter(s => {
+    const phase = s.phases as { program_id?: string | null } | null
+    const programId = (s.program_id as string | null)
+      ?? phase?.program_id
+      ?? (s.batch_id ? batchProgramMap.get(s.batch_id as string) ?? null : null)
+    return !programId || enrolledSet.has(programId)
+  })
   const now = new Date()
 
   function getStatus(s: Record<string, unknown>) {
@@ -81,7 +115,7 @@ export default async function LivePage() {
                 const cfg = statusConfig[st]
                 const scheduled = new Date(session.scheduled_at as string)
                 const phase = session.phases as Record<string,unknown> | null
-                const canJoin = (st === 'live' || st === 'starting') && session.join_url
+                const canJoin = (st === 'live' || st === 'starting')
 
                 return (
                   <div key={session.id as string} className="card" style={{
@@ -118,10 +152,10 @@ export default async function LivePage() {
 
                     <div style={{ display:'flex', gap:'8px', flexShrink:0 }}>
                       {canJoin && (
-                        <a href={session.join_url as string} target="_blank" rel="noreferrer"
+                        <Link href={`/live/${session.id}`}
                           className="btn btn-primary" style={{ fontSize:'12px', padding:'7px 16px' }}>
                           Join <ArrowRight size={12}/>
-                        </a>
+                        </Link>
                       )}
                       {session.recording_url && (
                         <a href={session.recording_url as string} target="_blank" rel="noreferrer"

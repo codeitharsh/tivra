@@ -6,6 +6,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import LiveRoomClient from './LiveRoomClient'
 import { requireActiveStudent } from '@/lib/access-gate'
+import { checkLiveSessionAccess } from '@/lib/live-session-access'
+import LockedFeature from '@/components/LockedFeature'
 import type { Profile } from '@/types/database'
 
 export default async function LiveRoomPage({
@@ -37,6 +39,30 @@ export default async function LiveRoomPage({
   if (!sessionData) notFound()
 
   const session = sessionData as Record<string, unknown>
+
+  // Sessions scoped to a batch and/or programme are only visible to
+  // students who belong to that batch / are enrolled in that programme —
+  // otherwise a student could open any /live/[sessionId] URL directly
+  // (guessed, forwarded, or bookmarked) and join a class they have no
+  // access to. Sessions with no batch/programme signal stay open to any
+  // active student.
+  if (profile.role === 'student') {
+    const access = await checkLiveSessionAccess(admin, user.id, profile.batch_id, {
+      batch_id:   session.batch_id   as string | null,
+      phase_id:   session.phase_id   as string | null,
+      program_id: session.program_id as string | null,
+    })
+    if (!access.ok) {
+      return (
+        <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
+          <Sidebar profile={profile}/>
+          <main style={{ flex:1, overflow:'auto' }}>
+            <LockedFeature feature="This class" description={access.reason}/>
+          </main>
+        </div>
+      )
+    }
+  }
 
   // Get student's attendance record if any
   const { data: attendanceData } = await supabase
