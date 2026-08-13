@@ -99,6 +99,7 @@ function TestGroup({
         Phase {phaseNum} weekly tests
       </div>
       <div className="card" style={{ padding:0, overflow:'hidden' }}>
+        <div style={{ overflowX:'auto' }}>
         <table className="data-table">
           <thead>
             <tr>
@@ -178,6 +179,7 @@ function TestGroup({
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

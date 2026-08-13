@@ -137,7 +137,7 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
               position:'fixed', inset:0, zIndex:40,
             }}/>
             <div style={{
-              position:'absolute', top:'42px', right:0, width:'320px',
+              position:'absolute', top:'42px', right:0, width:'min(320px, calc(100vw - 32px))',
               background:'var(--surface)', border:'1px solid var(--border)',
               borderRadius:'var(--radius)', zIndex:50, boxShadow:'0 12px 32px rgba(0,0,0,0.45)',
               overflow:'hidden',

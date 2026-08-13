@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -16,12 +16,27 @@ const LINKS = [
 export default function PublicNav() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const navRef = useRef<HTMLElement>(null)
+  // Measured, not hardcoded — a fixed '65px' guess previously drifted out
+  // of sync with the nav's real rendered height (measured ~75px), leaving
+  // a ~10px gap where the dropdown panel's top edge sat behind the nav
+  // bar instead of flush against it.
+  const [navHeight, setNavHeight] = useState(65)
+
+  useEffect(() => {
+    function measure() {
+      if (navRef.current) setNavHeight(navRef.current.offsetHeight)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [])
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setOpen(false) }, [pathname])
 
   return (
-    <nav style={{
+    <nav ref={navRef} style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '18px 40px',
       borderBottom: '1px solid var(--border)',
@@ -75,9 +90,10 @@ export default function PublicNav() {
       {/* Mobile panel */}
       {open && (
         <div style={{
-          position: 'fixed', top: '65px', left: 0, right: 0, bottom: 0, zIndex: 99,
+          position: 'fixed', top: `${navHeight}px`, left: 0, right: 0, bottom: 0, zIndex: 99,
           background: 'var(--bg)', borderTop: '1px solid var(--border)',
           padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '4px',
+          overflowY: 'auto',
         }}>
           {LINKS.map(l => (
             <Link key={l.href} href={l.href} style={{

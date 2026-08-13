@@ -96,29 +96,31 @@ export default function SettingsClient({ colleges }: { colleges: Record<string,u
         </div>
       ) : (
         <div className="card" style={{ padding:0, overflow:'hidden' }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Organisation</th>
-                <th>Email domain</th>
-                <th style={{textAlign:'right'}}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {colleges.map(c=>(
-                <tr key={c.id as string}>
-                  <td style={{fontWeight:500}}>{String(c.college_name??'')} </td>
-                  <td><span style={{fontFamily:'var(--font-mono)',fontSize:'12px',color:'var(--accent-2)'}}>{String(c.email_domain??'')} </span></td>
-                  <td style={{textAlign:'right'}}>
-                    <button className="btn btn-danger" onClick={()=>removeDomain(c.id as string)}
-                      style={{fontSize:'11px',padding:'4px 10px'}} disabled={isPending}>
-                      <Trash2 size={11}/>
-                    </button>
-                  </td>
+          <div style={{ overflowX:'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Organisation</th>
+                  <th>Email domain</th>
+                  <th style={{textAlign:'right'}}>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {colleges.map(c=>(
+                  <tr key={c.id as string}>
+                    <td style={{fontWeight:500}}>{String(c.college_name??'')} </td>
+                    <td><span style={{fontFamily:'var(--font-mono)',fontSize:'12px',color:'var(--accent-2)'}}>{String(c.email_domain??'')} </span></td>
+                    <td style={{textAlign:'right'}}>
+                      <button className="btn btn-danger" onClick={()=>removeDomain(c.id as string)}
+                        style={{fontSize:'11px',padding:'4px 10px'}} disabled={isPending}>
+                        <Trash2 size={11}/>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

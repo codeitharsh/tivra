@@ -180,6 +180,7 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
 
       {/* Referral codes table */}
       <div className="card" style={{ padding:0, overflow:'hidden' }}>
+        <div style={{ overflowX:'auto' }}>
         <table className="data-table">
           <thead>
             <tr>
@@ -246,6 +247,7 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {toast && (
@@ -260,6 +262,7 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
           All referral enrollments
         </div>
         <div className="card" style={{ padding:0, overflow:'hidden' }}>
+          <div style={{ overflowX:'auto' }}>
           <table className="data-table">
             <thead>
               <tr>
@@ -312,6 +315,7 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
               })}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

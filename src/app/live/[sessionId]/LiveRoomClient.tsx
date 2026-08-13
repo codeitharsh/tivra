@@ -122,10 +122,10 @@ export default function LiveRoomClient({
       </div>
 
       {/* Main area */}
-      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+      <div className="live-room-main" style={{ flex: 1, display: 'flex', minHeight: 0 }}>
 
         {/* Video area */}
-        <div style={{ flex: 1, position: 'relative', background: '#000' }}>
+        <div style={{ flex: 1, position: 'relative', background: '#000', minHeight: '260px' }}>
 
           {/* LIVE — embed Jitsi */}
           {isLive && roomUrl ? (
@@ -204,7 +204,7 @@ export default function LiveRoomClient({
         </div>
 
         {/* Right sidebar */}
-        <div style={{
+        <div className="live-room-sidebar" style={{
           width: '260px', flexShrink: 0,
           borderLeft: '1px solid var(--border)',
           display: 'flex', flexDirection: 'column',
@@ -286,6 +286,14 @@ export default function LiveRoomClient({
 
       <style>{`
         @keyframes spin { to{transform:rotate(360deg)} }
+        @media (max-width: 768px) {
+          .live-room-main { flex-direction: column; }
+          .live-room-sidebar {
+            width: 100% !important;
+            border-left: none !important;
+            border-top: 1px solid var(--border);
+          }
+        }
       `}</style>
     </div>
   )
