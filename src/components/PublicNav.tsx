@@ -36,6 +36,7 @@ export default function PublicNav() {
   useEffect(() => { setOpen(false) }, [pathname])
 
   return (
+    <>
     <nav ref={navRef} style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '18px 40px',
@@ -87,33 +88,6 @@ export default function PublicNav() {
         {open ? <X size={18}/> : <Menu size={18}/>}
       </button>
 
-      {/* Mobile panel */}
-      {open && (
-        <div style={{
-          position: 'fixed', top: `${navHeight}px`, left: 0, right: 0, bottom: 0, zIndex: 99,
-          background: 'var(--bg)', borderTop: '1px solid var(--border)',
-          padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '4px',
-          overflowY: 'auto',
-        }}>
-          {LINKS.map(l => (
-            <Link key={l.href} href={l.href} style={{
-              fontSize: '17px', color: 'var(--text)', fontFamily: 'var(--font-sans), sans-serif',
-              textDecoration: 'none', padding: '14px 4px', borderBottom: '1px solid var(--border)',
-            }}>{l.label}</Link>
-          ))}
-          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-            <Link href="/login" className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }}>Login</Link>
-            {ENROLLMENT_OPEN ? (
-              <Link href="/register" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Enrol Now</Link>
-            ) : (
-              <span className="btn" style={{
-                flex: 1, justifyContent: 'center', background: 'var(--card2)', color: 'var(--muted2)',
-              }}>Soon</span>
-            )}
-          </div>
-        </div>
-      )}
-
       <style>{`
         @media (max-width: 860px) {
           .nav-links { display: none !important; }
@@ -121,5 +95,41 @@ export default function PublicNav() {
         }
       `}</style>
     </nav>
+
+    {/* Mobile panel — deliberately rendered OUTSIDE <nav>, not nested
+        inside it. Nav has backdropFilter set for its frosted-glass look,
+        and in real (non-headless) rendering, filter/backdrop-filter on an
+        ancestor makes it a containing block for position:fixed
+        descendants — so this panel's top/bottom were being resolved
+        against nav's own ~75px-tall box instead of the viewport,
+        collapsing it to zero visible height while its children still
+        measured "correctly" in isolation. Keeping it as a sibling avoids
+        that containing-block entirely. */}
+    {open && (
+      <div style={{
+        position: 'fixed', top: `${navHeight}px`, left: 0, right: 0, bottom: 0, zIndex: 99,
+        background: 'var(--bg)', borderTop: '1px solid var(--border)',
+        padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '4px',
+        overflowY: 'auto',
+      }}>
+        {LINKS.map(l => (
+          <Link key={l.href} href={l.href} style={{
+            fontSize: '17px', color: 'var(--text)', fontFamily: 'var(--font-sans), sans-serif',
+            textDecoration: 'none', padding: '14px 4px', borderBottom: '1px solid var(--border)',
+          }}>{l.label}</Link>
+        ))}
+        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+          <Link href="/login" className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }}>Login</Link>
+          {ENROLLMENT_OPEN ? (
+            <Link href="/register" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Enrol Now</Link>
+          ) : (
+            <span className="btn" style={{
+              flex: 1, justifyContent: 'center', background: 'var(--card2)', color: 'var(--muted2)',
+            }}>Soon</span>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   )
 }
