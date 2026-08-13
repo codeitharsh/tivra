@@ -696,21 +696,30 @@ export default function ProgrammeStack({ programmes }: { programmes: ProgramCard
           trigger: section,
           start: 'top top',
           end: 'bottom bottom',
-          scrub: 0.6,
+          scrub: 1,
           pin: frameRef.current,
           pinSpacing: false,
           anticipatePin: 1,
+          fastScrollEnd: true,
         },
       })
 
+      // ease:'none' on the tweens — with a scrubbed timeline the scrub
+      // value above is what supplies the actual smoothing (a bit of
+      // inertia/lag as it catches up to scroll position); layering a
+      // power-curve ease on top of that made the mapping from scroll
+      // position to card position non-linear, which showed up as a
+      // slight hitch right at the handoff between one card's tween and
+      // the next's. Linear tweens + scrub-driven easing is the standard
+      // GSAP recipe for a scrub timeline that tracks scroll smoothly.
       for (let i = 1; i < cards.length; i++) {
         const pos = i - 1
         tl.to(cards[i - 1], {
           scale: 0.92, opacity: 0.35, filter: 'blur(3px)',
-          duration: 1, ease: 'power1.out',
+          duration: 1, ease: 'none',
         }, pos)
         tl.to(cards[i], {
-          yPercent: 0, duration: 1, ease: 'power2.out',
+          yPercent: 0, duration: 1, ease: 'none',
         }, pos)
       }
     }, section)
