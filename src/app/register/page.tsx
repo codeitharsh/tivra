@@ -121,7 +121,7 @@ function RegisterForm() {
 
           <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
             {[
-              { name:'full_name', label:'Full Name', type:'text',     placeholder:'Harsh Sharma' },
+              { name:'full_name', label:'Full Name', type:'text',     placeholder:'John Doe' },
               { name:'email',     label:'Email',     type:'email',    placeholder:'you@example.com' },
               { name:'phone',     label:'Phone Number',     type:'tel', placeholder:'+91 98765 43210' },
               { name:'password',  label:'Password',  type:'password', placeholder:'Min. 8 characters' },
