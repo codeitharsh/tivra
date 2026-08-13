@@ -501,7 +501,6 @@ function PaymentForm() {
                     value={referralCode}
                     onChange={e => { setReferralCode(e.target.value.toUpperCase()); setReferralStatus('idle'); setReferralData(null) }}
                     onKeyDown={e => e.key === 'Enter' && validateReferral()}
-                    placeholder="e.g. LAKSHIKA100"
                     className="form-input"
                     style={{ flex:1, borderColor: referralStatus === 'invalid' ? 'var(--red)' : undefined, letterSpacing:'0.05em' }}
                   />
