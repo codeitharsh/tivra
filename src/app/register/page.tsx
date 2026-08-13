@@ -142,7 +142,6 @@ function RegisterForm() {
                     value={referralCode}
                     onChange={e => { setReferralCode(e.target.value.toUpperCase()); setReferralStatus('idle'); setReferralFaculty('') }}
                     onBlur={e => validateReferral(e.target.value)}
-                    placeholder="e.g. LAKSHIKA100"
                     className="form-input"
                     style={{
                       flex:1,
