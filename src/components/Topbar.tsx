@@ -97,7 +97,7 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
   }
 
   return (
-    <header style={{
+    <header className="topbar-header" style={{
       background: 'var(--surface)', borderBottom: '1px solid var(--border)',
       padding: '0 28px', height: '60px',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -212,6 +212,12 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
           <Settings size={15}/>
         </Link>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .topbar-header { padding-left: 64px !important; }
+        }
+      `}</style>
     </header>
   )
 }

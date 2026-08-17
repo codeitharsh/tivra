@@ -387,6 +387,7 @@ h1,h2,h3,h4,h5,h6 { font-family: var(--font-serif), ui-serif, Georgia, serif; le
   /* Sidebar → hamburger */
   .sidebar-desktop    { display: none !important; }
   .sidebar-mobile-btn { display: flex !important; }
+  .sidebar-mobile     { display: flex !important; }
 
   /* Grids → stack */
   .r-grid-2 { grid-template-columns: 1fr !important; }
