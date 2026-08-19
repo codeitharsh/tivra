@@ -53,6 +53,16 @@ export default async function AdminAccessPage() {
     .order('display_order', { ascending: true })
   const programmes = (programsRaw ?? []) as { slug: string; name: string }[]
 
+  // Fetch all batches for the Grant-access modal's optional batch picker —
+  // batch assignment previously had no UI anywhere in the app, even
+  // though batch-scoped live classes depend on a student's profile
+  // having the right batch_id set.
+  const { data: batchesRaw } = await admin
+    .from('batches')
+    .select('id, name, batch_type, status')
+    .order('name', { ascending: true })
+  const batches = (batchesRaw ?? []) as { id: string; name: string; batch_type: string; status: string }[]
+
   // Fetch latest payment requests
   const { data: paymentRequests } = await admin
     .from('payment_requests')
@@ -118,7 +128,7 @@ export default async function AdminAccessPage() {
             </div>
           </div>
 
-          <AccessTable rows={rows} programmes={programmes}/>
+          <AccessTable rows={rows} programmes={programmes} batches={batches}/>
         </div>
       </main>
     </div>

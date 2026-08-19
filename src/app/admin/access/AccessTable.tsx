@@ -32,8 +32,9 @@ type FS = 'all'|'pending_payment'|'active'|'restricted'
 type FR = 'all'|'student'|'teacher'|'parent'|'admin'
 
 interface Programme { slug: string; name: string }
+interface Batch { id: string; name: string; batch_type: string; status: string }
 
-export default function AccessTable({ rows, programmes }: { rows: Record<string,unknown>[]; programmes: Programme[] }) {
+export default function AccessTable({ rows, programmes, batches }: { rows: Record<string,unknown>[]; programmes: Programme[]; batches: Batch[] }) {
   const router = useRouter()
   const [isPending, start] = useTransition()
   const [search,    setSearch]    = useState('')
@@ -50,6 +51,11 @@ export default function AccessTable({ rows, programmes }: { rows: Record<string,
   // but no enrolled_programs row, incorrectly locking them out of
   // every programme-scoped page once those checks existed.
   const [grantPlan,  setGrantPlan] = useState(programmes[0]?.slug ?? '')
+  // Optional — batch-scoped live classes only admit students whose
+  // profile.batch_id matches the session's batch, so leaving this
+  // unset (empty string) is a real, valid choice: the student stays
+  // eligible for "all batches" sessions but no batch-specific ones.
+  const [grantBatch, setGrantBatch] = useState('')
   const [revokeM,   setRevokeM]   = useState<Record<string,unknown>|null>(null)
 
   const toast3 = (msg:string,type:'success'|'error') => {
@@ -77,10 +83,11 @@ export default function AccessTable({ rows, programmes }: { rows: Record<string,
         notes:      grantNotes,
         role:       grantRole,
         plan:       grantRole === 'student' ? grantPlan : undefined,
+        batch_id:   grantRole === 'student' && grantBatch ? grantBatch : undefined,
       })
       if (r?.error) toast3(r.error,'error')
       else { toast3(`✓ Access granted to ${grantM.full_name}`,'success'); router.refresh() }
-      setGrantM(null); setGrantNotes(''); setGrantRole('student'); setGrantPlan(programmes[0]?.slug ?? ''); setActionId(null)
+      setGrantM(null); setGrantNotes(''); setGrantRole('student'); setGrantPlan(programmes[0]?.slug ?? ''); setGrantBatch(''); setActionId(null)
     })
   }
 
@@ -352,6 +359,20 @@ export default function AccessTable({ rows, programmes }: { rows: Record<string,
                   </select>
                   <div style={{fontSize:'11px',color:'var(--muted)',marginTop:'5px'}}>
                     Determines which programme(s) this student gets enrolled in and can access.
+                  </div>
+                </div>
+              )}
+              {grantRole === 'student' && (
+                <div>
+                  <label className="form-label">Batch <span style={{fontWeight:400,textTransform:'none',opacity:0.6}}>(optional)</span></label>
+                  <select className="form-select" value={grantBatch} onChange={e=>setGrantBatch(e.target.value)}>
+                    <option value="">No batch (all-batches live classes only)</option>
+                    {batches.map(b => (
+                      <option key={b.id} value={b.id}>{b.name} — {b.batch_type} · {b.status}</option>
+                    ))}
+                  </select>
+                  <div style={{fontSize:'11px',color:'var(--muted)',marginTop:'5px'}}>
+                    Batch-specific live classes only admit students assigned to that batch. Leave unset if this programme has none yet.
                   </div>
                 </div>
               )}
