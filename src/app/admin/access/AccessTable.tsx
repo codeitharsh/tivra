@@ -31,7 +31,9 @@ const ROLE_META: Record<string, { color:string; bg:string }> = {
 type FS = 'all'|'pending_payment'|'active'|'restricted'
 type FR = 'all'|'student'|'teacher'|'parent'|'admin'
 
-export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }) {
+interface Programme { slug: string; name: string }
+
+export default function AccessTable({ rows, programmes }: { rows: Record<string,unknown>[]; programmes: Programme[] }) {
   const router = useRouter()
   const [isPending, start] = useTransition()
   const [search,    setSearch]    = useState('')
@@ -47,7 +49,7 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
   // manually activating a student left them with an active account
   // but no enrolled_programs row, incorrectly locking them out of
   // every programme-scoped page once those checks existed.
-  const [grantPlan,  setGrantPlan] = useState('cloud_launchpad')
+  const [grantPlan,  setGrantPlan] = useState(programmes[0]?.slug ?? '')
   const [revokeM,   setRevokeM]   = useState<Record<string,unknown>|null>(null)
 
   const toast3 = (msg:string,type:'success'|'error') => {
@@ -78,7 +80,7 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
       })
       if (r?.error) toast3(r.error,'error')
       else { toast3(`✓ Access granted to ${grantM.full_name}`,'success'); router.refresh() }
-      setGrantM(null); setGrantNotes(''); setGrantRole('student'); setGrantPlan('cloud_launchpad'); setActionId(null)
+      setGrantM(null); setGrantNotes(''); setGrantRole('student'); setGrantPlan(programmes[0]?.slug ?? ''); setActionId(null)
     })
   }
 
@@ -344,9 +346,9 @@ export default function AccessTable({ rows }: { rows: Record<string,unknown>[] }
                 <div>
                   <label className="form-label">Programme</label>
                   <select className="form-select" value={grantPlan} onChange={e=>setGrantPlan(e.target.value)}>
-                    <option value="cloud_launchpad">Cloud LaunchPad</option>
-                    <option value="cloud_architect">Cloud Architect</option>
-                    <option value="bundle">Bundle (both programmes)</option>
+                    {programmes.map(p => (
+                      <option key={p.slug} value={p.slug}>{p.name}</option>
+                    ))}
                   </select>
                   <div style={{fontSize:'11px',color:'var(--muted)',marginTop:'5px'}}>
                     Determines which programme(s) this student gets enrolled in and can access.

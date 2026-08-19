@@ -44,6 +44,15 @@ export default async function AdminAccessPage() {
     progressMap[p.student_id] = (progressMap[p.student_id] ?? 0) + 1
   }
 
+  // Fetch all programmes for the Grant-access modal's programme picker —
+  // includes inactive/unpublished ones too (unlike the public site),
+  // since an admin may want to grant access ahead of a launch.
+  const { data: programsRaw } = await admin
+    .from('programs')
+    .select('slug, name')
+    .order('display_order', { ascending: true })
+  const programmes = (programsRaw ?? []) as { slug: string; name: string }[]
+
   // Fetch latest payment requests
   const { data: paymentRequests } = await admin
     .from('payment_requests')
@@ -109,7 +118,7 @@ export default async function AdminAccessPage() {
             </div>
           </div>
 
-          <AccessTable rows={rows}/>
+          <AccessTable rows={rows} programmes={programmes}/>
         </div>
       </main>
     </div>
