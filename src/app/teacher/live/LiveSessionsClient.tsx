@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Loader2, Plus, X, Video, Radio,
-  Square, ExternalLink, RefreshCw, Globe, PlayCircle, Clock,
+  Square, ExternalLink, RefreshCw, Globe, PlayCircle, Clock, Link2,
 } from 'lucide-react'
 
 interface Batch { id: string; name: string; batch_type: string; status: string }
@@ -23,10 +23,10 @@ const BATCH_META: Record<string, { color: string; bg: string }> = {
 }
 const batchMeta = (type: string) => BATCH_META[type] ?? BATCH_META.open
 
-// all writes go through /api/daily — no direct Supabase client needed
+// all writes go through /api/live-session — no direct Supabase client needed
 
-async function callDaily(action: string, sessionId: string, extra?: Record<string,unknown>) {
-  const res = await fetch('/api/daily', {
+async function callLiveApi(action: string, sessionId: string, extra?: Record<string,unknown>) {
+  const res = await fetch('/api/live-session', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ action, sessionId, ...extra }),
   })
@@ -41,10 +41,9 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
   const [actionId,    setActionId]    = useState<string|null>(null)
   const [recordingId, setRecordingId] = useState<string|null>(null)
   const [manualUrl,   setManualUrl]   = useState('')
-  const [lobbyTip,     setLobbyTip]   = useState<string|null>(null)
   const [form, setForm] = useState({
     title:'', description:'', phase_id:'', module_id:'',
-    batch_id:'', date:'', time:'', duration:'60',
+    batch_id:'', date:'', time:'', duration:'60', meetingLink:'',
   })
 
   const showToast = (msg:string,type:'success'|'error') => {
@@ -56,9 +55,10 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
 
   async function createSession() {
     if (!form.title||!form.date||!form.time){showToast('Title, date, and time required','error');return}
+    if (!form.meetingLink.trim()){showToast('Paste your Teams meeting link','error');return}
     const scheduledAt = new Date(`${form.date}T${form.time}:00`).toISOString()
     start(async()=>{
-      const res  = await callDaily('schedule_session', '', {
+      const res  = await callLiveApi('schedule_session', '', {
         title:           form.title,
         description:     form.description||null,
         phaseId:         form.phase_id||null,
@@ -66,11 +66,12 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
         batchId:         form.batch_id||null,
         scheduledAt,
         durationMinutes: Number(form.duration),
+        meetingLink:     form.meetingLink.trim(),
       })
       const data = await res.json() as {error?:string}
       if(!res.ok){showToast(data.error??'Failed to schedule','error');return}
       showToast('✓ Class scheduled!','success')
-      setForm({title:'',description:'',phase_id:'',module_id:'',batch_id:'',date:'',time:'',duration:'60'})
+      setForm({title:'',description:'',phase_id:'',module_id:'',batch_id:'',date:'',time:'',duration:'60',meetingLink:''})
       setShowForm(false)
       router.refresh()
     })
@@ -80,19 +81,16 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
     setActionId(sessionId)
     start(async()=>{
       try {
-        const res  = await callDaily('create_room', sessionId)
-        let data: {error?:string;teacherUrl?:string} = {}
-        try { data = await res.json() } catch { /* empty response */ }
+        const res  = await callLiveApi('go_live', sessionId)
+        const data = await res.json() as {error?:string;joinUrl?:string}
 
-        if(!res.ok || !data.teacherUrl) {
-          showToast(data.error ?? `Server error (${res.status}) — check that DAILY_API_KEY is set in .env.local`, 'error')
+        if(!res.ok || !data.joinUrl) {
+          showToast(data.error ?? `Server error (${res.status})`, 'error')
           setActionId(null); return
         }
 
-        await callDaily('go_live', sessionId)
-        window.open(data.teacherUrl,'_blank','noopener,noreferrer')
-        showToast('🔴 Live! Room opened in new tab — students can now join Tivra.','success')
-        setLobbyTip(sessionId)
+        window.open(data.joinUrl,'_blank','noopener,noreferrer')
+        showToast('🔴 Live! Teams opened in a new tab — students can now join.','success')
         router.refresh()
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Network error'
@@ -102,28 +100,17 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
     })
   }
 
-  async function rejoinRoom(sessionId:string) {
-    setActionId(sessionId)
-    start(async()=>{
-      try {
-        const res  = await callDaily('create_room', sessionId)
-        const data = await res.json() as {teacherUrl?:string;error?:string}
-        if(data.teacherUrl) window.open(data.teacherUrl,'_blank','noopener,noreferrer')
-        else showToast(data.error??'Failed','error')
-      } catch {showToast('Network error','error')}
-      setActionId(null)
-    })
+  function rejoinRoom(joinUrl: string | null) {
+    if (!joinUrl) { showToast('No meeting link set for this session','error'); return }
+    window.open(joinUrl,'_blank','noopener,noreferrer')
   }
 
   async function endSession(sessionId:string) {
-    if(!confirm('End this session? Recording will be saved automatically.')) return
+    if(!confirm('End this session?')) return
     setActionId(sessionId)
     start(async()=>{
-      const res  = await callDaily('end_session', sessionId)
-      const data = await res.json() as {recordingUrl?:string}
-      showToast(data.recordingUrl
-        ? '✓ Session ended. Recording saved!'
-        : '✓ Session ended. Recording may take a few minutes.','success')
+      await callLiveApi('end_session', sessionId)
+      showToast('✓ Session ended.','success')
       setActionId(null)
       router.refresh()
     })
@@ -132,10 +119,10 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
   async function fetchRecording(sessionId:string) {
     setActionId(sessionId)
     start(async()=>{
-      const res  = await callDaily('fetch_recording', sessionId)
+      const res  = await callLiveApi('fetch_recording', sessionId)
       const data = await res.json() as {recordings?:unknown[];error?:string}
       if(data.recordings?.length) showToast(`✓ Recording found!`,'success')
-      else showToast('No recording yet — try again in a few minutes','error')
+      else showToast('No recording — use Manual URL below','error')
       setActionId(null)
       router.refresh()
     })
@@ -144,7 +131,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
   async function saveManualRecording(sessionId:string) {
     if(!manualUrl.trim()) return
     start(async()=>{
-      const res  = await callDaily('save_recording', sessionId, { recordingUrl: manualUrl.trim() })
+      const res  = await callLiveApi('save_recording', sessionId, { recordingUrl: manualUrl.trim() })
       const data = await res.json() as {error?:string}
       if(!res.ok){showToast(data.error??'Failed','error');return}
       showToast('✓ Recording URL saved','success')
@@ -174,8 +161,8 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
       {/* Header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}}>
         <div style={{fontSize:'13px',color:'var(--muted)'}}>
-          Powered by <span style={{color:'var(--accent-2)',fontWeight:600}}>Jitsi Meet</span>
-          {' '}— free, open source, students stay inside Tivra
+          Uses your own <span style={{color:'var(--accent-2)',fontWeight:600}}>Microsoft Teams</span>
+          {' '}— paste your meeting link when scheduling
         </div>
         <button className="btn btn-primary" onClick={()=>setShowForm(v=>!v)} style={{fontSize:'13px'}}>
           {showForm?<><X size={14}/> Cancel</>:<><Plus size={14}/> Schedule class</>}
@@ -193,6 +180,15 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
               <label className="form-label">Class title *</label>
               <input className="form-input" placeholder="e.g. IAM & Security — Week 3"
                 value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/>
+            </div>
+
+            <div style={{gridColumn:'span 2'}}>
+              <label className="form-label">Teams meeting link *</label>
+              <input className="form-input" type="url" placeholder="https://teams.microsoft.com/l/meetup-join/…"
+                value={form.meetingLink} onChange={e=>setForm(f=>({...f,meetingLink:e.target.value}))}/>
+              <div style={{fontSize:'11px',color:'var(--muted)',marginTop:'5px'}}>
+                Create the meeting in your own Microsoft Teams first, then paste its join link here.
+              </div>
             </div>
 
             {/* Batch pills */}
@@ -276,13 +272,10 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
           <div className="banner banner-info" style={{marginTop:'14px'}}>
             <Video size={14} style={{flexShrink:0,color:'var(--accent-2)'}}/>
             <span style={{fontSize:'13px'}}>
-              A Jitsi room is created automatically when you click <strong style={{color:'var(--text)'}}>Go Live</strong>.
-              Students join inside Tivra — completely free, no subscription needed.
-              Only students in the selected batch can join through Tivra, but the raw Jitsi
-              link itself has no per-person check — if it gets forwarded outside Tivra, anyone
-              with it can enter. For extra protection, once you&apos;re in the call open{' '}
-              <strong style={{color:'var(--text)'}}>Security Options → Enable Lobby</strong> so
-              new joiners need your approval before entering.
+              Students only see this link after Tivra checks they&apos;re in the right batch and
+              programme — same as before. Once a student has the link though, it works like any
+              Teams link: consider turning on Teams&apos; own lobby / &quot;people in my org
+              only&quot; setting for extra protection against it being forwarded outside Tivra.
             </span>
           </div>
 
@@ -314,7 +307,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
             const phase = s.phases  as Record<string,unknown>|null
             const sid   = s.id as string
             const busy  = actionId===sid&&isPending
-            const hasRoom = !!(s.daily_room_name)
+            const joinUrl = (s.join_url as string | null) ?? null
 
             return (
               <div key={sid} className="card" style={{padding:'18px 20px'}}>
@@ -347,7 +340,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
                       <span>{new Date(s.scheduled_at as string).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span>
                       <span>at {new Date(s.scheduled_at as string).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</span>
                       <span>· {String(s.duration_minutes??60)} min</span>
-                      {hasRoom&&<span style={{color:'var(--accent-2)',fontSize:'10px',fontWeight:600,display:'inline-flex',alignItems:'center',gap:'3px'}}><Radio size={10}/> Jitsi room ready</span>}
+                      {joinUrl&&<span style={{color:'var(--accent-2)',fontSize:'10px',fontWeight:600,display:'inline-flex',alignItems:'center',gap:'3px'}}><Link2 size={10}/> Link set</span>}
                     </div>
                   </div>
 
@@ -362,7 +355,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
                       <button className="btn btn-success" onClick={()=>goLive(sid)}
                         disabled={busy} style={{fontSize:'12px',padding:'7px 16px',display:'flex',alignItems:'center',gap:'6px'}}>
                         {busy
-                          ?<><Loader2 size={12} style={{animation:'spin 1s linear infinite'}}/> Creating…</>
+                          ?<><Loader2 size={12} style={{animation:'spin 1s linear infinite'}}/> Going live…</>
                           :<><Radio size={12}/> Go live</>}
                       </button>
                     ) : null}
@@ -370,9 +363,9 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
                     {/* Live — rejoin + end */}
                     {s.is_live?(
                       <>
-                        <button className="btn btn-primary" onClick={()=>rejoinRoom(sid)}
-                          disabled={busy} style={{fontSize:'12px',padding:'7px 14px',display:'flex',alignItems:'center',gap:'6px'}}>
-                          {busy?<Loader2 size={12} style={{animation:'spin 1s linear infinite'}}/>:<><ExternalLink size={12}/> Rejoin</>}
+                        <button className="btn btn-primary" onClick={()=>rejoinRoom(joinUrl)}
+                          style={{fontSize:'12px',padding:'7px 14px',display:'flex',alignItems:'center',gap:'6px'}}>
+                          <ExternalLink size={12}/> Rejoin
                         </button>
                         <button className="btn btn-danger" onClick={()=>endSession(sid)}
                           disabled={busy} style={{fontSize:'12px',padding:'7px 14px',display:'flex',alignItems:'center',gap:'6px'}}>
@@ -404,28 +397,11 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
                   </div>
                 </div>
 
-                {/* Lobby reminder — shown right after this session goes live */}
-                {lobbyTip===sid?(
-                  <div className="banner banner-info" style={{marginTop:'12px'}}>
-                    <Video size={14} style={{flexShrink:0,color:'var(--accent-2)'}}/>
-                    <span style={{fontSize:'13px',flex:1}}>
-                      Room opened in a new tab. To stop the link from working for anyone it
-                      gets forwarded to, open <strong style={{color:'var(--text)'}}>Security
-                      Options → Enable Lobby</strong> inside that tab — new joiners will then
-                      need your approval before entering.
-                    </span>
-                    <button className="btn btn-ghost" onClick={()=>setLobbyTip(null)}
-                      style={{fontSize:'11px',padding:'4px 10px',flexShrink:0}}>
-                      <X size={12}/>
-                    </button>
-                  </div>
-                ) : null}
-
                 {/* Manual recording input */}
                 {recordingId===sid?(
                   <div style={{marginTop:'12px',display:'flex',gap:'8px'}}>
                     <input className="form-input" style={{flex:1}}
-                      placeholder="Paste YouTube / Loom / Drive link…"
+                      placeholder="Paste YouTube / Loom / Drive / Teams recording link…"
                       value={manualUrl} onChange={e=>setManualUrl(e.target.value)}/>
                     <button className="btn btn-primary" onClick={()=>saveManualRecording(sid)}
                       style={{fontSize:'12px',flexShrink:0}}>Save</button>

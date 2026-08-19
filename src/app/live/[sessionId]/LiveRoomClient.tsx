@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, Loader2, ArrowLeft, AlertTriangle, PlayCircle, Check, Clock3 } from 'lucide-react'
+import { CheckCircle2, Loader2, ArrowLeft, AlertTriangle, PlayCircle, Check, Clock3, ExternalLink, Video } from 'lucide-react'
 
 interface Props {
   session:            Record<string, unknown>
@@ -34,7 +34,7 @@ export default function LiveRoomClient({
     async function fetchRoom() {
       setLoadingRoom(true)
       try {
-        const res  = await fetch('/api/daily', {
+        const res  = await fetch('/api/live-session', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({ action: 'get_student_token', sessionId }),
@@ -127,15 +127,26 @@ export default function LiveRoomClient({
         {/* Video area */}
         <div style={{ flex: 1, position: 'relative', background: '#000', minHeight: '260px' }}>
 
-          {/* LIVE — embed Jitsi */}
+          {/* LIVE — join link opens Teams in a new tab (Teams blocks
+              being embedded in a third-party iframe, so this can't be
+              shown inline). A real click is required here rather than
+              opening automatically — browsers block window.open() calls
+              that don't originate from a direct user gesture. */}
           {isLive && roomUrl ? (
-            <iframe
-              src={roomUrl}
-              allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
-              allowFullScreen
-              style={{ width: '100%', height: '100%', border: 'none', minHeight: '400px' }}
-              title={String(session.title ?? 'Live Class')}
-            />
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', color: 'var(--text)', padding: '40px', textAlign: 'center' }}>
+              <Video size={34} color="var(--accent-2)" style={{ marginBottom: '14px' }}/>
+              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '20px', marginBottom: '8px' }}>
+                Class is live
+              </div>
+              <p style={{ color: 'var(--muted)', fontSize: '14px', maxWidth: '340px', marginBottom: '24px' }}>
+                This class runs in Microsoft Teams — it&apos;ll open in a new tab.
+              </p>
+              <a href={roomUrl} target="_blank" rel="noreferrer"
+                className="btn btn-primary" style={{ fontSize: '14px', padding: '12px 28px' }}>
+                <ExternalLink size={14}/> Join in Teams
+              </a>
+            </div>
           ) : isLive && loadingRoom ? (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', color: 'var(--text)' }}>
@@ -263,7 +274,7 @@ export default function LiveRoomClient({
             </div>
             {[
               ['Duration',  `${String(session.duration_minutes ?? 60)} minutes`],
-              ['Platform',  'Jitsi Meet (in-platform)'],
+              ['Platform',  'Microsoft Teams (opens in new tab)'],
               ['Date',      new Date(session.scheduled_at as string).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })],
               ['Time',      new Date(session.scheduled_at as string).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })],
             ].map(([label, value]) => (

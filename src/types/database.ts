@@ -143,7 +143,7 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['doubt_answers']['Insert']>
       }
       live_sessions: {
-        Row: { id:string; program_id:string|null; phase_id:string|null; module_id:string|null; title:string; description:string|null; scheduled_at:string; duration_minutes:number; join_url:string|null; recording_url:string|null; platform:'zoom'|'meet'|'daily'|'livekit'|'jitsi'; is_live:boolean; is_completed:boolean; host_id:string|null; created_by:string|null; created_at:string; daily_room_name:string|null; daily_room_url:string|null; room_nonce:string|null }
+        Row: { id:string; program_id:string|null; phase_id:string|null; module_id:string|null; title:string; description:string|null; scheduled_at:string; duration_minutes:number; join_url:string|null; recording_url:string|null; platform:'zoom'|'meet'|'daily'|'livekit'|'jitsi'|'teams'; is_live:boolean; is_completed:boolean; host_id:string|null; created_by:string|null; created_at:string; daily_room_name:string|null; daily_room_url:string|null; room_nonce:string|null }
         Insert: Omit<Database['public']['Tables']['live_sessions']['Row'],'id'|'created_at'>
         Update: Partial<Database['public']['Tables']['live_sessions']['Insert']>
       }
