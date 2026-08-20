@@ -1,11 +1,13 @@
 export const runtime = 'edge'
 
 import Link from 'next/link'
+import type { CSSProperties } from 'react'
 import { ArrowRight } from 'lucide-react'
 import PublicNav from '@/components/PublicNav'
 import { createAdminClient } from '@/lib/supabase/server'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 import { PROGRAM_META, DEFAULT_PROGRAM_META } from '@/lib/program-meta'
+import { priceNode } from '@/lib/format-price'
 import type { Program } from '@/types/database'
 
 export default async function ProgramsPage() {
@@ -45,7 +47,11 @@ export default async function ProgramsPage() {
         <div style={{ display:'flex', flexDirection:'column' }}>
           {programs.map(p => {
             const meta = PROGRAM_META[p.slug] ?? DEFAULT_PROGRAM_META
-            const priceLabel = p.price_inr ? `₹${p.price_inr.toLocaleString('en-IN')}` : 'Revealing Soon'
+            const pillStyle: CSSProperties = {
+              padding:'3px 10px', borderRadius:'var(--radius-pill)', fontSize:'11px', fontWeight:600,
+              background:'var(--card2)', border:'1px solid var(--border)', color:'var(--muted)',
+              fontFamily:'var(--font-mono), monospace',
+            }
             return (
               <Link key={p.id} href={`/programs/${p.slug}`} className="program-row" style={{
                 textDecoration:'none', display:'block', borderTop:'1px solid var(--border)',
@@ -85,13 +91,8 @@ export default async function ProgramsPage() {
                         </p>
                       )}
                       <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
-                        {[p.duration_label, priceLabel].filter(Boolean).map(t => (
-                          <span key={t} style={{
-                            padding:'3px 10px', borderRadius:'var(--radius-pill)', fontSize:'11px', fontWeight:600,
-                            background:'var(--card2)', border:'1px solid var(--border)', color:'var(--muted)',
-                            fontFamily:'var(--font-mono), monospace',
-                          }}>{t}</span>
-                        ))}
+                        {p.duration_label && <span style={pillStyle}>{p.duration_label}</span>}
+                        <span style={pillStyle}>{priceNode(p.price_inr, p.original_price_inr)}</span>
                       </div>
                     </div>
                   </div>

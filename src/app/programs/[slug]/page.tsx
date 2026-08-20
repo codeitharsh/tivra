@@ -8,6 +8,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 import { DEFAULT_PROGRAM_FAQS } from '@/lib/default-faqs'
 import ViewCurriculumButton from '@/components/ViewCurriculumButton'
+import { priceNode } from '@/lib/format-price'
 import type { Program } from '@/types/database'
 
 export default async function ProgramLandingPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -25,7 +26,6 @@ export default async function ProgramLandingPage({ params }: { params: Promise<{
   const program = programRow as Program
 
   const faqs = program.faqs && program.faqs.length > 0 ? program.faqs : DEFAULT_PROGRAM_FAQS
-  const priceLabel = program.price_inr ? `₹${program.price_inr.toLocaleString('en-IN')}` : 'Revealing Soon'
 
   // Fixed feature grid — no per-module curriculum is shown publicly
   // anymore (see "View Curriculum" for the lead-gated PDF instead).
@@ -96,7 +96,7 @@ export default async function ProgramLandingPage({ params }: { params: Promise<{
           }}>
             {[
               { num: program.duration_label ?? '—', label: 'Duration' },
-              { num: priceLabel, label: 'Price' },
+              { num: priceNode(program.price_inr, program.original_price_inr), label: 'Price' },
               { num: '75%', label: 'Pass Mark' },
             ].map((s, i, arr) => (
               <div key={s.label} style={{

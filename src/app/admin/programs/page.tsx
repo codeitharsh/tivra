@@ -20,12 +20,12 @@ export default async function AdminProgramsPage() {
   const admin = createAdminClient()
   const { data } = await admin
     .from('programs')
-    .select('id, name, slug, price_inr, duration_label, is_active, curriculum_url, mode, placement_assistance')
+    .select('id, name, slug, price_inr, original_price_inr, duration_label, is_active, curriculum_url, mode, placement_assistance')
     .order('display_order', { ascending: true })
 
   const programs = (data ?? []) as {
     id: string; name: string; slug: string
-    price_inr: number | null; duration_label: string | null
+    price_inr: number | null; original_price_inr: number | null; duration_label: string | null
     is_active: boolean; curriculum_url: string | null
     mode: string; placement_assistance: boolean
   }[]

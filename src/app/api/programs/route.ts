@@ -18,7 +18,7 @@ export async function GET(): Promise<Response> {
     const sb = adminSB()
     const { data, error } = await sb
       .from('programs')
-      .select('id, slug, name, tagline, description, price_inr, duration_label, difficulty, learning_outcomes')
+      .select('id, slug, name, tagline, description, price_inr, original_price_inr, duration_label, difficulty, learning_outcomes')
       .eq('is_active', true)
       .order('display_order', { ascending: true })
 

@@ -20,7 +20,7 @@ export interface Database {
       programs: {
         Row: {
           id:string; name:string; slug:string; description:string|null; is_active:boolean; created_at:string
-          price_inr:number|null; duration_label:string|null
+          price_inr:number|null; original_price_inr:number|null; duration_label:string|null
           difficulty:'beginner'|'intermediate'|'advanced'|null
           instructor_name:string|null; instructor_title:string|null; instructor_bio:string|null
           learning_outcomes:string[]; tagline:string|null

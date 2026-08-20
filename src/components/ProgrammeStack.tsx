@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import Link from 'next/link'
 import { Check } from 'lucide-react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { PROGRAM_META, DEFAULT_PROGRAM_META as DEFAULT_META } from '@/lib/program-meta'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
+import { priceNode } from '@/lib/format-price'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
@@ -14,7 +15,8 @@ if (typeof window !== 'undefined') {
 
 interface ProgramCard {
   id: string; slug: string; name: string; tagline: string | null; description: string | null
-  price_inr: number | null; duration_label: string | null; learning_outcomes: string[]
+  price_inr: number | null; original_price_inr?: number | null
+  duration_label: string | null; learning_outcomes: string[]
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -742,7 +744,11 @@ export default function ProgrammeStack({ programmes }: { programmes: ProgramCard
         {programmes.map((p, i) => {
           const meta = PROGRAM_META[p.slug] ?? DEFAULT_META
           const Anim = ANIM_BY_SLUG[p.slug]
-          const priceLabel = p.price_inr ? `₹${p.price_inr.toLocaleString('en-IN')}` : 'Revealing Soon'
+          const pillStyle: CSSProperties = {
+            fontSize:'11px', fontWeight:600, padding:'4px 12px', borderRadius:'var(--radius-pill)',
+            background:'var(--card2)', border:'1px solid var(--border)', color:meta.color,
+            fontFamily:'var(--font-mono), monospace',
+          }
           return (
             <div
               key={p.id}
@@ -786,13 +792,8 @@ export default function ProgrammeStack({ programmes }: { programmes: ProgramCard
                   )}
 
                   <div style={{ display:'flex', gap:'8px', flexWrap:'wrap', marginBottom:'24px' }}>
-                    {[p.duration_label, priceLabel].filter(Boolean).map(t => (
-                      <span key={t} style={{
-                        fontSize:'11px', fontWeight:600, padding:'4px 12px', borderRadius:'var(--radius-pill)',
-                        background:'var(--card2)', border:'1px solid var(--border)', color:meta.color,
-                        fontFamily:'var(--font-mono), monospace',
-                      }}>{t}</span>
-                    ))}
+                    {p.duration_label && <span style={pillStyle}>{p.duration_label}</span>}
+                    <span style={pillStyle}>{priceNode(p.price_inr, p.original_price_inr)}</span>
                   </div>
 
                   <div style={{ display:'flex', flexDirection:'column', gap:'8px', marginBottom:'28px' }}>

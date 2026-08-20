@@ -6,18 +6,18 @@ import { Loader2, Upload, CheckCircle2, Eye, Trash2, Plus, X, Check } from 'luci
 
 interface ProgramRow {
   id: string; name: string; slug: string
-  price_inr: number | null; duration_label: string | null
+  price_inr: number | null; original_price_inr: number | null; duration_label: string | null
   is_active: boolean; curriculum_url: string | null
   mode: string; placement_assistance: boolean
 }
 
 interface EditState {
-  price_inr: string; duration_label: string; mode: string
+  price_inr: string; original_price_inr: string; duration_label: string; mode: string
 }
 
 const BLANK_CREATE = {
   name: '', slug: '', tagline: '', description: '',
-  price_inr: '', duration_label: '', mode: 'Live Online',
+  price_inr: '', original_price_inr: '', duration_label: '', mode: 'Live Online',
   difficulty: '' as '' | 'beginner' | 'intermediate' | 'advanced',
   instructor_name: '', instructor_title: '',
   placement_assistance: false, is_active: false,
@@ -33,6 +33,7 @@ export default function ProgramsManagerClient({ programs }: { programs: ProgramR
   const [edits, setEdits] = useState<Record<string, EditState>>(
     Object.fromEntries(programs.map(p => [p.id, {
       price_inr: p.price_inr != null ? String(p.price_inr) : '',
+      original_price_inr: p.original_price_inr != null ? String(p.original_price_inr) : '',
       duration_label: p.duration_label ?? '',
       mode: p.mode,
     }]))
@@ -80,6 +81,7 @@ export default function ProgramsManagerClient({ programs }: { programs: ProgramR
     const edit = edits[id]
     void patchProgram(id, {
       price_inr: edit.price_inr ? Number(edit.price_inr) : 0,
+      original_price_inr: edit.original_price_inr ? Number(edit.original_price_inr) : null,
       duration_label: edit.duration_label,
       mode: edit.mode,
     }, '✓ Saved')
@@ -161,6 +163,7 @@ export default function ProgramsManagerClient({ programs }: { programs: ProgramR
           tagline:                createForm.tagline.trim() || undefined,
           description:            createForm.description.trim() || undefined,
           price_inr:              createForm.price_inr ? Number(createForm.price_inr) : undefined,
+          original_price_inr:     createForm.original_price_inr ? Number(createForm.original_price_inr) : undefined,
           duration_label:         createForm.duration_label.trim() || undefined,
           mode:                   createForm.mode.trim() || undefined,
           difficulty:             createForm.difficulty || undefined,
@@ -234,12 +237,18 @@ export default function ProgramsManagerClient({ programs }: { programs: ProgramR
                 style={{ resize: 'vertical' }}/>
             </div>
 
-            <div className="r-grid-3" style={{ gap: '12px' }}>
+            <div className="r-grid-4" style={{ gap: '12px' }}>
               <div>
                 <label className="form-label">Price (₹)</label>
                 <input className="form-input" type="number" min="0" placeholder="blank = Revealing Soon"
                   value={createForm.price_inr}
                   onChange={e => setCreateForm(f => ({ ...f, price_inr: e.target.value }))}/>
+              </div>
+              <div>
+                <label className="form-label">Original price (₹)</label>
+                <input className="form-input" type="number" min="0" placeholder="optional — shown struck through"
+                  value={createForm.original_price_inr}
+                  onChange={e => setCreateForm(f => ({ ...f, original_price_inr: e.target.value }))}/>
               </div>
               <div>
                 <label className="form-label">Duration</label>
@@ -336,12 +345,18 @@ export default function ProgramsManagerClient({ programs }: { programs: ProgramR
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '12px', alignItems: 'end', marginBottom: '16px' }} className="r-grid-2">
+            <div style={{ display: 'grid', gap: '12px', alignItems: 'end', marginBottom: '16px' }} className="r-grid-3">
               <div>
                 <label className="form-label">Price (₹)</label>
                 <input className="form-input" type="number" min="0"
                   value={edit.price_inr}
                   onChange={e => setEdit(p.id, { price_inr: e.target.value })}/>
+              </div>
+              <div>
+                <label className="form-label">Original price (₹)</label>
+                <input className="form-input" type="number" min="0" placeholder="optional"
+                  value={edit.original_price_inr}
+                  onChange={e => setEdit(p.id, { original_price_inr: e.target.value })}/>
               </div>
               <div>
                 <label className="form-label">Duration</label>

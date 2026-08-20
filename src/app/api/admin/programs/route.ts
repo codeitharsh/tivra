@@ -26,6 +26,7 @@ interface CreateBody {
   description?:           string
   tagline?:               string
   price_inr?:             number
+  original_price_inr?:    number
   duration_label?:        string
   mode?:                  string
   difficulty?:            'beginner' | 'intermediate' | 'advanced'
@@ -73,6 +74,9 @@ export async function POST(req: NextRequest) {
     if (body.price_inr !== undefined && (typeof body.price_inr !== 'number' || body.price_inr < 0)) {
       return NextResponse.json({ error: 'price_inr must be a non-negative number' }, { status: 400 })
     }
+    if (body.original_price_inr !== undefined && (typeof body.original_price_inr !== 'number' || body.original_price_inr < 0)) {
+      return NextResponse.json({ error: 'original_price_inr must be a non-negative number' }, { status: 400 })
+    }
     if (body.display_order !== undefined && (typeof body.display_order !== 'number' || body.display_order < 0)) {
       return NextResponse.json({ error: 'display_order must be a non-negative number' }, { status: 400 })
     }
@@ -87,6 +91,7 @@ export async function POST(req: NextRequest) {
       description:           body.description?.trim() || null,
       tagline:                body.tagline?.trim() || null,
       price_inr:              body.price_inr ?? null,
+      original_price_inr:     body.original_price_inr ?? null,
       duration_label:         body.duration_label?.trim() || null,
       mode:                   body.mode?.trim() || 'Live Online',
       difficulty:             body.difficulty ?? null,

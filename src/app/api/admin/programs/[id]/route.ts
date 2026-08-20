@@ -14,6 +14,7 @@ function adminSB() {
 
 interface PatchBody {
   price_inr?:            number
+  original_price_inr?:   number | null
   duration_label?:       string
   is_active?:            boolean
   mode?:                 string
@@ -49,6 +50,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         return NextResponse.json({ error: 'price_inr must be a non-negative number' }, { status: 400 })
       }
       update.price_inr = body.price_inr
+    }
+    if (body.original_price_inr !== undefined) {
+      if (body.original_price_inr !== null && (typeof body.original_price_inr !== 'number' || body.original_price_inr < 0)) {
+        return NextResponse.json({ error: 'original_price_inr must be a non-negative number or null' }, { status: 400 })
+      }
+      update.original_price_inr = body.original_price_inr
     }
     if (body.duration_label !== undefined) {
       if (typeof body.duration_label !== 'string' || !body.duration_label.trim()) {

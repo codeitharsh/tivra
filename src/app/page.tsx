@@ -84,7 +84,8 @@ const FEATURES = [
 
 interface ProgramCard {
   id: string; slug: string; name: string; tagline: string | null; description: string | null
-  price_inr: number | null; duration_label: string | null; learning_outcomes: string[]
+  price_inr: number | null; original_price_inr?: number | null
+  duration_label: string | null; learning_outcomes: string[]
 }
 
 const FAQS = [
