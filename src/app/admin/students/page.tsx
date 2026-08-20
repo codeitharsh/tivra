@@ -18,23 +18,46 @@ export default async function AdminStudentsPage() {
 
   const admin = createAdminClient()
 
-  const { data: studentsRaw } = await admin
-    .from('profiles')
-    .select('id, full_name, email, role, access_status, phone, streak_count, last_login_date, created_at, enrolled_program_id, batch_id, batches!batch_id(name)')
-    .order('created_at', { ascending: false })
+  // The four queries below are all independent of each other (none
+  // needs another's result), so they were previously firing as a
+  // sequential waterfall — each awaited one at a time. Promise.all
+  // runs them concurrently instead; the phase/module lookups further
+  // down genuinely do depend on this batch's result (the set of
+  // enrolled programmes), so those stay sequential after it.
+  const [
+    { data: studentsRaw },
+    { data: progressRaw },
+    { data: attemptsRaw },
+    { data: enrollmentsRaw },
+  ] = await Promise.all([
+    admin
+      .from('profiles')
+      .select('id, full_name, email, role, access_status, phone, streak_count, last_login_date, created_at, enrolled_program_id, batch_id, batches!batch_id(name)')
+      .order('created_at', { ascending: false }),
+
+    // Module progress per student
+    admin.from('module_progress').select('student_id, status').eq('status', 'completed'),
+
+    // Test attempts per student
+    admin.from('test_attempts').select('student_id, score_percent'),
+
+    // Total module count PER STUDENT, based on their actual enrollments —
+    // previously this was a hardcoded literal /24, only ever correct for
+    // a student enrolled in exactly the original single-programme,
+    // 2-phase, 24-module Cloud LaunchPad. Any student enrolled in a
+    // different programme (or a programme with a different module
+    // count) saw a silently wrong progress percentage in this admin
+    // table. Computed dynamically per student here, same approach
+    // already used in dashboard/page.tsx for the student-facing view.
+    admin.from('enrolled_programs').select('student_id, program_id'),
+  ])
 
   const students = (studentsRaw ?? []) as Record<string, unknown>[]
 
-  // Module progress per student
-  const { data: progressRaw } = await admin
-    .from('module_progress').select('student_id, status').eq('status', 'completed')
   const progressMap: Record<string, number> = {}
   for (const p of (progressRaw ?? []) as { student_id: string }[])
     progressMap[p.student_id] = (progressMap[p.student_id] ?? 0) + 1
 
-  // Test attempts per student
-  const { data: attemptsRaw } = await admin
-    .from('test_attempts').select('student_id, score_percent')
   const testMap: Record<string, { count: number; total: number }> = {}
   for (const a of (attemptsRaw ?? []) as { student_id: string; score_percent: number }[]) {
     if (!testMap[a.student_id]) testMap[a.student_id] = { count: 0, total: 0 }
@@ -42,17 +65,6 @@ export default async function AdminStudentsPage() {
     testMap[a.student_id].total += a.score_percent ?? 0
   }
 
-  // Total module count PER STUDENT, based on their actual enrollments —
-  // previously this was a hardcoded literal /24, only ever correct for
-  // a student enrolled in exactly the original single-programme,
-  // 2-phase, 24-module Cloud LaunchPad. Any student enrolled in a
-  // different programme (or a programme with a different module
-  // count) saw a silently wrong progress percentage in this admin
-  // table. Computed dynamically per student here, same approach
-  // already used in dashboard/page.tsx for the student-facing view.
-  const { data: enrollmentsRaw } = await admin
-    .from('enrolled_programs')
-    .select('student_id, program_id')
   const studentProgramIds: Record<string, string[]> = {}
   for (const e of (enrollmentsRaw ?? []) as { student_id: string; program_id: string }[]) {
     (studentProgramIds[e.student_id] ??= []).push(e.program_id)

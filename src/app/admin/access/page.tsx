@@ -21,53 +21,67 @@ export default async function AdminAccessPage() {
 
   const admin = createAdminClient()
 
-  // Fetch ALL users (not just students) — exclude only the current admin
-  const { data: allUsers } = await admin
-    .from('profiles')
-    .select(`
-      id, full_name, email, role, access_type, access_status,
-      phone, streak_count, created_at,
-      payment_verified_at, payment_notes,
-      college_id, enrolled_program_id
-    `)
-    .neq('id', user.id)          // don't show yourself
-    .order('created_at', { ascending: false })
+  // All five queries below are independent of each other (none needs
+  // another's result), so they were previously firing as a sequential
+  // waterfall — each awaited one at a time — meaning this page's load
+  // time was the SUM of all five round-trips instead of just the
+  // slowest one. Promise.all runs them concurrently instead.
+  const [
+    { data: allUsers },
+    { data: progressCounts },
+    { data: programsRaw },
+    { data: batchesRaw },
+    { data: paymentRequests },
+  ] = await Promise.all([
+    // Fetch ALL users (not just students) — exclude only the current admin
+    admin
+      .from('profiles')
+      .select(`
+        id, full_name, email, role, access_type, access_status,
+        phone, streak_count, created_at,
+        payment_verified_at, payment_notes,
+        college_id, enrolled_program_id
+      `)
+      .neq('id', user.id)          // don't show yourself
+      .order('created_at', { ascending: false }),
 
-  // Fetch module progress counts separately
-  const { data: progressCounts } = await admin
-    .from('module_progress')
-    .select('student_id')
-    .eq('status', 'completed')
+    // Module progress counts
+    admin
+      .from('module_progress')
+      .select('student_id')
+      .eq('status', 'completed'),
+
+    // All programmes for the Grant-access modal's programme picker —
+    // includes inactive/unpublished ones too (unlike the public site),
+    // since an admin may want to grant access ahead of a launch.
+    admin
+      .from('programs')
+      .select('slug, name')
+      .order('display_order', { ascending: true }),
+
+    // All batches for the Grant-access modal's optional batch picker —
+    // batch assignment previously had no UI anywhere in the app, even
+    // though batch-scoped live classes depend on a student's profile
+    // having the right batch_id set.
+    admin
+      .from('batches')
+      .select('id, name, batch_type, status')
+      .order('name', { ascending: true }),
+
+    // Latest payment requests
+    admin
+      .from('payment_requests')
+      .select('student_id, status, transaction_ref, created_at')
+      .order('created_at', { ascending: false }),
+  ])
 
   const progressMap: Record<string, number> = {}
   for (const p of (progressCounts ?? []) as { student_id: string }[]) {
     progressMap[p.student_id] = (progressMap[p.student_id] ?? 0) + 1
   }
 
-  // Fetch all programmes for the Grant-access modal's programme picker —
-  // includes inactive/unpublished ones too (unlike the public site),
-  // since an admin may want to grant access ahead of a launch.
-  const { data: programsRaw } = await admin
-    .from('programs')
-    .select('slug, name')
-    .order('display_order', { ascending: true })
   const programmes = (programsRaw ?? []) as { slug: string; name: string }[]
-
-  // Fetch all batches for the Grant-access modal's optional batch picker —
-  // batch assignment previously had no UI anywhere in the app, even
-  // though batch-scoped live classes depend on a student's profile
-  // having the right batch_id set.
-  const { data: batchesRaw } = await admin
-    .from('batches')
-    .select('id, name, batch_type, status')
-    .order('name', { ascending: true })
   const batches = (batchesRaw ?? []) as { id: string; name: string; batch_type: string; status: string }[]
-
-  // Fetch latest payment requests
-  const { data: paymentRequests } = await admin
-    .from('payment_requests')
-    .select('student_id, status, transaction_ref, created_at')
-    .order('created_at', { ascending: false })
 
   const paymentMap: Record<string, { status: string; transaction_ref: string | null }> = {}
   for (const pr of (paymentRequests ?? []) as {
