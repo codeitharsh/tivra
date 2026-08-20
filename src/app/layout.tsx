@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Fraunces, Geist, Geist_Mono } from 'next/font/google'
+import RouteProgress from '@/components/RouteProgress'
 import './globals.css'
 
 const fraunces = Fraunces({
@@ -78,7 +79,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
       className={`${fraunces.variable} ${geist.variable} ${geistMono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <RouteProgress/>
+        {children}
+      </body>
     </html>
   )
 }
