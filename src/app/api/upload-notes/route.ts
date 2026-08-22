@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { getRecipientsForProgram } from '@/lib/notify-recipients'
+import { sendEmailFireAndForget } from '@/lib/email'
+import { renderNotesUploadedEmail } from '@/lib/email-templates/notes-uploaded'
 
 function adminSB() {
   return createSB(
@@ -56,14 +59,15 @@ export async function POST(req: NextRequest) {
     // the upload to succeed.
     const { data: moduleRow, error: modErr } = await sb
       .from('modules')
-      .select('phase_id')
+      .select('phase_id, title')
       .eq('id', moduleId)
       .maybeSingle()
 
     if (modErr || !moduleRow) {
       return NextResponse.json({ error: 'Module not found' }, { status: 404 })
     }
-    if ((moduleRow as { phase_id: string }).phase_id !== phaseId) {
+    const moduleData = moduleRow as { phase_id: string; title: string }
+    if (moduleData.phase_id !== phaseId) {
       return NextResponse.json({ error: 'module_id does not belong to the given phase_id' }, { status: 400 })
     }
 
@@ -87,6 +91,40 @@ export async function POST(req: NextRequest) {
     const { error: dbError } = await sb
       .from('modules').update({ notes_url: path }).eq('id', moduleId)
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 })
+
+    // ── Notify enrolled students ───────────────────────────────
+    // Best-effort: a failure here must never turn a successful upload
+    // into an error response, so every step is wrapped defensively.
+    try {
+      const { data: phaseRow } = await sb
+        .from('phases').select('program_id').eq('id', phaseId).maybeSingle()
+      const programId = (phaseRow as { program_id: string } | null)?.program_id
+
+      if (programId) {
+        const { data: programRow } = await sb
+          .from('programs').select('name, slug').eq('id', programId).maybeSingle()
+        const program = programRow as { name: string; slug: string } | null
+
+        if (program) {
+          const recipients = await getRecipientsForProgram(sb, programId)
+          await Promise.all(recipients.map(r => {
+            const { subject, html, text } = renderNotesUploadedEmail({
+              fullName: r.full_name ?? undefined,
+              moduleTitle: moduleData.title,
+              programName: program.name,
+              programSlug: program.slug,
+            })
+            return sendEmailFireAndForget({
+              to: r.email, subject, html, text,
+              emailType: 'notes_uploaded', userId: r.id,
+              metadata: { moduleId, phaseId, programId },
+            })
+          }))
+        }
+      }
+    } catch (notifyErr) {
+      console.error('[upload-notes] Notification step failed (upload itself still succeeded):', notifyErr)
+    }
 
     return NextResponse.json({ success: true, path })
 

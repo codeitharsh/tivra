@@ -3,7 +3,46 @@ export const runtime = 'edge'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { getRecipientsForProgram } from '@/lib/notify-recipients'
+import { sendEmailFireAndForget } from '@/lib/email'
+import { renderContentScheduledEmail } from '@/lib/email-templates/content-scheduled'
+
+// ── Notify students enrolled in a programme that a test/assessment
+//    just got an unlock time. Best-effort: never throws, so a
+//    notification failure can't turn a successful schedule into an
+//    error response for the teacher.
+async function notifyContentScheduled(
+  sb: SupabaseClient,
+  programId: string,
+  kind: 'test' | 'assessment',
+  title: string,
+  unlockDatetime: string
+) {
+  try {
+    const { data: programRow } = await sb
+      .from('programs').select('name, slug').eq('id', programId).maybeSingle()
+    const program = programRow as { name: string; slug: string } | null
+    if (!program) return
+
+    const recipients = await getRecipientsForProgram(sb, programId)
+    await Promise.all(recipients.map(r => {
+      const { subject, html, text } = renderContentScheduledEmail({
+        fullName: r.full_name ?? undefined,
+        kind, title, programName: program.name, programSlug: program.slug,
+        unlockAt: unlockDatetime,
+      })
+      return sendEmailFireAndForget({
+        to: r.email, subject, html, text,
+        emailType: `${kind}_scheduled`, userId: r.id,
+        metadata: { programId },
+      })
+    }))
+  } catch (err) {
+    console.error(`[tests] Notification step failed for ${kind} "${title}" (schedule itself still succeeded):`, err)
+  }
+}
 
 // ── Auth helper ───────────────────────────────────────────────
 async function getAuthUser() {
@@ -133,6 +172,13 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // A test created without an unlock time yet is a draft — nothing
+      // to notify about until it's actually scheduled (create_test with
+      // unlockDatetime set, or a later save_schedule call).
+      if (unlockDatetime) {
+        await notifyContentScheduled(sb, programId, 'test', title.trim(), unlockDatetime)
+      }
+
       return NextResponse.json({ success: true, testId })
     }
 
@@ -189,6 +235,14 @@ export async function POST(req: NextRequest) {
         .eq('id', testId)
 
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+      const { data: testRow } = await sb
+        .from('weekly_tests').select('program_id, title').eq('id', testId).maybeSingle()
+      const test = testRow as { program_id: string; title: string } | null
+      if (test) {
+        await notifyContentScheduled(sb, test.program_id, 'test', test.title, unlockDatetime2)
+      }
+
       return NextResponse.json({ success: true })
     }
 
@@ -350,6 +404,20 @@ export async function PATCH(req: NextRequest) {
         .update({ unlock_datetime: unlockDatetime, is_manually_unlocked: false })
         .eq('id', assessmentId)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+      // assessments has no program_id column — resolve it via its phase.
+      const { data: assessmentRow } = await sb
+        .from('assessments').select('phase_id, title').eq('id', assessmentId).maybeSingle()
+      const assessment = assessmentRow as { phase_id: string; title: string } | null
+      if (assessment) {
+        const { data: phaseRow } = await sb
+          .from('phases').select('program_id').eq('id', assessment.phase_id).maybeSingle()
+        const programId = (phaseRow as { program_id: string } | null)?.program_id
+        if (programId) {
+          await notifyContentScheduled(sb, programId, 'assessment', assessment.title, unlockDatetime)
+        }
+      }
+
       return NextResponse.json({ success: true })
     }
 

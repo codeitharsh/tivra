@@ -5,6 +5,9 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { checkLiveSessionAccess } from '@/lib/live-session-access'
+import { getRecipientsForSession } from '@/lib/notify-recipients'
+import { sendEmailFireAndForget } from '@/lib/email'
+import { renderLiveClassScheduledEmail } from '@/lib/email-templates/live-class-scheduled'
 
 // ── Live classes via teacher-provided meeting links ────────────
 // Previously this route created hosted video rooms itself (first
@@ -113,6 +116,29 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+      // ── Notify the relevant students ──────────────────────────
+      // Best-effort: never let a notification failure turn a
+      // successful schedule into an error response for the teacher.
+      try {
+        const recipients = await getRecipientsForSession(sb, {
+          batchId: batchId || null, phaseId: phaseId || null, programId: null,
+        })
+        await Promise.all(recipients.map(r => {
+          const { subject, html, text } = renderLiveClassScheduledEmail({
+            fullName: r.full_name ?? undefined,
+            title, scheduledAt, durationMinutes: durationMinutes ?? 60,
+          })
+          return sendEmailFireAndForget({
+            to: r.email, subject, html, text,
+            emailType: 'live_class_scheduled', userId: r.id,
+            metadata: { sessionId: (data as { id: string }).id, batchId, phaseId },
+          })
+        }))
+      } catch (notifyErr) {
+        console.error('[live-session] Notification step failed (schedule itself still succeeded):', notifyErr)
+      }
+
       return NextResponse.json({ success: true, sessionId: (data as { id: string }).id })
     }
 
