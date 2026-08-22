@@ -128,9 +128,21 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: 'Cannot swap a module with itself' }, { status: 400 })
         }
 
-        // Swap module_numbers
-        await sb.from('modules').update({ module_number: n1 }).eq('id', moduleId1)
-        await sb.from('modules').update({ module_number: n2 }).eq('id', moduleId2)
+        // Swap module_numbers via a temporary out-of-range value.
+        // `modules` has a unique(phase_id, module_number) constraint, so
+        // writing either module directly to the other's current number
+        // would collide (both rows would briefly hold the same number)
+        // and the update would be rejected — which is exactly what was
+        // happening silently before (errors from these two calls went
+        // unchecked, so the swap failed but the API still reported
+        // success). module_number is never negative, so -1 can't collide
+        // with a real row while we shuffle the other one into place.
+        const { error: eTmp } = await sb.from('modules').update({ module_number: -1 }).eq('id', moduleId1)
+        if (eTmp) return NextResponse.json({ error: eTmp.message }, { status: 500 })
+        const { error: e2 } = await sb.from('modules').update({ module_number: n2 }).eq('id', moduleId2)
+        if (e2) return NextResponse.json({ error: e2.message }, { status: 500 })
+        const { error: e1 } = await sb.from('modules').update({ module_number: n1 }).eq('id', moduleId1)
+        if (e1) return NextResponse.json({ error: e1.message }, { status: 500 })
         return NextResponse.json({ success: true })
       }
 
