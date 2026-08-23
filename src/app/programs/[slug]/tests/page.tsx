@@ -15,7 +15,7 @@ import { Info, CheckCircle2, Clock, Lock, ArrowRight } from 'lucide-react'
 type TestRow = {
   id: string; week_number: number; title: string; topic: string | null
   unlock_datetime: string | null; duration_minutes: number
-  is_manually_unlocked: boolean
+  is_manually_unlocked: boolean; batch_id: string | null
   phases: { title: string; phase_number: number } | null
 }
 
@@ -57,7 +57,11 @@ export default async function TestsPage({
   )
 
   const now = new Date()
-  const tests = (testsRaw ?? []) as TestRow[]
+  // A test with a batch_id only shows to students in that exact batch —
+  // null batch_id (the default/unscoped case) stays visible programme-wide,
+  // matching how a null-batch live_session is open to everyone enrolled.
+  const tests = ((testsRaw ?? []) as TestRow[])
+    .filter(t => !t.batch_id || t.batch_id === profile.batch_id)
 
   function getTestStatus(t: TestRow) {
     if (attemptMap.has(t.id)) return 'completed'

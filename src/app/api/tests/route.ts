@@ -5,7 +5,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
-import { getRecipientsForProgram } from '@/lib/notify-recipients'
+import { getRecipientsForProgram, getRecipientsForBatch } from '@/lib/notify-recipients'
 import { sendEmailFireAndForget } from '@/lib/email'
 import { renderContentScheduledEmail } from '@/lib/email-templates/content-scheduled'
 
@@ -18,7 +18,8 @@ async function notifyContentScheduled(
   programId: string,
   kind: 'test' | 'assessment',
   title: string,
-  unlockDatetime: string
+  unlockDatetime: string,
+  batchId: string | null = null
 ) {
   try {
     const { data: programRow } = await sb
@@ -26,7 +27,12 @@ async function notifyContentScheduled(
     const program = programRow as { name: string; slug: string } | null
     if (!program) return
 
-    const recipients = await getRecipientsForProgram(sb, programId)
+    // A batch-scoped test should only notify that batch, not the whole
+    // programme — mirrors getRecipientsForSession's batch-first
+    // resolution already used for live classes.
+    const recipients = batchId
+      ? await getRecipientsForBatch(sb, batchId)
+      : await getRecipientsForProgram(sb, programId)
     await Promise.all(recipients.map(r => {
       const { subject, html, text } = renderContentScheduledEmail({
         fullName: r.full_name ?? undefined,
@@ -36,7 +42,7 @@ async function notifyContentScheduled(
       return sendEmailFireAndForget({
         to: r.email, subject, html, text,
         emailType: `${kind}_scheduled`, userId: r.id,
-        metadata: { programId },
+        metadata: { programId, batchId },
       })
     }))
   } catch (err) {
@@ -93,6 +99,7 @@ export async function POST(req: NextRequest) {
       action: string
       programId?: string
       phaseId?: string
+      batchId?: string
       weekNumber?: number
       title?: string
       topic?: string
@@ -123,7 +130,7 @@ export async function POST(req: NextRequest) {
     // ── CREATE TEST ───────────────────────────────────────────
     if (body.action === 'create_test') {
       const {
-        programId, phaseId, weekNumber, title, topic,
+        programId, phaseId, batchId, weekNumber, title, topic,
         durationMinutes, unlockDatetime, isManuallyUnlocked, questions,
       } = body
 
@@ -137,6 +144,7 @@ export async function POST(req: NextRequest) {
         .insert({
           program_id:           programId,
           phase_id:             phaseId,
+          batch_id:             batchId || null,
           week_number:          weekNumber,
           title:                title.trim(),
           topic:                topic?.trim() || null,
@@ -176,7 +184,7 @@ export async function POST(req: NextRequest) {
       // to notify about until it's actually scheduled (create_test with
       // unlockDatetime set, or a later save_schedule call).
       if (unlockDatetime) {
-        await notifyContentScheduled(sb, programId, 'test', title.trim(), unlockDatetime)
+        await notifyContentScheduled(sb, programId, 'test', title.trim(), unlockDatetime, batchId || null)
       }
 
       return NextResponse.json({ success: true, testId })
@@ -237,10 +245,10 @@ export async function POST(req: NextRequest) {
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
       const { data: testRow } = await sb
-        .from('weekly_tests').select('program_id, title').eq('id', testId).maybeSingle()
-      const test = testRow as { program_id: string; title: string } | null
+        .from('weekly_tests').select('program_id, title, batch_id').eq('id', testId).maybeSingle()
+      const test = testRow as { program_id: string; title: string; batch_id: string | null } | null
       if (test) {
-        await notifyContentScheduled(sb, test.program_id, 'test', test.title, unlockDatetime2)
+        await notifyContentScheduled(sb, test.program_id, 'test', test.title, unlockDatetime2, test.batch_id)
       }
 
       return NextResponse.json({ success: true })

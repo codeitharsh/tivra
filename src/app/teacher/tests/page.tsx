@@ -60,12 +60,26 @@ export default async function TeacherTestsPage({
 
   const { data: testsRaw } = programId ? await admin
     .from('weekly_tests')
-    .select('*, phases!phase_id(title, phase_number)')
+    .select('*, phases!phase_id(title, phase_number), batches!batch_id(name, batch_type, status)')
     .eq('program_id', programId)
     .order('phase_id')
     .order('week_number') : { data: [] }
 
   const tests = (testsRaw ?? []) as Record<string, unknown>[]
+
+  // Batches for the create-test batch picker — scoped to THIS programme
+  // only (unlike teacher/live/page.tsx's batch fetch, which isn't locked
+  // to one programme). Showing another programme's batches here would
+  // let a teacher accidentally scope a test to students who can't even
+  // see it, since a test's own audience is already fixed to programId.
+  const { data: batchesRaw } = programId ? await admin
+    .from('batches')
+    .select('id, name, batch_type, status')
+    .eq('program_id', programId)
+    .in('status', ['active', 'upcoming'])
+    .order('name') : { data: [] }
+
+  const batches = (batchesRaw ?? []) as { id: string; name: string; batch_type: string; status: string }[]
 
   const { data: qCountsRaw } = await admin
     .from('test_questions')
@@ -138,6 +152,7 @@ export default async function TeacherTestsPage({
               phases={phases}
               tests={enrichedTests}
               programId={programId}
+              batches={batches}
             />
           ) : (
             <div style={{ fontSize: '13px', color: 'var(--muted)' }}>

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Plus, Trash2, Loader2, Lock, Unlock,
   ChevronDown, ChevronUp, X, Check, CircleDot, Clock3, Pencil,
-  AlertTriangle, Lightbulb, Info, ClipboardList,
+  AlertTriangle, Lightbulb, Info, ClipboardList, Globe,
 } from 'lucide-react'
 import { createClient as createSBClient } from '@supabase/supabase-js'
 
@@ -21,10 +21,24 @@ interface Phase {
   modules: { id: string; title: string; module_number: number }[]
 }
 
+interface Batch { id: string; name: string; batch_type: string; status: string }
+
+// Same lookup as teacher/live/LiveSessionsClient.tsx's batch pill picker —
+// duplicated locally rather than shared, matching how this codebase
+// already colocates small per-component style lookups.
+const BATCH_META: Record<string, { color: string; bg: string }> = {
+  open:      { color: 'var(--accent-2)', bg: 'rgba(23,174,224,0.14)'  },
+  college:   { color: '#c3b1ea',         bg: 'rgba(167,139,218,0.16)' },
+  corporate: { color: 'var(--amber)',    bg: 'var(--amber-dim)'       },
+  custom:    { color: '#a9c0e8',         bg: 'rgba(107,143,209,0.16)' },
+}
+const batchMeta = (type: string) => BATCH_META[type] ?? BATCH_META.open
+
 interface Props {
   phases:    Phase[]
   tests:     Record<string, unknown>[]
   programId: string
+  batches:   Batch[]
 }
 
 type Tab = 'tests' | 'create'
@@ -36,7 +50,7 @@ const BLANK_Q = {
   explanation: '',
 }
 
-export default function TeacherTestsClient({ phases, tests, programId }: Props) {
+export default function TeacherTestsClient({ phases, tests, programId, batches }: Props) {
   const router = useRouter()
   const [isPending, start] = useTransition()
   const [tab,        setTab]        = useState<Tab>('tests')
@@ -47,7 +61,7 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
   // ── Create test form ─────────────────────────────────────
   const [form, setForm] = useState({
     title: '', topic: '', phase_id: '', week_number: '',
-    duration_minutes: '30', date: '', time: '',
+    duration_minutes: '30', date: '', time: '', batch_id: '',
   })
   const [questions, setQuestions]  = useState<typeof BLANK_Q[]>([{ ...BLANK_Q, options: ['','','',''] }])
   const [creating,  setCreating]   = useState(false)
@@ -113,6 +127,7 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
           action:              'create_test',
           programId,
           phaseId:             form.phase_id,
+          batchId:             form.batch_id || null,
           weekNumber:          Number(form.week_number),
           title:               form.title.trim(),
           topic:               form.topic.trim() || null,
@@ -126,7 +141,7 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
       if (!res.ok) throw new Error(json.error ?? 'Failed to create test')
 
       showToast(`✓ Test created with ${questions.length} question${questions.length !== 1 ? 's' : ''}!`, 'success')
-      setForm({ title:'', topic:'', phase_id:'', week_number:'', duration_minutes:'30', date:'', time:'' })
+      setForm({ title:'', topic:'', phase_id:'', week_number:'', duration_minutes:'30', date:'', time:'', batch_id:'' })
       setQuestions([{ ...BLANK_Q, options: ['','','',''] }])
       setTab('tests')
       router.refresh()
@@ -313,6 +328,17 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
           <span className="pill" style={{ background: cfg.bg, color: cfg.color }}>
             <cfg.Icon size={11}/> {cfg.label}
           </span>
+
+          {(() => {
+            const batch = t.batches as { name: string; batch_type: string } | null
+            if (!batch) return null
+            const meta = batchMeta(batch.batch_type)
+            return (
+              <span className="pill" style={{ background: meta.bg, color: meta.color }}>
+                {batch.name}
+              </span>
+            )
+          })()}
 
           <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
             <button
@@ -580,6 +606,39 @@ export default function TeacherTestsClient({ phases, tests, programId }: Props) 
                 <input className="form-input" placeholder="e.g. IAM, EC2, S3…"
                   value={form.topic}
                   onChange={e => setForm(f => ({ ...f, topic: e.target.value }))}/>
+              </div>
+            </div>
+
+            {/* Batch pills — same picker as teacher/live/LiveSessionsClient.tsx.
+                No batch selected (default) means the test stays visible to
+                every enrolled student in the programme, unchanged behavior. */}
+            <div>
+              <label className="form-label">Batch (optional)</label>
+              <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
+                <button type="button" onClick={() => setForm(f => ({ ...f, batch_id: '' }))} style={{
+                  padding:'8px 16px', borderRadius:'var(--radius-pill)', cursor:'pointer',
+                  fontSize:'12px', fontWeight:600, fontFamily:'var(--font-sans)',
+                  border: form.batch_id === '' ? '1px solid var(--accent-ring)' : '1px solid var(--border)',
+                  background: form.batch_id === '' ? 'var(--accent-2-dim)' : 'rgba(255,255,255,0.04)',
+                  color: form.batch_id === '' ? 'var(--accent-2)' : 'var(--muted)',
+                  display:'flex', alignItems:'center', gap:'6px',
+                }}><Globe size={12}/> All batches</button>
+                {batches.map(b => {
+                  const meta = batchMeta(b.batch_type)
+                  return (
+                    <button key={b.id} type="button" onClick={() => setForm(f => ({ ...f, batch_id: b.id }))} style={{
+                      padding:'8px 16px', borderRadius:'var(--radius-pill)', cursor:'pointer',
+                      fontSize:'12px', fontWeight:600, fontFamily:'var(--font-sans)',
+                      border: form.batch_id === b.id ? `1px solid ${meta.color}` : '1px solid var(--border)',
+                      background: form.batch_id === b.id ? meta.bg : 'rgba(255,255,255,0.04)',
+                      color: form.batch_id === b.id ? meta.color : 'var(--muted)',
+                      display:'flex', alignItems:'center', gap:'6px',
+                    }}>
+                      <span style={{ width:'6px', height:'6px', borderRadius:'50%', background: meta.color, flexShrink:0 }}/>
+                      {b.name}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 

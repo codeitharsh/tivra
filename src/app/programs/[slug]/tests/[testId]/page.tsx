@@ -46,7 +46,7 @@ export default async function TakeTestPage({
     id: string; title: string; topic: string | null
     unlock_datetime: string | null; duration_minutes: number
     is_manually_unlocked: boolean; week_number: number
-    program_id: string
+    program_id: string; batch_id: string | null
   }
 
   // Cross-check: this test must belong to the resolved programme.
@@ -54,6 +54,12 @@ export default async function TakeTestPage({
   // check rather than a join — without it, a student entitled to
   // Programme A could load Programme B's test by guessing its UUID.
   if (test.program_id !== program.id) notFound()
+
+  // Same batch check as the tests-list page — a test scoped to a batch
+  // the student isn't in must 404 here too, not just be hidden from the
+  // list (otherwise the list filter alone is cosmetic; the direct URL
+  // would still work for any enrolled student who knows/guesses the id).
+  if (test.batch_id && test.batch_id !== profile.batch_id) notFound()
 
   const now       = new Date()
   const isUnlocked = test.is_manually_unlocked ||
