@@ -2,8 +2,15 @@
 // TIVRA — Test/Assessment Scheduled Email Template
 //
 // Shared by weekly tests and phase assessments (parameterized by
-// `kind`) since both are "a timed thing just got an unlock time" —
-// same table-based/inline-style/MSO-safe approach as welcome.ts.
+// `kind`) since both are "a timed thing just became available to
+// students" — same table-based/inline-style/MSO-safe approach as
+// welcome.ts.
+//
+// unlockAt is optional: a weekly test can be created with NO unlock
+// date at all, meaning it's open immediately (see the "available
+// immediately" banner in TeacherTestsClient's create form) — that's
+// still new content students should hear about, just worded as
+// "is now available" instead of "unlocks on <date>".
 // ════════════════════════════════════════════════════════════════
 
 export interface ContentScheduledEmailData {
@@ -12,7 +19,7 @@ export interface ContentScheduledEmailData {
   title: string
   programName: string
   programSlug: string
-  unlockAt: string // ISO datetime
+  unlockAt?: string // ISO datetime — omitted means "available right now"
   websiteUrl?: string // defaults to https://tivra.in if not provided
 }
 
@@ -32,9 +39,19 @@ export function renderContentScheduledEmail(
   const contentUrl = `${siteUrl}/programs/${data.programSlug}/${data.kind === 'test' ? 'tests' : 'assessments'}`
   const logoUrl = `${siteUrl}/tivra-logo-no-bg.png`
   const year = new Date().getFullYear()
-  const unlockLabel = formatIST(data.unlockAt)
+  const isImmediate = !data.unlockAt
+  const unlockLabel = data.unlockAt ? formatIST(data.unlockAt) : null
 
-  const subject = `New ${kindLabel} scheduled: ${data.title}`
+  const subject = isImmediate
+    ? `New ${kindLabel} available: ${data.title}`
+    : `New ${kindLabel} scheduled: ${data.title}`
+  const headline = isImmediate ? `A new ${kindLabel} is available right now 📋` : `A new ${kindLabel} just got scheduled 📋`
+  const bodyLine = isImmediate
+    ? `<strong style="color:#ffffff;">${escapeHtml(data.title)}</strong> in <strong style="color:#ffffff;">${escapeHtml(data.programName)}</strong> is open now — you can take it whenever you're ready.`
+    : `<strong style="color:#ffffff;">${escapeHtml(data.title)}</strong> in <strong style="color:#ffffff;">${escapeHtml(data.programName)}</strong> unlocks on <strong style="color:#ffffff;">${unlockLabel}</strong>.`
+  const footerLine = isImmediate
+    ? "It's open now, so you can jump in right away."
+    : "It'll stay locked until the time above, so there's nothing to do right now except mark your calendar."
 
   const html = `
 <!DOCTYPE html>
@@ -65,7 +82,7 @@ export function renderContentScheduledEmail(
 <body style="margin:0; padding:0; background-color:#07080c; font-family:'DM Sans', Arial, Helvetica, sans-serif;">
 
 <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">
-  ${escapeHtml(data.title)} unlocks ${unlockLabel} — set a reminder.
+  ${isImmediate ? `${escapeHtml(data.title)} is open now.` : `${escapeHtml(data.title)} unlocks ${unlockLabel} — set a reminder.`}
 </div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#07080c;">
@@ -103,12 +120,10 @@ export function renderContentScheduledEmail(
   <tr>
     <td class="fluid-padding" style="padding:36px 40px 0;">
       <div style="font-family:Arial,Helvetica,sans-serif; font-weight:800; font-size:22px; color:#ffffff; line-height:1.35; margin-bottom:14px;">
-        Hi ${escapeHtml(firstName)},<br>A new ${kindLabel} just got scheduled 📋
+        Hi ${escapeHtml(firstName)},<br>${headline}
       </div>
       <div style="font-family:'DM Sans',Arial,sans-serif; font-size:14px; line-height:1.75; color:rgba(255,255,255,0.65);">
-        <strong style="color:#ffffff;">${escapeHtml(data.title)}</strong> in
-        <strong style="color:#ffffff;">${escapeHtml(data.programName)}</strong> unlocks on
-        <strong style="color:#ffffff;">${unlockLabel}</strong>.
+        ${bodyLine}
       </div>
     </td>
   </tr>
@@ -134,7 +149,7 @@ export function renderContentScheduledEmail(
   <tr>
     <td class="fluid-padding" style="padding:30px 40px 0;">
       <div style="font-family:'DM Sans',Arial,sans-serif; font-size:13px; line-height:1.7; color:rgba(255,255,255,0.55);">
-        It'll stay locked until the time above, so there's nothing to do right now except mark your calendar.
+        ${footerLine}
       </div>
       <div style="font-family:Arial,Helvetica,sans-serif; font-weight:700; font-size:14px; color:#ffffff; margin-top:20px;">
         Rise Beyond.
@@ -172,13 +187,15 @@ export function renderContentScheduledEmail(
   const text = [
     `Hi ${firstName},`,
     '',
-    `A new ${kindLabel} just got scheduled 📋`,
+    headline.replace(' 📋', ''),
     '',
-    `${data.title} in ${data.programName} unlocks on ${unlockLabel}.`,
+    isImmediate
+      ? `${data.title} in ${data.programName} is open now — you can take it whenever you're ready.`
+      : `${data.title} in ${data.programName} unlocks on ${unlockLabel}.`,
     '',
     `View: ${contentUrl}`,
     '',
-    "It'll stay locked until the time above, so there's nothing to do right now except mark your calendar.",
+    footerLine,
     '',
     'Rise Beyond.',
     'Team Tivra',

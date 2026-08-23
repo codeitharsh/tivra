@@ -10,15 +10,21 @@ import { sendEmailFireAndForget } from '@/lib/email'
 import { renderContentScheduledEmail } from '@/lib/email-templates/content-scheduled'
 
 // ── Notify students enrolled in a programme that a test/assessment
-//    just got an unlock time. Best-effort: never throws, so a
-//    notification failure can't turn a successful schedule into an
-//    error response for the teacher.
+//    just became available — either scheduled for a future unlock
+//    time, or (for a test created with no date at all) open right
+//    now. unlockDatetime is nullable specifically for that second
+//    case: a weekly test can be created with no unlock date, meaning
+//    it's immediately available (see TeacherTestsClient's create
+//    form), and that's still new content worth a notification, not a
+//    reason to skip one. Best-effort: never throws, so a notification
+//    failure can't turn a successful schedule into an error response
+//    for the teacher.
 async function notifyContentScheduled(
   sb: SupabaseClient,
   programId: string,
   kind: 'test' | 'assessment',
   title: string,
-  unlockDatetime: string,
+  unlockDatetime: string | null,
   batchId: string | null = null
 ) {
   try {
@@ -37,7 +43,7 @@ async function notifyContentScheduled(
       const { subject, html, text } = renderContentScheduledEmail({
         fullName: r.full_name ?? undefined,
         kind, title, programName: program.name, programSlug: program.slug,
-        unlockAt: unlockDatetime,
+        unlockAt: unlockDatetime ?? undefined,
       })
       return sendEmailFireAndForget({
         to: r.email, subject, html, text,
@@ -180,12 +186,15 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // A test created without an unlock time yet is a draft — nothing
-      // to notify about until it's actually scheduled (create_test with
-      // unlockDatetime set, or a later save_schedule call).
-      if (unlockDatetime) {
-        await notifyContentScheduled(sb, programId, 'test', title.trim(), unlockDatetime, batchId || null)
-      }
+      // Notify regardless of whether an unlock date was set — a test
+      // created with no date is immediately available (see the "will
+      // be available immediately" banner in the create form), which is
+      // just as notification-worthy as a future-dated one. This used
+      // to be gated on `unlockDatetime` alone, which meant a test
+      // created without a date (the common case — a teacher who wants
+      // it open right away doesn't set one) silently never notified
+      // anyone at all.
+      await notifyContentScheduled(sb, programId, 'test', title.trim(), unlockDatetime ?? null, batchId || null)
 
       return NextResponse.json({ success: true, testId })
     }
