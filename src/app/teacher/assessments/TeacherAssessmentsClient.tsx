@@ -119,6 +119,25 @@ export default function TeacherAssessmentsClient({
     })
   }
 
+  // ── Delete assessment ──────────────────────────────────────
+  async function deleteAssessment(assessmentId: string, phaseTitle: string, attemptCountForDelete: number) {
+    const warning = attemptCountForDelete > 0
+      ? `Delete the assessment for "${phaseTitle}"? This will also permanently delete ${attemptCountForDelete} student attempt${attemptCountForDelete !== 1 ? 's' : ''} and any certificates already issued from it. This can't be undone.`
+      : `Delete the assessment for "${phaseTitle}"? This can't be undone.`
+    if (!confirm(warning)) return
+
+    setSaving(`del-${assessmentId}`)
+    start(async () => {
+      try {
+        await api('delete_assessment', { assessmentId })
+        showToast('✓ Assessment deleted', 'success')
+        setExpandedId(null)
+        router.refresh()
+      } catch (err) { showToast(err instanceof Error ? err.message : 'Failed', 'error') }
+      setSaving(null)
+    })
+  }
+
   // ── Toggle unlock ─────────────────────────────────────────
   async function toggleUnlock(assessmentId: string, current: boolean) {
     setSaving(`unlock-${assessmentId}`)
@@ -197,6 +216,7 @@ export default function TeacherAssessmentsClient({
         const schBusy  = saving === `sched-${aId}`  && isPending
         const unlBusy  = saving === `unlock-${aId}` && isPending
         const addBusy  = saving === `addq-${aId}`   && isPending
+        const delBusy  = saving === `del-${aId}`    && isPending
         const cf       = createForm[phase.id] ?? { title:'', totalQ:'', duration:'', passing:'' }
 
         return (
@@ -248,6 +268,15 @@ export default function TeacherAssessmentsClient({
                         : assessment.is_manually_unlocked
                         ? <><Lock size={11}/> Lock</>
                         : <><Unlock size={11}/> Unlock</>}
+                    </button>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => deleteAssessment(aId!, `Phase ${phase.phase_number}: ${phase.title}`, aCount)}
+                      disabled={delBusy} style={{ fontSize: '11px', padding: '5px 10px' }}
+                      title="Delete assessment">
+                      {delBusy
+                        ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }}/>
+                        : <Trash2 size={11}/>}
                     </button>
                   </div>
                 </>

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, CheckCircle2, AlertCircle, Loader2, Trash2 } from 'lucide-react'
+import { Upload, CheckCircle2, AlertCircle, Loader2, Trash2, Eye } from 'lucide-react'
 
 interface Module {
   id: string; title: string; module_number: number; notes_url: string | null
@@ -175,16 +175,26 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
                       : <><AlertCircle size={13}/> No notes uploaded yet for this module</>}
                   </span>
                   {currentModule.notes_url && confirmDelete !== currentModule.id && (
-                    <button
-                      onClick={() => setConfirmDelete(currentModule.id)}
-                      style={{
-                        flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'var(--red)', display: 'flex', alignItems: 'center', padding: '2px',
-                      }}
-                      title="Delete uploaded notes"
-                    >
-                      <Trash2 size={14}/>
-                    </button>
+                    <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
+                      <a
+                        href={`/api/admin/notes-preview?moduleId=${currentModule.id}`}
+                        target="_blank" rel="noreferrer"
+                        style={{ color: 'var(--green)', display: 'flex', alignItems: 'center' }}
+                        title="View uploaded PDF"
+                      >
+                        <Eye size={14}/>
+                      </a>
+                      <button
+                        onClick={() => setConfirmDelete(currentModule.id)}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'var(--red)', display: 'flex', alignItems: 'center', padding: 0,
+                        }}
+                        title="Delete uploaded notes"
+                      >
+                        <Trash2 size={14}/>
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -261,7 +271,7 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
                       ? <CheckCircle2 size={14} style={{ color: 'var(--green)', flexShrink: 0 }}/>
                       : <AlertCircle  size={14} style={{ color: 'var(--muted)',  flexShrink: 0 }}/>
                     }
-                    <div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '12px', fontWeight: 500 }}>
                         {m.module_number}. {m.title.length > 22 ? m.title.slice(0,22)+'…' : m.title}
                       </div>
@@ -269,6 +279,17 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
                         {m.notes_url ? 'Uploaded' : 'Not uploaded'}
                       </div>
                     </div>
+                    {m.notes_url && (
+                      <a
+                        href={`/api/admin/notes-preview?moduleId=${m.id}`}
+                        target="_blank" rel="noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        style={{ color: 'var(--green)', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                        title="View uploaded PDF"
+                      >
+                        <Eye size={13}/>
+                      </a>
+                    )}
                   </div>
                 ))}
               </div>

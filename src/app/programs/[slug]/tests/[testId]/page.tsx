@@ -8,6 +8,7 @@ import Topbar from '@/components/Topbar'
 import TestTaker from './TestTaker'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { requireProgramAccess } from '@/lib/program-access'
+import { buildBreakdown, type QuestionBreakdownItem } from '@/lib/question-breakdown'
 import type { Profile } from '@/types/database'
 
 export default async function TakeTestPage({
@@ -86,6 +87,26 @@ export default async function TakeTestPage({
     id: string; question_text: string; options: string[]
   }[]
 
+  // Only fetched when an attempt already exists — correct_answer must
+  // never reach the client before that point. Powers the "review your
+  // answers" report on a return visit, not just right after a fresh
+  // submit (which gets its own breakdown from the submit API response).
+  let breakdown: QuestionBreakdownItem[] | null = null
+  if (existingAttempt) {
+    const { data: fullQuestionsRaw } = await admin
+      .from('test_questions')
+      .select('id, question_text, options, correct_answer, explanation')
+      .eq('test_id', testId)
+      .order('order_num')
+
+    const fullQuestions = (fullQuestionsRaw ?? []) as {
+      id: string; question_text: string; options: string[]
+      correct_answer: string; explanation: string | null
+    }[]
+
+    breakdown = buildBreakdown(fullQuestions, existingAttempt.answers)
+  }
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       <Sidebar profile={profile}/>
@@ -94,12 +115,13 @@ export default async function TakeTestPage({
           title={`Week ${test.week_number}: ${test.topic ?? test.title}`}
           subtitle={`${questions.length} questions · ${test.duration_minutes} minutes`}
         />
-        <div style={{ padding: '28px', maxWidth: '800px' }}>
+        <div style={{ padding: '28px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
           <TestTaker
             test={test}
             questions={questions}
             isUnlocked={isUnlocked}
             existingAttempt={existingAttempt}
+            initialBreakdown={breakdown}
             studentId={user.id}
             slug={slug}
           />

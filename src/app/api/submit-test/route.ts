@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { buildBreakdown } from '@/lib/question-breakdown'
 
 function adminSB() {
   return createSB(
@@ -99,13 +100,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Test not yet available' }, { status: 403 })
     }
 
-    // Fetch correct answers SERVER-SIDE only
+    // Fetch correct answers SERVER-SIDE only — question_text/options/
+    // explanation are included too now so the response can carry a
+    // full per-question breakdown for the post-submit report, not just
+    // the aggregate score.
     const { data: questionsRaw } = await sb
       .from('test_questions')
-      .select('id, correct_answer')
+      .select('id, question_text, options, correct_answer, explanation')
       .eq('test_id', testId)
 
-    const questions = (questionsRaw ?? []) as { id: string; correct_answer: string }[]
+    const questions = (questionsRaw ?? []) as {
+      id: string; question_text: string; options: string[]
+      correct_answer: string; explanation: string | null
+    }[]
 
     // Compute score server-side
     let correct = 0
@@ -133,6 +140,7 @@ export async function POST(req: NextRequest) {
       score:   scorePercent,
       correct,
       total:   questions.length,
+      breakdown: buildBreakdown(questions, answers),
     })
 
   } catch (err) {

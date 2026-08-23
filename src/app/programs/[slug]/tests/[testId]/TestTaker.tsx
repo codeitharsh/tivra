@@ -6,6 +6,8 @@ import {
   Loader2, Clock, Lock, ClipboardList, Timer, Zap, AlertTriangle,
   Trophy, TrendingUp, BookOpen, CheckCircle2, ArrowRight, ArrowLeft,
 } from 'lucide-react'
+import QuestionReview from '@/components/QuestionReview'
+import type { QuestionBreakdownItem } from '@/lib/question-breakdown'
 
 interface Question {
   id: string
@@ -30,23 +32,26 @@ interface Props {
   questions: Question[]
   isUnlocked: boolean
   existingAttempt: { score_percent: number; answers: Record<string,string>; submitted_at: string } | null
+  initialBreakdown: QuestionBreakdownItem[] | null
   studentId: string
   slug: string
 }
 
-export default function TestTaker({ test, questions, isUnlocked, existingAttempt, slug }: Props) {
+export default function TestTaker({ test, questions, isUnlocked, existingAttempt, initialBreakdown, slug }: Props) {
   const [answers, setAnswers]       = useState<Record<string, string>>({})
   const [submitted, setSubmitted]   = useState(!!existingAttempt)
   const [result, setResult]         = useState<ServerResult | null>(
     existingAttempt ? {
       score:   existingAttempt.score_percent,
-      correct: 0,
+      correct: initialBreakdown?.filter(b => b.is_correct).length ?? 0,
       total:   questions.length,
     } : null
   )
+  const [breakdown, setBreakdown]   = useState<QuestionBreakdownItem[] | null>(initialBreakdown)
   const [timeLeft, setTimeLeft]     = useState(test.duration_minutes * 60)
   const [isPending, startTransition] = useTransition()
   const [started, setStarted]       = useState(!!existingAttempt)
+  const [currentQ, setCurrentQ]     = useState(0)
   const [error, setError]           = useState<string | null>(null)
   const router                      = useRouter()
 
@@ -65,7 +70,10 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({ testId: test.id, answers }),
         })
-        const data = await res.json() as { error?: string; score?: number; correct?: number; total?: number }
+        const data = await res.json() as {
+          error?: string; score?: number; correct?: number; total?: number
+          breakdown?: QuestionBreakdownItem[]
+        }
 
         if (!res.ok) {
           setError(data.error ?? 'Submission failed. Try again.')
@@ -73,6 +81,7 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
         }
 
         setResult({ score: data.score ?? 0, correct: data.correct ?? 0, total: data.total ?? questions.length })
+        setBreakdown(data.breakdown ?? null)
         setSubmitted(true)
         router.refresh()
       } catch {
@@ -109,7 +118,7 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
   // ── Not yet unlocked ──────────────────────────────────────
   if (!isUnlocked) {
     return (
-      <div className="card" style={{ textAlign:'center', padding:'60px 40px' }}>
+      <div className="card" style={{ textAlign:'center', padding:'60px 40px', maxWidth:'560px', margin:'0 auto' }}>
         <Lock size={36} color="var(--muted2)" style={{ marginBottom:'16px' }}/>
         <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'20px', marginBottom:'8px' }}>
           Test not yet available
@@ -127,7 +136,7 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
   // ── Start screen ──────────────────────────────────────────
   if (!started) {
     return (
-      <div className="card" style={{ textAlign:'center', padding:'48px 40px' }}>
+      <div className="card" style={{ textAlign:'center', padding:'48px 40px', maxWidth:'560px', margin:'0 auto' }}>
         <ClipboardList size={32} color="var(--accent)" style={{ marginBottom:'16px' }}/>
         <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'20px', marginBottom:'8px' }}>
           Week {test.week_number}: {test.topic ?? test.title}
@@ -172,35 +181,45 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
             color: score >= 75 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)' }}>
             {Math.round(score)}%
           </div>
-          {result.correct > 0 && (
-            <div style={{ fontSize:'14px', color:'var(--muted)', marginTop:'6px' }}>
-              {result.correct} of {result.total} correct
-            </div>
-          )}
+          <div style={{ fontSize:'14px', color:'var(--muted)', marginTop:'6px' }}>
+            {result.correct} of {result.total} correct
+          </div>
           <div style={{ marginTop:'12px', fontSize:'15px', fontWeight:500 }}>
             {score >= 75 ? 'Great work.' : score >= 50 ? 'Good effort — keep studying.' : 'Review your notes and keep going.'}
           </div>
         </div>
-        <div style={{ marginTop:'20px' }}>
-          <a href={`/programs/${slug}/tests`} className="btn btn-ghost" style={{ fontSize:'13px' }}>
-            <ArrowLeft size={13}/> Back to tests
-          </a>
-        </div>
+
+        {breakdown && (
+          <div style={{ marginBottom: '20px' }}>
+            <div className="stat-label" style={{ marginBottom: '12px' }}>Question review</div>
+            <QuestionReview breakdown={breakdown}/>
+          </div>
+        )}
+
+        <a href={`/programs/${slug}/tests`} className="btn btn-ghost" style={{ fontSize:'13px' }}>
+          <ArrowLeft size={13}/> Back to tests
+        </a>
       </div>
     )
   }
 
-  // ── Active test ───────────────────────────────────────────
+  // ── Active test — one question at a time, same pattern as
+  //    AssessmentTaker's taking screen (question navigator strip +
+  //    circular lettered options) so the two feel like one product. ──
+  const q = questions[currentQ]
+
   return (
     <div>
       {/* Sticky timer */}
       <div style={{
         position:'sticky', top:'60px', zIndex:20,
         background:'var(--surface)', borderBottom:'1px solid var(--border)',
-        padding:'12px 0 14px', marginBottom:'24px',
+        padding:'12px 0 14px', marginBottom:'20px',
       }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
-          <span style={{ fontSize:'13px', color:'var(--muted)' }}>{answeredCount}/{questions.length} answered</span>
+          <span style={{ fontSize:'13px', color:'var(--muted)' }}>
+            Q{currentQ+1}/{questions.length} · {answeredCount} answered
+          </span>
           <span style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'18px', color:timerColor,
             display:'flex', alignItems:'center', gap:'6px' }}>
             <Clock size={16}/> {formatTime(timeLeft)}
@@ -211,60 +230,98 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
         </div>
       </div>
 
+      {/* Question navigator */}
+      <div style={{ display:'flex', flexWrap:'wrap', gap:'6px', marginBottom:'20px' }}>
+        {questions.map((qq, i) => (
+          <button key={qq.id} onClick={() => setCurrentQ(i)} style={{
+            width:'32px', height:'32px', borderRadius:'var(--radius-sm)', border:'none', cursor:'pointer',
+            fontFamily:'var(--font-mono)', fontWeight:600, fontSize:'11px',
+            background: currentQ === i
+              ? 'var(--accent)'
+              : answers[qq.id] ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+            color: currentQ === i ? 'var(--on-accent)' : answers[qq.id] ? 'var(--green)' : 'var(--muted)',
+          }}>{i+1}</button>
+        ))}
+      </div>
+
       {error && (
         <div className="banner banner-warning" style={{ marginBottom:'16px' }}>
           <AlertTriangle size={15} style={{ flexShrink:0 }}/><span style={{ fontSize:'13px' }}>{error}</span>
         </div>
       )}
 
-      <div style={{ display:'flex', flexDirection:'column', gap:'20px', marginBottom:'24px' }}>
-        {questions.map((q, i) => (
-          <div key={q.id} className="card" style={{ padding:'20px' }}>
-            <div style={{ fontSize:'14px', fontWeight:500, marginBottom:'16px' }}>
-              <span style={{ color:'var(--muted)', marginRight:'8px' }}>Q{i+1}.</span>
-              {q.question_text}
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
-              {q.options.map((opt, oi) => {
-                const letter   = String.fromCharCode(65 + oi)
-                const selected = answers[q.id] === letter
-                return (
-                  <button key={oi} onClick={() => setAnswers(prev => ({ ...prev, [q.id]: letter }))}
-                    style={{
-                      textAlign:'left', padding:'12px 16px', borderRadius:'var(--radius-sm)',
-                      border:`1px solid ${selected ? 'var(--accent-ring)' : 'var(--border)'}`,
-                      background: selected ? 'var(--accent-dim)' : 'var(--card2)',
-                      color: selected ? 'var(--text)' : 'var(--muted)',
-                      cursor:'pointer', fontSize:'13px', transition:'all 0.15s',
-                      fontFamily:'var(--font-sans)',
-                    }}>
-                    <strong style={{ marginRight:'10px', color: selected ? 'var(--accent-2)' : 'var(--muted)' }}>
-                      {letter}.
-                    </strong>
-                    {opt}
-                  </button>
-                )
-              })}
-            </div>
+      {q && (
+        <div className="card" style={{ padding:'24px', marginBottom:'16px' }}>
+          <div style={{ fontSize:'15px', fontWeight:500, marginBottom:'20px', lineHeight:1.6 }}>
+            <span style={{ color:'var(--muted)', marginRight:'8px', fontSize:'13px' }}>Q{currentQ+1}.</span>
+            {q.question_text}
           </div>
-        ))}
+          <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+            {q.options.map((opt, oi) => {
+              const letter   = String.fromCharCode(65 + oi)
+              const selected = answers[q.id] === letter
+              return (
+                <button key={oi} onClick={() => setAnswers(prev => ({ ...prev, [q.id]: letter }))}
+                  style={{
+                    textAlign:'left', padding:'14px 18px', borderRadius:'var(--radius-sm)',
+                    border:`1px solid ${selected ? 'var(--accent-ring)' : 'var(--border)'}`,
+                    background: selected ? 'var(--accent-dim)' : 'var(--card2)',
+                    color: selected ? 'var(--text)' : 'var(--muted)',
+                    cursor:'pointer', fontSize:'14px', transition:'all 0.15s',
+                    fontFamily:'var(--font-sans)', display:'flex', alignItems:'center', gap:'12px',
+                  }}>
+                  <span style={{
+                    width:'26px', height:'26px', borderRadius:'50%', flexShrink:0,
+                    border:`2px solid ${selected ? 'var(--accent-2)' : 'rgba(255,255,255,0.15)'}`,
+                    background: selected ? 'var(--accent-2-dim)' : 'transparent',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontFamily:'var(--font-mono)', fontWeight:600, fontSize:'11px',
+                    color: selected ? 'var(--accent-2)' : 'var(--muted)',
+                  }}>{letter}</span>
+                  {opt}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display:'flex', gap:'10px', marginBottom:'16px' }}>
+        <button className="btn btn-ghost" onClick={() => setCurrentQ(i => Math.max(0, i-1))}
+          disabled={currentQ === 0} style={{ flex:1, justifyContent:'center', fontSize:'13px' }}>
+          <ArrowLeft size={13}/> Previous
+        </button>
+        {currentQ < questions.length - 1 ? (
+          <button className="btn btn-primary" onClick={() => setCurrentQ(i => Math.min(questions.length-1, i+1))}
+            style={{ flex:1, justifyContent:'center', fontSize:'13px' }}>
+            Next <ArrowRight size={13}/>
+          </button>
+        ) : (
+          <button className="btn btn-primary" onClick={handleSubmit} disabled={isPending || answeredCount === 0}
+            style={{ flex:2, justifyContent:'center', fontSize:'14px' }}>
+            {isPending
+              ? <><Loader2 size={14} style={{ animation:'spin 1s linear infinite' }}/> Submitting…</>
+              : <><CheckCircle2 size={14}/> Submit test</>}
+          </button>
+        )}
       </div>
 
-      <div className="card" style={{ padding:'20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ fontSize:'13px', color:'var(--muted)' }}>
-          {answeredCount < questions.length
-            ? <span style={{ color:'var(--amber)', display:'inline-flex', alignItems:'center', gap:'6px' }}><AlertTriangle size={13}/> {questions.length - answeredCount} unanswered</span>
-            : <span style={{ color:'var(--green)', display:'inline-flex', alignItems:'center', gap:'6px' }}><CheckCircle2 size={13}/> All questions answered</span>
-          }
+      {currentQ < questions.length - 1 && (
+        <div style={{ display:'flex', justifyContent:'flex-end', alignItems:'center', gap:'14px',
+          padding:'14px 0', borderTop:'1px solid var(--border)' }}>
+          {answeredCount < questions.length && (
+            <span style={{ fontSize:'12px', color:'var(--amber)', display:'inline-flex', alignItems:'center', gap:'6px' }}>
+              <AlertTriangle size={12}/> {questions.length - answeredCount} unanswered
+            </span>
+          )}
+          <button className="btn btn-primary" onClick={handleSubmit}
+            disabled={isPending || answeredCount === 0} style={{ fontSize:'13px', padding:'10px 24px' }}>
+            {isPending
+              ? <><Loader2 size={14} style={{ animation:'spin 1s linear infinite' }}/> Submitting…</>
+              : 'Submit test'}
+          </button>
         </div>
-        <button className="btn btn-primary" onClick={handleSubmit}
-          disabled={isPending || answeredCount === 0} style={{ fontSize:'13px', padding:'11px 24px' }}>
-          {isPending
-            ? <><Loader2 size={14} style={{ animation:'spin 1s linear infinite' }}/> Submitting…</>
-            : <>Submit test <ArrowRight size={14}/></>
-          }
-        </button>
-      </div>
+      )}
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )

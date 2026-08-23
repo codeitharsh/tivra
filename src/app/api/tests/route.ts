@@ -410,6 +410,26 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
+    // ── DELETE ASSESSMENT ──────────────────────────────────────
+    if (body.action === 'delete_assessment') {
+      const { assessmentId } = body
+      if (!assessmentId) return NextResponse.json({ error: 'assessmentId required' }, { status: 400 })
+
+      // certificates.assessment_id has no ON DELETE rule (unlike
+      // assessment_questions/assessment_attempts, which cascade) — a
+      // raw delete on `assessments` would fail with a FK violation the
+      // moment any student has ever passed it. Explicit cleanup here,
+      // same reasoning as delete_test's explicit test_questions delete
+      // even though that FK also cascades.
+      await sb.from('certificates').delete().eq('assessment_id', assessmentId)
+      await sb.from('assessment_attempts').delete().eq('assessment_id', assessmentId)
+      await sb.from('assessment_questions').delete().eq('assessment_id', assessmentId)
+
+      const { error } = await sb.from('assessments').delete().eq('id', assessmentId)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
     // ── SAVE ASSESSMENT SCHEDULE ───────────────────────────────
     if (body.action === 'save_assessment_schedule') {
       const { assessmentId, unlockDatetime } = body

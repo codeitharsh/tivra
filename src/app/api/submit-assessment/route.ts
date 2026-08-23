@@ -5,6 +5,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { checkAndIssueProgramCompletion } from '@/lib/program-completion'
+import { buildBreakdown } from '@/lib/question-breakdown'
 
 function adminSB() {
   return createSB(
@@ -115,13 +116,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Assessment not yet available' }, { status: 403 })
     }
 
-    // Fetch correct answers SERVER-SIDE
+    // Fetch correct answers SERVER-SIDE — question_text/options/
+    // explanation included too, so the response can carry a full
+    // per-question breakdown for the post-submit report.
     const { data: questionsRaw } = await sb
       .from('assessment_questions')
-      .select('id, correct_answer')
+      .select('id, question_text, options, correct_answer, explanation')
       .eq('assessment_id', assessmentId)
 
-    const questions = (questionsRaw ?? []) as { id: string; correct_answer: string }[]
+    const questions = (questionsRaw ?? []) as {
+      id: string; question_text: string; options: string[]
+      correct_answer: string; explanation: string | null
+    }[]
 
     // Compute score server-side
     let correct = 0
@@ -171,6 +177,7 @@ export async function POST(req: NextRequest) {
       total:    questions.length,
       passMark: a.passing_percent,
       programCompletionIssued: programCompletion.issued,
+      breakdown: buildBreakdown(questions, answers),
     })
 
   } catch (err) {

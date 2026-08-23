@@ -6,6 +6,8 @@ import {
   Loader2, Clock, Trophy, AlertTriangle, RotateCcw, Lock, ClipboardList,
   HelpCircle, Timer, Target, Zap, CheckCircle2, Frown, ArrowLeft, ArrowRight, Check,
 } from 'lucide-react'
+import QuestionReview from '@/components/QuestionReview'
+import type { QuestionBreakdownItem } from '@/lib/question-breakdown'
 
 interface Question {
   id: string
@@ -34,6 +36,7 @@ interface Props {
   canRetake:       boolean
   retakeUnlocksAt: string | null
   alreadyPassed:   boolean
+  initialBreakdown: QuestionBreakdownItem[] | null
   studentId:       string
   studentName:     string
   slug:            string
@@ -77,12 +80,13 @@ function CooldownTimer({ unlocksAt, onUnlock }: { unlocksAt: string; onUnlock: (
 export default function AssessmentTaker({
   assessment, questions, isUnlocked,
   latestAttempt, allAttempts, attemptCount,
-  canRetake, retakeUnlocksAt, alreadyPassed, slug,
+  canRetake, retakeUnlocksAt, alreadyPassed, initialBreakdown, slug,
 }: Props) {
   const router = useRouter()
   const [screen, setScreen]         = useState<Screen>(latestAttempt ? 'result' : 'info')
   const [answers, setAnswers]       = useState<Record<string, string>>({})
   const [serverResult, setResult]   = useState<{ score: number; passed: boolean; correct: number; total: number } | null>(null)
+  const [breakdown, setBreakdown]   = useState<QuestionBreakdownItem[] | null>(initialBreakdown)
   const [timeLeft, setTimeLeft]     = useState(assessment.duration_minutes * 60)
   const [isPending, startTransition] = useTransition()
   const [currentQ, setCurrentQ]     = useState(0)
@@ -119,6 +123,7 @@ export default function AssessmentTaker({
         const data = await res.json() as {
           error?: string; retakeAt?: string
           score?: number; passed?: boolean; correct?: number; total?: number
+          breakdown?: QuestionBreakdownItem[]
         }
 
         if (!res.ok) {
@@ -136,6 +141,7 @@ export default function AssessmentTaker({
           correct: data.correct ?? 0,
           total:   data.total   ?? questions.length,
         })
+        setBreakdown(data.breakdown ?? null)
         setScreen('result')
         router.refresh()
       } catch {
@@ -175,7 +181,7 @@ export default function AssessmentTaker({
   // ── Not unlocked ──────────────────────────────────────────
   if (!isUnlocked) {
     return (
-      <div className="card" style={{ textAlign:'center', padding:'60px 40px' }}>
+      <div className="card" style={{ textAlign:'center', padding:'60px 40px', maxWidth:'560px', margin:'0 auto' }}>
         <Lock size={36} color="var(--muted2)" style={{ marginBottom:'16px' }}/>
         <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'20px', marginBottom:'8px' }}>
           Assessment not yet available
@@ -319,9 +325,9 @@ export default function AssessmentTaker({
             color: passed ? 'var(--green)' : 'var(--red)', marginBottom:'8px' }}>
             {Math.round(score)}%
           </div>
-          {serverResult && (
+          {breakdown && (
             <div style={{ fontSize:'14px', color:'var(--muted)', marginBottom:'8px' }}>
-              {serverResult.correct} of {serverResult.total} correct
+              {breakdown.filter(b => b.is_correct).length} of {breakdown.length} correct
             </div>
           )}
           <div style={{ fontSize:'16px', fontWeight:600, marginBottom:'20px' }}>
@@ -355,6 +361,13 @@ export default function AssessmentTaker({
                 </span>
               </div>
             ))}
+          </div>
+        )}
+
+        {breakdown && (
+          <div style={{ marginBottom: '20px' }}>
+            <div className="stat-label" style={{ marginBottom: '12px' }}>Question review</div>
+            <QuestionReview breakdown={breakdown}/>
           </div>
         )}
 

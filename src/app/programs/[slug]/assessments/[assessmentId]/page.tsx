@@ -8,6 +8,7 @@ import Topbar from '@/components/Topbar'
 import AssessmentTaker from './AssessmentTaker'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { requireProgramAccess } from '@/lib/program-access'
+import { buildBreakdown, type QuestionBreakdownItem } from '@/lib/question-breakdown'
 import type { Profile } from '@/types/database'
 
 export default async function TakeAssessmentPage({
@@ -117,6 +118,26 @@ export default async function TakeAssessmentPage({
     options: string[]
   }[]
 
+  // Only fetched once a latest attempt exists — correct_answer must
+  // never reach the client before that. Powers "review your answers"
+  // on a return visit, not just right after a fresh submit (which gets
+  // its own breakdown from the submit API response).
+  let breakdown: QuestionBreakdownItem[] | null = null
+  if (latestAttempt) {
+    const { data: fullQuestionsRaw } = await admin
+      .from('assessment_questions')
+      .select('id, question_text, options, correct_answer, explanation')
+      .eq('assessment_id', assessmentId)
+      .order('order_num')
+
+    const fullQuestions = (fullQuestionsRaw ?? []) as {
+      id: string; question_text: string; options: string[]
+      correct_answer: string; explanation: string | null
+    }[]
+
+    breakdown = buildBreakdown(fullQuestions, latestAttempt.answers)
+  }
+
   const phase = assessment.phases
 
   return (
@@ -127,7 +148,7 @@ export default async function TakeAssessmentPage({
           title={assessment.title}
           subtitle={`Phase ${phase?.phase_number ?? ''}: ${phase?.title ?? ''} · ${assessment.total_questions} questions · ${assessment.duration_minutes} min`}
         />
-        <div style={{ padding: '28px', maxWidth: '860px' }}>
+        <div style={{ padding: '28px', maxWidth: '860px', margin: '0 auto', width: '100%' }}>
           <AssessmentTaker
             assessment={assessment}
             questions={questions}
@@ -138,6 +159,7 @@ export default async function TakeAssessmentPage({
             canRetake={canRetake}
             retakeUnlocksAt={retakeUnlocksAt?.toISOString() ?? null}
             alreadyPassed={alreadyPassed}
+            initialBreakdown={breakdown}
             studentId={user.id}
             studentName={profile.full_name ?? 'Student'}
             slug={slug}
