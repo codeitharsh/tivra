@@ -3,6 +3,7 @@ import { useState, useTransition, useMemo, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Eye, EyeOff } from 'lucide-react'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -37,6 +38,13 @@ function LoginForm() {
   }, [searchParams])
 
   const error = submitError ?? urlError
+  const [showPassword, setShowPassword] = useState(false)
+
+  // Set by reset-password/page.tsx after a successful password update —
+  // a one-line confirmation, distinct from the warning-styled error banner
+  // above (submitError/urlError), so it needs its own derived value rather
+  // than being folded into `error`.
+  const resetSuccess = useMemo(() => searchParams.get('reset') === 'success', [searchParams])
 
   // Only ever redirect to a same-origin relative path after login — a
   // `next` value like `//evil.com` or `https://evil.com` must never be
@@ -76,6 +84,10 @@ function LoginForm() {
           <h1 style={{ fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'22px', color:'var(--text)', marginBottom:'6px' }}>Welcome back</h1>
           <p style={{ fontSize:'14px', color:'var(--muted)', marginBottom:'28px' }}>Sign in to your Tivra account</p>
 
+          {resetSuccess && !error && (
+            <div className="banner banner-success" style={{ marginBottom:'20px' }}>Password updated — sign in with your new password.</div>
+          )}
+
           {error && (
             <div className="banner banner-warning" style={{ marginBottom:'20px' }}>{error}</div>
           )}
@@ -86,8 +98,29 @@ function LoginForm() {
               <input name="email" type="email" required placeholder="you@example.com" className="form-input"/>
             </div>
             <div>
-              <label className="form-label">Password</label>
-              <input name="password" type="password" required placeholder="••••••••" className="form-input"/>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
+                <label className="form-label" style={{ marginBottom:0 }}>Password</label>
+                <Link href="/forgot-password" style={{ fontSize:'11px', color:'var(--accent)', textDecoration:'none', fontWeight:600, marginBottom:'6px' }}>
+                  Forgot password?
+                </Link>
+              </div>
+              <div style={{ position:'relative', marginTop:'6px' }}>
+                <input
+                  name="password" type={showPassword ? 'text' : 'password'} required
+                  placeholder="••••••••" className="form-input" style={{ paddingRight:'44px' }}
+                />
+                <button
+                  type="button" onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)',
+                    background:'none', border:'none', color:'var(--muted2)', cursor:'pointer',
+                    display:'flex', padding:0,
+                  }}
+                >
+                  {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
+                </button>
+              </div>
             </div>
             <button type="submit" disabled={isPending} className="btn btn-primary" style={{ justifyContent:'center', marginTop:'4px', width:'100%', cursor: isPending ? 'wait' : 'pointer', opacity: isPending ? 0.7 : 1 }}>
               {isPending ? 'Signing in…' : 'Sign In'}

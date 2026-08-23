@@ -35,6 +35,7 @@ const PUBLIC_ROUTES = [
   '/', '/login', '/register', '/verify',
   '/about', '/contact', '/terms', '/privacy',
   '/pending',   // pending/explore page is public so redirect works
+  '/forgot-password', '/reset-password',
 ]
 
 // Programme LANDING pages (e.g. /programs/cloud-launchpad) are public

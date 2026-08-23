@@ -3,7 +3,18 @@ import { useMemo, useState, Suspense, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Mail, Check, X } from 'lucide-react'
+import { Mail, Check, X, Eye, EyeOff } from 'lucide-react'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Mirrors the server-side checks in handleSubmit below, but surfaced
+// per-field on blur instead of only after a full submit attempt.
+function validateField(name: string, value: string): string | null {
+  if (name === 'email' && value && !EMAIL_RE.test(value)) return 'Enter a valid email address.'
+  if (name === 'phone' && value && value.trim().length < 7) return 'Enter a valid phone number.'
+  if (name === 'password' && value && value.length < 8) return 'Must be at least 8 characters.'
+  return null
+}
 
 function RegisterForm() {
   const router = useRouter()
@@ -24,6 +35,18 @@ function RegisterForm() {
   const [referralFaculty, setReferralFaculty] = useState('')
   const [registeredEmail, setRegisteredEmail] = useState<string|null>(null)
   const [isPending, start] = useTransition()
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [showPassword, setShowPassword] = useState(false)
+
+  function handleFieldBlur(name: string, value: string) {
+    const msg = validateField(name, value)
+    setFieldErrors(prev => {
+      const next = { ...prev }
+      if (msg) next[name] = msg
+      else delete next[name]
+      return next
+    })
+  }
 
   async function validateReferral(code: string) {
     if (!code.trim()) { setReferralStatus('idle'); setReferralFaculty(''); return }
@@ -125,12 +148,45 @@ function RegisterForm() {
               { name:'email',     label:'Email',     type:'email',    placeholder:'you@example.com' },
               { name:'phone',     label:'Phone Number',     type:'tel', placeholder:'+91 98765 43210' },
               { name:'password',  label:'Password',  type:'password', placeholder:'Min. 8 characters' },
-            ].map(f => (
-              <div key={f.name}>
-                <label className="form-label">{f.label}</label>
-                <input name={f.name} type={f.type} required={true} placeholder={f.placeholder} className="form-input"/>
-              </div>
-            ))}
+            ].map(f => {
+              const isPassword = f.name === 'password'
+              return (
+                <div key={f.name}>
+                  <label className="form-label">{f.label}</label>
+                  <div style={{ position: isPassword ? 'relative' : undefined }}>
+                    <input
+                      name={f.name}
+                      type={isPassword ? (showPassword ? 'text' : 'password') : f.type}
+                      required
+                      placeholder={f.placeholder}
+                      className="form-input"
+                      style={{
+                        paddingRight: isPassword ? '44px' : undefined,
+                        borderColor: fieldErrors[f.name] ? 'var(--red)' : undefined,
+                      }}
+                      onBlur={e => handleFieldBlur(f.name, e.target.value)}
+                      onChange={() => { if (fieldErrors[f.name]) handleFieldBlur(f.name, '') }}
+                    />
+                    {isPassword && (
+                      <button
+                        type="button" onClick={() => setShowPassword(v => !v)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        style={{
+                          position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)',
+                          background:'none', border:'none', color:'var(--muted2)', cursor:'pointer',
+                          display:'flex', padding:0,
+                        }}
+                      >
+                        {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
+                      </button>
+                    )}
+                  </div>
+                  {fieldErrors[f.name] && (
+                    <p style={{ fontSize:'11px', color:'var(--red)', marginTop:'4px' }}>{fieldErrors[f.name]}</p>
+                  )}
+                </div>
+              )
+            })}
             {/* Referral code — optional */}
             <div>
               <label className="form-label">
