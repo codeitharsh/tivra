@@ -3,6 +3,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Mail } from 'lucide-react'
+import { createRecoveryClient } from '@/lib/supabase/recovery-client'
 
 export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null)
@@ -15,12 +16,29 @@ export default function ForgotPasswordPage() {
     const fd = new FormData(e.currentTarget)
     const email = (fd.get('email') as string).trim()
     start(async () => {
-      const res = await fetch('/api/auth/forgot-password', {
+      // Rate-limit gate only — see /api/auth/forgot-password's own
+      // comment for why the actual Supabase call happens here in the
+      // browser instead: resetPasswordForEmail() generates a PKCE code
+      // verifier that must still be readable by whatever later calls
+      // exchangeCodeForSession() on /reset-password. Calling it
+      // server-side split that across two storage contexts and broke
+      // the exchange ("PKCE code verifier not found in storage").
+      const gate = await fetch('/api/auth/forgot-password', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
-      const data = await res.json() as { error?: string; success?: boolean }
-      if (data.error) { setError(data.error); return }
+      const gateData = await gate.json() as { error?: string }
+      if (gateData.error) { setError(gateData.error); return }
+
+      const supabase = createRecoveryClient()
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      // Supabase's own resetPasswordForEmail already doesn't reveal
+      // whether an account exists for this email — any error surfaced
+      // here is a real problem (bad config, Supabase-side rate limit),
+      // not an enumeration risk.
+      if (error) { setError(error.message); return }
       setSentTo(email)
     })
   }

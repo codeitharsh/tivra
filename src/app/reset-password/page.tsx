@@ -1,45 +1,51 @@
 'use client'
-import { useEffect, useRef, useState, useTransition, Suspense } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { createRecoveryClient } from '@/lib/supabase/recovery-client'
 
 type ExchangeState = 'exchanging' | 'ready' | 'invalid'
 
-function ResetPasswordForm() {
+// No useSearchParams here (implicit flow reads the URL hash internally
+// via the SDK, not a query param this component needs), so no Suspense
+// boundary is required — unlike login/register/the old code-based
+// version of this page.
+export default function ResetPasswordPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const code = searchParams.get('code')
-  // No code at all is knowable synchronously from the URL at first render —
-  // only the actual exchange (a real async call to an external system) needs
-  // an effect, so the "no code" case is folded into the initial state
-  // instead of a synchronous setState inside the effect body below.
-  const [exchangeState, setExchangeState] = useState<ExchangeState>(code ? 'exchanging' : 'invalid')
+  const [exchangeState, setExchangeState] = useState<ExchangeState>('exchanging')
   const [error, setError] = useState<string | null>(null)
   const [fieldError, setFieldError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [isPending, start] = useTransition()
-  const exchangedRef = useRef(false)
+  // Reused for both the recovery-session detection below AND the later
+  // updateUser()/signOut() calls in handleSubmit — the implicit-flow
+  // session that gets established here needs to be read by that same
+  // client later, not a freshly constructed one.
+  const [supabase] = useState(() => createRecoveryClient())
 
-  // The recovery link Supabase emails carries a one-time PKCE `code` —
-  // exchanging it here (client-side, since it needs the browser's own
-  // Supabase client) establishes a real session so updateUser() below is
-  // allowed to change the password. A code can only be exchanged once;
-  // React's Strict Mode deliberately mounts effects twice in dev, which
-  // without this ref guard exchanges the code, succeeds, then immediately
-  // exchanges it again on the second mount and fails (already consumed) —
-  // showing "invalid" every time in dev even though the flow is correct.
+  // With the implicit flow, Supabase's client SDK automatically parses
+  // the #access_token=...&type=recovery fragment in the URL on load
+  // (detectSessionInUrl defaults to true) — no code to manually exchange,
+  // nothing to look up in storage. It fires a PASSWORD_RECOVERY auth
+  // event once that's done; getSession() covers the rare race where the
+  // event fired before this listener attached. A link with no valid
+  // token at all (or already used) never fires either, so a timeout is
+  // what eventually resolves that case to "invalid" instead of hanging
+  // on "Verifying…" forever.
   useEffect(() => {
-    if (!code || exchangedRef.current) return
-    exchangedRef.current = true
-    const supabase = createClient()
-    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-      setExchangeState(error ? 'invalid' : 'ready')
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setExchangeState('ready')
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setExchangeState('ready')
+    })
+    const timeout = setTimeout(() => {
+      setExchangeState(prev => prev === 'exchanging' ? 'invalid' : prev)
+    }, 4000)
+    return () => { subscription.unsubscribe(); clearTimeout(timeout) }
+  }, [supabase])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -53,7 +59,6 @@ function ResetPasswordForm() {
     if (password !== confirm) { setFieldError('Passwords do not match.'); return }
 
     start(async () => {
-      const supabase = createClient()
       const { error } = await supabase.auth.updateUser({ password })
       if (error) { setError(error.message); return }
       // Sign out rather than leaving them logged in from the recovery
@@ -141,13 +146,5 @@ function ResetPasswordForm() {
         </div>
       </div>
     </div>
-  )
-}
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={null}>
-      <ResetPasswordForm/>
-    </Suspense>
   )
 }
