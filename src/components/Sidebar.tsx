@@ -31,11 +31,15 @@ function buildStudentNav(enrolledPrograms: { name: string; slug: string }[]) {
   // an unconditional entry, not gated behind having enrolled programmes
   // the way everything else in this function is.
   const freeNotes  = { href:'/free-notes', label:'Free Notes', icon:Library }
-  if (enrolledPrograms.length === 0) return [dashboard, freeNotes]
+  // Self-paced courses are the same "open to everyone" precedent as Free
+  // Notes (see migrations/2026-08-24-self-paced-courses.sql and
+  // middleware.ts STEP 8) — unconditional for the same reason.
+  const courses    = { href:'/courses', label:'Courses', icon:GraduationCap }
+  if (enrolledPrograms.length === 0) return [dashboard, freeNotes, courses]
   if (enrolledPrograms.length === 1) {
     const p = enrolledPrograms[0]
     return [
-      dashboard, freeNotes,
+      dashboard, freeNotes, courses,
       { href:`/programs/${p.slug}/content`,     label:'Study Content', icon:BookOpen },
       { href:`/programs/${p.slug}/tests`,       label:'Weekly Tests',  icon:ClipboardList },
       { href:`/programs/${p.slug}/assessments`, label:'Assessments',   icon:Target },
@@ -46,7 +50,7 @@ function buildStudentNav(enrolledPrograms: { name: string; slug: string }[]) {
   // name prefixed, since the sidebar has no nested-section UI today.
   // (A future enhancement could group these visually; this is the
   // minimum correct behavior for "don't silently hide programme #2.")
-  const items = [dashboard, freeNotes]
+  const items = [dashboard, freeNotes, courses]
   for (const p of enrolledPrograms) {
     items.push(
       { href:`/programs/${p.slug}/content`,     label:`${p.name} · Content`,     icon:BookOpen },
@@ -79,6 +83,7 @@ const NAV_ADMIN = [
   { href:'/admin/analytics',       label:'Analytics',       icon:TrendingUp },
   { href:'/admin/programs',        label:'Programmes',      icon:BookMarked },
   { href:'/admin/free-notes',      label:'Free Notes',      icon:Library },
+  { href:'/admin/courses',         label:'Courses',         icon:BookOpen },
   { href:'/admin/batches',         label:'Batches',         icon:Layers },
   { href:'/admin/students',        label:'All Users',       icon:Users },
   { href:'/admin/enrollments',     label:'Enrollments',     icon:GraduationCap },

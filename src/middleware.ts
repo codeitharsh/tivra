@@ -109,6 +109,16 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
+  // ── STEP 1c: Self-paced COURSE landing pages only — same reasoning
+  //    as STEP 1b: /courses (the browse grid) and /courses/{slug} (a
+  //    single course's landing page) are public so anyone can explore
+  //    what's on offer. Actually taking a lesson (/courses/{slug}/
+  //    learn/{lessonId}) or viewing a certificate is a 3rd-segment path
+  //    and falls through to the login requirement below. ────────────
+  if (pathname === '/courses' || /^\/courses\/[^/]+$/.test(pathname)) {
+    return response
+  }
+
   // ── STEP 2: Must be logged in ──────────────────────────────
   if (!user) {
     const url = new URL('/login', request.url)
@@ -150,12 +160,15 @@ export async function middleware(request: NextRequest) {
 
   // ── STEP 8: PENDING PAYMENT ────────────────────────────────
   // Student hasn't paid → they can only access /pending, /payment,
-  // /profile, and /free-notes (the self-study library is open to any
-  // registered user regardless of payment status — that's the entire
-  // point of it, see migrations/2026-08-23-free-notes.sql). Every
-  // other route is blocked.
+  // /profile, /free-notes, and /courses (self-paced courses are open to
+  // any registered user regardless of payment status, same precedent as
+  // Free Notes — see migrations/2026-08-24-self-paced-courses.sql).
+  // Every other route is blocked.
   if (status === 'pending_payment') {
-    if (pathname.startsWith('/profile') || pathname.startsWith('/payment') || pathname.startsWith('/free-notes')) return response
+    if (
+      pathname.startsWith('/profile') || pathname.startsWith('/payment') ||
+      pathname.startsWith('/free-notes') || pathname.startsWith('/courses')
+    ) return response
     return NextResponse.redirect(new URL('/pending', request.url))
   }
 

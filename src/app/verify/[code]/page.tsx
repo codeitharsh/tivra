@@ -32,11 +32,21 @@ export default async function VerifyPage({ params }: { params: Promise<{ code: s
     .eq('verification_code', code)
     .maybeSingle()
 
-  const isCompletion = !phaseCertData && !!completionData
-  const cert    = (phaseCertData ?? completionData) as Record<string,unknown> | null
+  // ...finally, fall back to a self-paced course completion certificate.
+  const { data: courseCompletionData } = (phaseCertData || completionData) ? { data: null } : await admin
+    .from('course_completions')
+    .select('*, profiles!student_id(full_name), courses!course_id(title)')
+    .eq('verification_code', code)
+    .maybeSingle()
+
+  const isCompletion       = !phaseCertData && !!completionData
+  const isCourseCompletion = !phaseCertData && !completionData && !!courseCompletionData
+  const cert    = (phaseCertData ?? completionData ?? courseCompletionData) as Record<string,unknown> | null
   const valid   = !!cert && !cert.is_revoked
   const profile = cert?.profiles as { full_name: string } | null
-  const phase   = !isCompletion ? (cert?.phases as { title: string; phase_number: number } | null) : null
+  const phase   = (!isCompletion && !isCourseCompletion) ? (cert?.phases as { title: string; phase_number: number } | null) : null
+  const courseRowRaw = isCourseCompletion ? cert?.courses : null
+  const courseRow = Array.isArray(courseRowRaw) ? courseRowRaw[0] : courseRowRaw as { title: string } | null
 
   return (
     <div style={{
@@ -61,11 +71,11 @@ export default async function VerifyPage({ params }: { params: Promise<{ code: s
           <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'22px',
             color: valid ? 'var(--green)' : 'var(--red)', marginBottom:'8px' }}>
             {valid
-              ? (isCompletion ? 'Programme completion verified' : 'Certificate verified')
+              ? (isCourseCompletion ? 'Course completion verified' : isCompletion ? 'Programme completion verified' : 'Certificate verified')
               : cert?.is_revoked ? 'Certificate revoked' : 'Certificate not found'}
           </div>
 
-          {valid && cert && !isCompletion && (
+          {valid && cert && !isCompletion && !isCourseCompletion && (
             <div style={{ marginTop:'20px', display:'flex', flexDirection:'column', gap:'8px' }}>
               {[
                 ['Student',   profile?.full_name ?? '—'],
@@ -92,6 +102,25 @@ export default async function VerifyPage({ params }: { params: Promise<{ code: s
                 ['Programme', PLAN_LABELS[String(cert.plan)] ?? 'Tivra Programme'],
                 ['Status',    'All phase assessments passed'],
                 ['Issued',    new Date(cert.issued_at as string).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})],
+              ].map(([label, value]) => (
+                <div key={label} style={{
+                  display:'flex', justifyContent:'space-between', padding:'10px 14px',
+                  background:'var(--card2)', borderRadius:'var(--radius-sm)', fontSize:'13px',
+                }}>
+                  <span style={{ color:'var(--muted)' }}>{label}</span>
+                  <span style={{ color:'var(--text)', fontWeight:500 }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {valid && cert && isCourseCompletion && (
+            <div style={{ marginTop:'20px', display:'flex', flexDirection:'column', gap:'8px' }}>
+              {[
+                ['Student', profile?.full_name ?? '—'],
+                ['Course',  courseRow?.title ?? 'Tivra Self-Paced Course'],
+                ['Status',  `${cert.completed_lesson_count}/${cert.total_required_lesson_count} required lessons completed`],
+                ['Issued',  new Date(cert.issued_at as string).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})],
               ].map(([label, value]) => (
                 <div key={label} style={{
                   display:'flex', justifyContent:'space-between', padding:'10px 14px',

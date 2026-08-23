@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Video, FlaskConical, ClipboardList, Award, MessageCircle,
   Target, FileCheck, MessagesSquare,
-  Clock, Plus, ArrowRight, Library,
+  Clock, Plus, ArrowRight, Library, GraduationCap,
 } from 'lucide-react'
 import PublicNav from '@/components/PublicNav'
 import ProgrammeStack from '@/components/ProgrammeStack'
@@ -120,6 +120,7 @@ export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [programmes, setProgrammes] = useState<ProgramCard[]>([])
   const pricingRef = useRef<HTMLDivElement>(null)
+  const openAccessRef = useRef<HTMLDivElement>(null)
   const featureRefs = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
@@ -132,6 +133,23 @@ export default function HomePage() {
   // content.
   useEffect(() => {
     const el = pricingRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible')
+          observer.unobserve(entry.target)
+        }
+      })
+    }, { threshold: 0.2 })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // Same single-block reveal treatment as the pricing section above —
+  // two cards is too little content to justify a staggered sequence.
+  useEffect(() => {
+    const el = openAccessRef.current
     if (!el) return
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -281,42 +299,6 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          FREE NOTES STRIP — a top-of-funnel touchpoint, not
-          another full section: DSA/CN/OOPS/DBMS notes are free
-          for anyone who registers, no enrolment needed. Kept
-          slim and distinct (cyan accent, "Free" badge) so it
-          reads as a genuine value-add, not a paid-programme card.
-      ══════════════════════════════════════════════════ */}
-      <section style={{ borderTop:'1px solid var(--border)', padding:'20px clamp(20px,4vw,48px)' }}>
-        <Link href="/free-notes" style={{ textDecoration:'none', display:'block' }}>
-          <div style={{
-            maxWidth:'1200px', margin:'0 auto', display:'flex', alignItems:'center',
-            justifyContent:'space-between', gap:'16px', flexWrap:'wrap',
-            padding:'16px 20px', borderRadius:'var(--radius)',
-            background:'var(--accent-2-dim)', border:'1px solid rgba(23,174,224,0.2)',
-          }}>
-            <div style={{ display:'flex', alignItems:'center', gap:'14px' }}>
-              <span style={{
-                width:'34px', height:'34px', borderRadius:'var(--radius-sm)', flexShrink:0,
-                background:'var(--card2)', color:'var(--accent-2)',
-                display:'flex', alignItems:'center', justifyContent:'center',
-              }}><Library size={16}/></span>
-              <span style={{ fontSize:'14px', color:'var(--text)' }}>
-                <strong style={{ fontFamily:'var(--font-serif), serif', fontWeight:600 }}>Free Notes</strong>
-                {' — '}DSA, Computer Networks, OOPS, DBMS and more. Free for anyone who registers, no enrolment needed.
-              </span>
-            </div>
-            <span style={{
-              display:'inline-flex', alignItems:'center', gap:'6px', flexShrink:0,
-              fontSize:'13px', fontWeight:600, color:'var(--accent-2)',
-            }}>
-              Browse Free Notes <ArrowRight size={14}/>
-            </span>
-          </div>
-        </Link>
-      </section>
-
-      {/* ══════════════════════════════════════════════════
           SECTION 1 — INTRODUCING TIVRA
       ══════════════════════════════════════════════════ */}
       <section style={{
@@ -447,6 +429,102 @@ export default function HomePage() {
               </div>
             )
           })}
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          OPEN ACCESS — Free Notes + Self-Paced Courses. Sits right
+          before Programmes: by this point in the scroll the visitor
+          already knows what Tivra's paid offering is (Sections 1-2),
+          so "here's what's free even before you pay" lands as a
+          natural bridge into the pricing/programmes pitch, not a
+          random insert straight after the hero. Built on the actual
+          Facet system (tv-clip cards, mono eyebrow, serif titles,
+          the two brand accents used exactly once each — cyan and
+          indigo, the only two dual-tone moments this system allows)
+          instead of a flat tinted alert bar.
+      ══════════════════════════════════════════════════ */}
+      <section ref={openAccessRef} className="reveal" style={{ borderTop:'1px solid var(--border)', padding:'clamp(56px,7vw,80px) clamp(20px,4vw,48px)' }}>
+        <div style={{ maxWidth:'1200px', margin:'0 auto' }}>
+          <div style={{
+            display:'flex', justifyContent:'space-between', alignItems:'flex-end',
+            flexWrap:'wrap', gap:'16px', marginBottom:'32px',
+          }}>
+            <div>
+              <Eyebrow label="Open Access"/>
+              <h2 style={{
+                fontFamily:'var(--font-serif), serif', fontWeight:600,
+                fontSize:'clamp(1.6rem,3.2vw,2.3rem)', letterSpacing:'-0.02em',
+                lineHeight:1.12, color:'var(--text)',
+              }}>
+                Free the moment you register.
+              </h2>
+            </div>
+            <p style={{ fontSize:'14px', color:'var(--muted)', maxWidth:'360px', lineHeight:1.7 }}>
+              No enrolment, no payment — these two are part of every Tivra
+              account from day one, paid or not.
+            </p>
+          </div>
+
+          <div className="open-access-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'20px' }}>
+            <Link href="/free-notes" className="oa-card" style={{ textDecoration:'none', display:'block', position:'relative' }}>
+              <div className="card oa-card-inner" style={{ padding:'26px', height:'100%', position:'relative', overflow:'hidden' }}>
+                <span className="oa-card-bar" style={{ background:'var(--accent-2)' }}/>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'22px' }}>
+                  <span style={{
+                    width:'40px', height:'40px', borderRadius:'var(--radius-sm)', flexShrink:0,
+                    background:'var(--card2)', border:'1px solid var(--border)', color:'var(--accent-2)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                  }}><Library size={18}/></span>
+                  <span style={{
+                    fontFamily:'var(--font-mono), monospace', fontSize:'10px', letterSpacing:'0.14em',
+                    textTransform:'uppercase', color:'var(--accent-2)',
+                  }}>Self-Study Library</span>
+                </div>
+                <h3 style={{
+                  fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'21px',
+                  color:'var(--text)', marginBottom:'10px',
+                }}>Free Notes</h3>
+                <p style={{ fontSize:'13.5px', color:'var(--muted)', lineHeight:1.7, marginBottom:'22px' }}>
+                  Plain, well-organised notes for exam prep and interviews —
+                  DSA, Computer Networks, OOPS, DBMS and more.
+                </p>
+                <div className="tick-rule" style={{ marginBottom:'18px' }}/>
+                <span className="oa-card-cta" style={{ color:'var(--accent-2)' }}>
+                  Browse Free Notes <ArrowRight size={13}/>
+                </span>
+              </div>
+            </Link>
+
+            <Link href="/courses" className="oa-card" style={{ textDecoration:'none', display:'block', position:'relative' }}>
+              <div className="card oa-card-inner" style={{ padding:'26px', height:'100%', position:'relative', overflow:'hidden' }}>
+                <span className="oa-card-bar" style={{ background:'var(--accent)' }}/>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'22px' }}>
+                  <span style={{
+                    width:'40px', height:'40px', borderRadius:'var(--radius-sm)', flexShrink:0,
+                    background:'var(--card2)', border:'1px solid var(--border)', color:'var(--accent)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                  }}><GraduationCap size={18}/></span>
+                  <span style={{
+                    fontFamily:'var(--font-mono), monospace', fontSize:'10px', letterSpacing:'0.14em',
+                    textTransform:'uppercase', color:'var(--accent)',
+                  }}>Self-Paced Learning</span>
+                </div>
+                <h3 style={{
+                  fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'21px',
+                  color:'var(--text)', marginBottom:'10px',
+                }}>Self-Paced Courses</h3>
+                <p style={{ fontSize:'13.5px', color:'var(--muted)', lineHeight:1.7, marginBottom:'22px' }}>
+                  Structured lessons you complete on your own schedule —
+                  text, diagrams, and code, with a certificate at the end.
+                </p>
+                <div className="tick-rule" style={{ marginBottom:'18px' }}/>
+                <span className="oa-card-cta" style={{ color:'var(--accent)' }}>
+                  Browse Courses <ArrowRight size={13}/>
+                </span>
+              </div>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -652,6 +730,31 @@ export default function HomePage() {
 
       <style>{`
         .prog-card:hover { transform: translateY(-3px); border-color: var(--border2) !important; }
+
+        /* Open Access cards — restrained top accent bar (2px, exactly
+           the .card-accent-top proportions, just per-card colored),
+           a lift + border-brighten on hover, and the arrow nudging
+           right — same 150-300ms micro-interaction rhythm as the rest
+           of the page, nothing bespoke to this section. */
+        .oa-card-bar {
+          position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        }
+        .oa-card-inner {
+          transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .oa-card:hover .oa-card-inner {
+          transform: translateY(-3px); border-color: var(--border2) !important;
+        }
+        .oa-card-cta {
+          display: inline-flex; align-items: center; gap: 6px;
+          font-size: 13px; font-weight: 600;
+        }
+        .oa-card-cta svg { transition: transform 0.2s ease; }
+        .oa-card:hover .oa-card-cta svg { transform: translateX(3px); }
+
+        @media (max-width: 640px) {
+          .open-access-grid { grid-template-columns: 1fr !important; }
+        }
 
         .feature-item {
           opacity: 0;
