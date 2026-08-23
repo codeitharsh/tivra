@@ -10,6 +10,7 @@ import {
   Upload, Settings2, ShieldCheck, UserCheck,
   BarChart3, Users, Home, TrendingUp, Layers, BookMarked,
   Target, Menu, X, ChevronRight, Gift, FileText, GraduationCap, Lock,
+  Library,
 } from 'lucide-react'
 
 import type { Profile, UserRole } from '@/types/database'
@@ -24,11 +25,17 @@ interface SidebarProps { profile: Profile | null }
 // flat structure as before.
 function buildStudentNav(enrolledPrograms: { name: string; slug: string }[]) {
   const dashboard = { href:'/dashboard', label:'Dashboard', icon:LayoutDashboard }
-  if (enrolledPrograms.length === 0) return [dashboard]
+  // Free Notes is open to every registered student regardless of
+  // enrollment/payment status (see migrations/2026-08-23-free-notes.sql
+  // and middleware.ts STEP 8) — it belongs right alongside Dashboard as
+  // an unconditional entry, not gated behind having enrolled programmes
+  // the way everything else in this function is.
+  const freeNotes  = { href:'/free-notes', label:'Free Notes', icon:Library }
+  if (enrolledPrograms.length === 0) return [dashboard, freeNotes]
   if (enrolledPrograms.length === 1) {
     const p = enrolledPrograms[0]
     return [
-      dashboard,
+      dashboard, freeNotes,
       { href:`/programs/${p.slug}/content`,     label:'Study Content', icon:BookOpen },
       { href:`/programs/${p.slug}/tests`,       label:'Weekly Tests',  icon:ClipboardList },
       { href:`/programs/${p.slug}/assessments`, label:'Assessments',   icon:Target },
@@ -39,7 +46,7 @@ function buildStudentNav(enrolledPrograms: { name: string; slug: string }[]) {
   // name prefixed, since the sidebar has no nested-section UI today.
   // (A future enhancement could group these visually; this is the
   // minimum correct behavior for "don't silently hide programme #2.")
-  const items = [dashboard]
+  const items = [dashboard, freeNotes]
   for (const p of enrolledPrograms) {
     items.push(
       { href:`/programs/${p.slug}/content`,     label:`${p.name} · Content`,     icon:BookOpen },
@@ -71,6 +78,7 @@ const NAV_ADMIN = [
   { href:'/admin',                 label:'Overview',        icon:BarChart3 },
   { href:'/admin/analytics',       label:'Analytics',       icon:TrendingUp },
   { href:'/admin/programs',        label:'Programmes',      icon:BookMarked },
+  { href:'/admin/free-notes',      label:'Free Notes',      icon:Library },
   { href:'/admin/batches',         label:'Batches',         icon:Layers },
   { href:'/admin/students',        label:'All Users',       icon:Users },
   { href:'/admin/enrollments',     label:'Enrollments',     icon:GraduationCap },

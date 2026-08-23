@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Video, FlaskConical, ClipboardList, Award, MessageCircle,
   Target, FileCheck, MessagesSquare,
-  Clock, Plus, ArrowRight,
+  Clock, Plus, ArrowRight, Library,
 } from 'lucide-react'
 import PublicNav from '@/components/PublicNav'
 import ProgrammeStack from '@/components/ProgrammeStack'
@@ -278,6 +278,42 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          FREE NOTES STRIP — a top-of-funnel touchpoint, not
+          another full section: DSA/CN/OOPS/DBMS notes are free
+          for anyone who registers, no enrolment needed. Kept
+          slim and distinct (cyan accent, "Free" badge) so it
+          reads as a genuine value-add, not a paid-programme card.
+      ══════════════════════════════════════════════════ */}
+      <section style={{ borderTop:'1px solid var(--border)', padding:'20px clamp(20px,4vw,48px)' }}>
+        <Link href="/free-notes" style={{ textDecoration:'none', display:'block' }}>
+          <div style={{
+            maxWidth:'1200px', margin:'0 auto', display:'flex', alignItems:'center',
+            justifyContent:'space-between', gap:'16px', flexWrap:'wrap',
+            padding:'16px 20px', borderRadius:'var(--radius)',
+            background:'var(--accent-2-dim)', border:'1px solid rgba(23,174,224,0.2)',
+          }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'14px' }}>
+              <span style={{
+                width:'34px', height:'34px', borderRadius:'var(--radius-sm)', flexShrink:0,
+                background:'var(--card2)', color:'var(--accent-2)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}><Library size={16}/></span>
+              <span style={{ fontSize:'14px', color:'var(--text)' }}>
+                <strong style={{ fontFamily:'var(--font-serif), serif', fontWeight:600 }}>Free Notes</strong>
+                {' — '}DSA, Computer Networks, OOPS, DBMS and more. Free for anyone who registers, no enrolment needed.
+              </span>
+            </div>
+            <span style={{
+              display:'inline-flex', alignItems:'center', gap:'6px', flexShrink:0,
+              fontSize:'13px', fontWeight:600, color:'var(--accent-2)',
+            }}>
+              Browse Free Notes <ArrowRight size={14}/>
+            </span>
+          </div>
+        </Link>
       </section>
 
       {/* ══════════════════════════════════════════════════

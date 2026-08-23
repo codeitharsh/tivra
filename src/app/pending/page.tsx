@@ -9,7 +9,7 @@ import SignOutButton from './SignOutButton'
 import WhatsAppBanner from '@/components/WhatsAppBanner'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 import { PROGRAM_META, DEFAULT_PROGRAM_META } from '@/lib/program-meta'
-import { Clock, XCircle, ArrowRight, Check } from 'lucide-react'
+import { Clock, XCircle, ArrowRight, Check, Library } from 'lucide-react'
 
 import type { Profile, Program } from '@/types/database'
 
@@ -159,6 +159,42 @@ export default async function PendingPage() {
             unlock immediately after payment.
           </p>
         </div>
+
+        {/* Free Notes CTA — the highest-value thing to show a freshly
+            registered, not-yet-paid visitor: something genuinely useful
+            they can use right now, with zero payment required. Placed
+            above the paid-programme grid deliberately. */}
+        <Link href="/free-notes" style={{ textDecoration: 'none', display: 'block', marginBottom: '32px' }}>
+          <div className="card" style={{
+            padding: '22px 26px', display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap',
+            border: '1px solid var(--accent-2-dim)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{
+                width: '38px', height: '38px', borderRadius: 'var(--radius-sm)', flexShrink: 0,
+                background: 'var(--accent-2-dim)', color: 'var(--accent-2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Library size={18}/>
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                  <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', color: 'var(--text)' }}>
+                    Free Notes
+                  </span>
+                  <span className="pill" style={{ background: 'var(--accent-2-dim)', color: 'var(--accent-2)' }}>Free</span>
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                  DSA, Computer Networks, OOPS, DBMS and more — free for every registered user, no enrolment needed.
+                </div>
+              </div>
+            </div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--accent-2)', flexShrink: 0 }}>
+              Browse notes <ArrowRight size={14}/>
+            </span>
+          </div>
+        </Link>
 
         {/* Programme cards — the actual explore experience */}
         <div className="r-grid-2" style={{ marginBottom: '40px' }}>

@@ -8,9 +8,10 @@ import { Menu, X } from 'lucide-react'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
 const LINKS = [
-  { href: '/programs', label: 'Programmes' },
-  { href: '/about',    label: 'About' },
-  { href: '/contact',  label: 'Contact' },
+  { href: '/programs',   label: 'Programmes' },
+  { href: '/free-notes', label: 'Free Notes' },
+  { href: '/about',      label: 'About' },
+  { href: '/contact',    label: 'Contact' },
 ]
 
 export default function PublicNav() {
