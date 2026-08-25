@@ -28,6 +28,16 @@ function adminSB() {
   )
 }
 
+// `Number(x) || 600` looked like a reasonable "default if missing"
+// fallback but silently clobbers a legitimate 0 — 0 is falsy in JS, so
+// setting a referral's discount to ₹0 always got coerced back to 600 on
+// both create and update. Only fall back to 600 when the value is truly
+// missing/non-numeric, not just falsy.
+function parseDiscountAmount(input: unknown): number {
+  const n = Number(input)
+  return Number.isFinite(n) ? n : 600
+}
+
 // ── Auth guards ──────────────────────────────────────────────
 async function getCallerRole(): Promise<{ id: string; role: string } | null> {
   const cookieStore = await cookies()
@@ -306,7 +316,7 @@ export async function POST(req: Request): Promise<Response> {
         faculty_name:    body.faculty_name as string,
         faculty_email:   (body.faculty_email as string) || null,
         referral_code:   code,
-        discount_amount: Number(body.discount_amount) || 600,
+        discount_amount: parseDiscountAmount(body.discount_amount),
         is_active:       true,
         created_by:      caller.id,
       })
@@ -327,7 +337,7 @@ export async function POST(req: Request): Promise<Response> {
         faculty_name:    body.faculty_name as string,
         faculty_email:   (body.faculty_email as string) || null,
         referral_code:   code,
-        discount_amount: Number(body.discount_amount) || 600,
+        discount_amount: parseDiscountAmount(body.discount_amount),
       }).eq('id', id)
       if (error) return Response.json({ error: error.message.includes('unique') ? 'This referral code already exists.' : error.message }, { status: 400 })
       return Response.json({ success: true })
