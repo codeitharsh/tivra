@@ -160,14 +160,16 @@ export async function middleware(request: NextRequest) {
 
   // ── STEP 8: PENDING PAYMENT ────────────────────────────────
   // Student hasn't paid → they can only access /pending, /payment,
-  // /profile, /free-notes, and /courses (self-paced courses are open to
-  // any registered user regardless of payment status, same precedent as
+  // /profile, /free-notes, /courses, and /certificates (self-paced
+  // courses — and any certificate earned from one — are open to any
+  // registered user regardless of payment status, same precedent as
   // Free Notes — see migrations/2026-08-24-self-paced-courses.sql).
   // Every other route is blocked.
   if (status === 'pending_payment') {
     if (
       pathname.startsWith('/profile') || pathname.startsWith('/payment') ||
-      pathname.startsWith('/free-notes') || pathname.startsWith('/courses')
+      pathname.startsWith('/free-notes') || pathname.startsWith('/courses') ||
+      pathname.startsWith('/certificates')
     ) return response
     return NextResponse.redirect(new URL('/pending', request.url))
   }

@@ -35,28 +35,36 @@ function buildStudentNav(enrolledPrograms: { name: string; slug: string }[]) {
   // Notes (see migrations/2026-08-24-self-paced-courses.sql and
   // middleware.ts STEP 8) — unconditional for the same reason.
   const courses    = { href:'/courses', label:'Courses', icon:GraduationCap }
-  if (enrolledPrograms.length === 0) return [dashboard, freeNotes, courses]
+  // One hub for every certificate a student has earned — phase
+  // certificates, programme completions, AND self-paced course
+  // completions. Previously "Certificate" was a per-programme link
+  // buried inside each programme's block, which meant a self-paced
+  // course certificate (earned regardless of paid-programme enrollment)
+  // had no discoverable home at all. Unconditional for the same reason
+  // as Free Notes/Courses; the per-programme links below are gone in
+  // favor of this single entry, since the hub already shows everything
+  // those did.
+  const certificates = { href:'/certificates', label:'Certificates', icon:Award }
+  if (enrolledPrograms.length === 0) return [dashboard, freeNotes, courses, certificates]
   if (enrolledPrograms.length === 1) {
     const p = enrolledPrograms[0]
     return [
-      dashboard, freeNotes, courses,
+      dashboard, freeNotes, courses, certificates,
       { href:`/programs/${p.slug}/content`,     label:'Study Content', icon:BookOpen },
       { href:`/programs/${p.slug}/tests`,       label:'Weekly Tests',  icon:ClipboardList },
       { href:`/programs/${p.slug}/assessments`, label:'Assessments',   icon:Target },
-      { href:`/programs/${p.slug}/certificate`, label:'Certificate',   icon:Award },
     ]
   }
   // Multiple programmes — flatten into one list with the programme
   // name prefixed, since the sidebar has no nested-section UI today.
   // (A future enhancement could group these visually; this is the
   // minimum correct behavior for "don't silently hide programme #2.")
-  const items = [dashboard, freeNotes, courses]
+  const items = [dashboard, freeNotes, courses, certificates]
   for (const p of enrolledPrograms) {
     items.push(
       { href:`/programs/${p.slug}/content`,     label:`${p.name} · Content`,     icon:BookOpen },
       { href:`/programs/${p.slug}/tests`,       label:`${p.name} · Tests`,       icon:ClipboardList },
       { href:`/programs/${p.slug}/assessments`, label:`${p.name} · Assessments`, icon:Target },
-      { href:`/programs/${p.slug}/certificate`, label:`${p.name} · Certificate`, icon:Award },
     )
   }
   return items
