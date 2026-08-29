@@ -10,7 +10,7 @@ import type { CourseBlock, CourseBlockType } from '@/types/course'
 import { BLOCK_TYPE_LABELS, newBlock } from '@/types/course'
 import LessonBlockRenderer from '@/components/course/LessonBlockRenderer'
 
-const BLOCK_TYPES: CourseBlockType[] = ['heading', 'paragraph', 'image', 'code', 'table', 'callout', 'list', 'divider']
+const BLOCK_TYPES: CourseBlockType[] = ['heading', 'paragraph', 'image', 'code', 'table', 'callout', 'list', 'divider', 'quiz', 'toggle', 'tabs']
 
 export default function LessonBlockEditorClient({
   courseId, lessonId, initialContent,
@@ -257,6 +257,84 @@ export default function LessonBlockEditorClient({
 
               {block.type === 'divider' && (
                 <div style={{ fontSize: '12px', color: 'var(--muted)' }}>A horizontal divider line.</div>
+              )}
+
+              {block.type === 'quiz' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <textarea className="form-input" rows={2} placeholder="Question…" style={{ fontSize: '13px', resize: 'vertical' }}
+                    value={block.question} onChange={e => updateBlock(block.id, { question: e.target.value })}/>
+                  {block.options.map((opt, oi) => (
+                    <div key={oi} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', flexShrink: 0, cursor: 'pointer' }}>
+                        <input type="radio" checked={block.correct_index === oi}
+                          onChange={() => updateBlock(block.id, { correct_index: oi })}/>
+                      </label>
+                      <input className="form-input" style={{ flex: 1, fontSize: '12px' }} placeholder={`Option ${oi + 1}`}
+                        value={opt} onChange={e => {
+                          const options = [...block.options]; options[oi] = e.target.value
+                          updateBlock(block.id, { options })
+                        }}/>
+                      <button className="btn btn-ghost" style={{ padding: '4px 8px' }}
+                        onClick={() => updateBlock(block.id, {
+                          options: block.options.filter((_, x) => x !== oi),
+                          correct_index: block.correct_index >= oi && block.correct_index > 0 ? block.correct_index - 1 : block.correct_index,
+                        })}>
+                        <X size={11}/>
+                      </button>
+                    </div>
+                  ))}
+                  <button className="btn btn-ghost" style={{ fontSize: '11px', alignSelf: 'flex-start' }}
+                    onClick={() => updateBlock(block.id, { options: [...block.options, ''] })}>
+                    <Plus size={11}/> Add option
+                  </button>
+                  <span style={{ fontSize: '11px', color: 'var(--muted2)' }}>Select the radio next to the correct option.</span>
+                  <textarea className="form-input" rows={2} placeholder="Explanation shown after answering…" style={{ fontSize: '12px', resize: 'vertical' }}
+                    value={block.explanation} onChange={e => updateBlock(block.id, { explanation: e.target.value })}/>
+                </div>
+              )}
+
+              {block.type === 'toggle' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input className="form-input" placeholder="Trigger label (e.g. Try it yourself)" style={{ fontSize: '12px' }}
+                    value={block.label} onChange={e => updateBlock(block.id, { label: e.target.value })}/>
+                  <textarea className="form-input" rows={3} placeholder="Revealed text — supports **bold**, *italic*, `code`, [text](url)"
+                    style={{ fontSize: '13px', resize: 'vertical' }}
+                    value={block.text} onChange={e => updateBlock(block.id, { text: e.target.value })}/>
+                </div>
+              )}
+
+              {block.type === 'tabs' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {block.tabs.map((tab, ti) => (
+                    <div key={ti} style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px', background: 'var(--bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <input className="form-input" placeholder="Tab label (e.g. macOS)" style={{ flex: 1, fontSize: '12px' }}
+                          value={tab.label} onChange={e => {
+                            const tabs = block.tabs.map(x => ({ ...x })); tabs[ti].label = e.target.value
+                            updateBlock(block.id, { tabs })
+                          }}/>
+                        <input className="form-input" placeholder="Language" style={{ width: '110px', fontSize: '12px' }}
+                          value={tab.language} onChange={e => {
+                            const tabs = block.tabs.map(x => ({ ...x })); tabs[ti].language = e.target.value
+                            updateBlock(block.id, { tabs })
+                          }}/>
+                        <button className="btn btn-ghost" style={{ padding: '4px 8px' }}
+                          onClick={() => updateBlock(block.id, { tabs: block.tabs.filter((_, x) => x !== ti) })}>
+                          <X size={11}/>
+                        </button>
+                      </div>
+                      <textarea className="form-input" rows={3} placeholder="Code…" style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', resize: 'vertical' }}
+                        value={tab.code} onChange={e => {
+                          const tabs = block.tabs.map(x => ({ ...x })); tabs[ti].code = e.target.value
+                          updateBlock(block.id, { tabs })
+                        }}/>
+                    </div>
+                  ))}
+                  <button className="btn btn-ghost" style={{ fontSize: '11px', alignSelf: 'flex-start' }}
+                    onClick={() => updateBlock(block.id, { tabs: [...block.tabs, { label: `Tab ${block.tabs.length + 1}`, language: 'bash', code: '' }] })}>
+                    <Plus size={11}/> Add tab
+                  </button>
+                </div>
               )}
             </div>
           ))}

@@ -1,10 +1,17 @@
 import type { CourseBlock } from '@/types/course'
 import { renderInlineSafe } from '@/lib/safe-richtext'
+import CodeBlock from './blocks/CodeBlock'
+import QuizBlock from './blocks/QuizBlock'
+import ToggleBlock from './blocks/ToggleBlock'
+import TabsBlock from './blocks/TabsBlock'
 
-// Pure server component — static content, no client JS needed, keeps
-// the edge runtime happy. Used both on the student lesson-reader page
-// and the admin block editor's live-preview pane, so there is exactly
-// one rendering code path to keep in sync with the block schema.
+// This component itself stays a plain server-renderable function — most
+// block types are static markup, no client JS needed. quiz/toggle/tabs/
+// code are the interactive exceptions and delegate to their own 'use
+// client' components; composing a client component inside a server one
+// is the standard Next.js pattern, and since this same function is also
+// imported directly into the admin editor's (already-client) preview
+// pane, both call sites keep rendering through one shared code path.
 
 const CALLOUT_STYLES: Record<string, { bg: string; border: string; color: string }> = {
   info:    { bg: 'var(--accent-2-dim)', border: 'rgba(0,212,255,0.25)', color: 'var(--accent-2)' },
@@ -61,25 +68,16 @@ export default function LessonBlockRenderer({ blocks }: { blocks: CourseBlock[] 
               </figure>
             )
           case 'code':
+            return <CodeBlock key={block.id} language={block.language} code={block.code}/>
+          case 'quiz':
             return (
-              <div key={block.id} style={{ margin: '16px 0' }}>
-                {block.language && (
-                  <div style={{
-                    fontSize: '11px', color: 'var(--muted2)', fontFamily: 'var(--font-mono)',
-                    padding: '6px 14px', background: 'var(--card2)', border: '1px solid var(--border)',
-                    borderBottom: 'none', borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
-                    textTransform: 'uppercase', letterSpacing: '0.05em',
-                  }}>{block.language}</div>
-                )}
-                <pre style={{
-                  margin: 0, padding: '16px', background: 'var(--bg)', border: '1px solid var(--border)',
-                  borderRadius: block.language ? '0 0 var(--radius-sm) var(--radius-sm)' : 'var(--radius-sm)',
-                  overflowX: 'auto', fontSize: '13px', fontFamily: 'var(--font-mono)', lineHeight: 1.6,
-                }}>
-                  <code>{block.code}</code>
-                </pre>
-              </div>
+              <QuizBlock key={block.id} question={block.question} options={block.options}
+                correct_index={block.correct_index} explanation={block.explanation}/>
             )
+          case 'toggle':
+            return <ToggleBlock key={block.id} label={block.label} text={block.text}/>
+          case 'tabs':
+            return <TabsBlock key={block.id} tabs={block.tabs}/>
           case 'table':
             return (
               <div key={block.id} style={{ margin: '16px 0', overflowX: 'auto' }}>
