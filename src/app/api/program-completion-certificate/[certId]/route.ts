@@ -2,6 +2,7 @@ export const runtime = 'edge'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createSB } from '@supabase/supabase-js'
+import { CERTIFICATE_LOGO_DATA_URI } from '@/lib/certificate-mark'
 
 function adminSB() {
   return createSB(
@@ -107,10 +108,7 @@ export async function GET(
   <rect x="1116" y="822" width="60" height="4" fill="url(#accentGrad)"/>
   <rect x="1172" y="762" width="4" height="64" fill="url(#accentGrad)"/>
 
-  <g transform="translate(544, 60)" filter="url(#glow)">
-    <polygon points="56,0 112,0 112,16 68,16 68,64 44,64 44,16 0,16 0,0" fill="url(#accentGrad)" opacity="0.9"/>
-    <polygon points="44,16 68,16 68,40 44,40" fill="#7c3aed" opacity="0.7"/>
-  </g>
+  <image href="${CERTIFICATE_LOGO_DATA_URI}" xlink:href="${CERTIFICATE_LOGO_DATA_URI}" x="552" y="60" width="96" height="96" filter="url(#glow)"/>
 
   <text x="600" y="160" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900"
     font-size="28" letter-spacing="14" fill="none" stroke="url(#accentGrad)" stroke-width="0.5">TIVRA</text>

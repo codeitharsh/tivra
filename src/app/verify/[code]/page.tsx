@@ -12,7 +12,19 @@ const PLAN_LABELS: Record<string, string> = {
 }
 
 export default async function VerifyPage({ params }: { params: Promise<{ code: string }> }) {
-  const { code } = await params
+  const { code: rawCode } = await params
+  // The certificate SVGs display their verification code UPPERCASED for
+  // legibility (and print "tivra.in/verify/<CODE>" in that same case
+  // directly on the certificate image) — but the value is stored exactly
+  // as generated, which for program_completions/course_completions is
+  // lowercase hex (substr(replace(gen_random_uuid()::text,'-',''),1,12))
+  // in a plain `text` column, compared case-sensitively. Without this
+  // normalization, anyone who typed the exact URL printed on their own
+  // certificate got "not found." (certificates.verification_code is a
+  // native `uuid` column, which Postgres already compares
+  // case-insensitively, so this is a no-op fix for that table and the
+  // real fix for the other two.)
+  const code = rawCode.toLowerCase()
   const admin = createSB(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
