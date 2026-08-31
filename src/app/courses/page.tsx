@@ -80,7 +80,7 @@ export default async function CoursesPage() {
                 <div className="card" style={{ padding: '22px', height: '100%', display: 'flex', flexDirection: 'column' }}>
                   {c.cover_image_path && (
                     <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: '14px' }}>
-                      <Image src={courseAssetUrl(c.cover_image_path)} alt={c.title} fill style={{ objectFit: 'cover' }}/>
+                      <Image src={courseAssetUrl(c.cover_image_path)} alt={c.title} fill style={{ objectFit: 'cover', objectPosition: 'top' }}/>
                     </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>

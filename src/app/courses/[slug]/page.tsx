@@ -113,7 +113,7 @@ export default async function CourseLandingPage({
       <div className="card" style={{ padding: '28px', marginBottom: '20px' }}>
         {course.cover_image_path && (
           <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: '20px' }}>
-            <Image src={courseAssetUrl(course.cover_image_path)} alt={course.title} fill priority style={{ objectFit: 'cover' }}/>
+            <Image src={courseAssetUrl(course.cover_image_path)} alt={course.title} fill priority style={{ objectFit: 'cover', objectPosition: 'top' }}/>
           </div>
         )}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
