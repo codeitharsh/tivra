@@ -1,12 +1,14 @@
 export const runtime = 'edge'
 
 import { notFound } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import PublicNav from '@/components/PublicNav'
 import { getCourseProgress } from '@/lib/course-progress'
+import { courseAssetUrl } from '@/lib/course-assets'
 import type { Profile } from '@/types/database'
 import { Clock, Layers, BookOpen, Award, CheckCircle2, ChevronRight, ArrowRight } from 'lucide-react'
 
@@ -36,7 +38,7 @@ export default async function CourseLandingPage({
   const admin = createAdminClient()
   const { data: courseRow } = await admin
     .from('courses')
-    .select('id, slug, title, description, difficulty, estimated_duration_minutes, skills, learning_outcomes, is_certificate_enabled')
+    .select('id, slug, title, description, difficulty, estimated_duration_minutes, skills, learning_outcomes, is_certificate_enabled, cover_image_path')
     .eq('slug', slug)
     .eq('status', 'published')
     .maybeSingle()
@@ -46,6 +48,7 @@ export default async function CourseLandingPage({
     id: string; slug: string; title: string; description: string | null
     difficulty: string; estimated_duration_minutes: number | null
     skills: string[]; learning_outcomes: string[]; is_certificate_enabled: boolean
+    cover_image_path: string | null
   }
 
   const { data: modulesRaw } = await admin
@@ -108,6 +111,11 @@ export default async function CourseLandingPage({
       </div>
 
       <div className="card" style={{ padding: '28px', marginBottom: '20px' }}>
+        {course.cover_image_path && (
+          <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: '20px' }}>
+            <Image src={courseAssetUrl(course.cover_image_path)} alt={course.title} fill priority style={{ objectFit: 'cover' }}/>
+          </div>
+        )}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
           <span className="pill" style={{ background: diff.bg, color: diff.color }}>{diff.label}</span>
           {course.estimated_duration_minutes && (

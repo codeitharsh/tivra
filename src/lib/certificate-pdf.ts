@@ -209,9 +209,8 @@ export async function generateCertificatePdf(opts: CertificatePdfOptions): Promi
   const headlineSize = opts.headline.length > 30 ? s(22) : s(30)
   drawGradientText(page, opts.headline, fontBold, headlineSize, y(510), 1, s(1))
 
-  let svgCursor = 572
   if (opts.tailLine) {
-    drawCentered(page, opts.tailLine, fontRegular, s(16), y(svgCursor), WHITE, 0.5, s(1))
+    drawCentered(page, opts.tailLine, fontRegular, s(16), y(572), WHITE, 0.5, s(1))
   }
 
   if (opts.badgeText) {

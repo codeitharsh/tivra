@@ -1,16 +1,19 @@
 export const runtime = 'edge'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import PublicNav from '@/components/PublicNav'
+import { courseAssetUrl } from '@/lib/course-assets'
 import type { Profile } from '@/types/database'
 import { GraduationCap, Clock, ArrowRight, BarChart3 } from 'lucide-react'
 
 interface CourseRow {
   id: string; slug: string; title: string; description: string | null
   difficulty: string; estimated_duration_minutes: number | null; skills: string[]
+  cover_image_path: string | null
 }
 
 const DIFFICULTY_META: Record<string, { label: string; color: string; bg: string }> = {
@@ -36,7 +39,7 @@ export default async function CoursesPage() {
   const admin = createAdminClient()
   const { data: coursesRaw } = await admin
     .from('courses')
-    .select('id, slug, title, description, difficulty, estimated_duration_minutes, skills')
+    .select('id, slug, title, description, difficulty, estimated_duration_minutes, skills, cover_image_path')
     .eq('status', 'published')
     .order('display_order')
 
@@ -75,6 +78,11 @@ export default async function CoursesPage() {
             return (
               <Link key={c.id} href={`/courses/${c.slug}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
                 <div className="card" style={{ padding: '22px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  {c.cover_image_path && (
+                    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: '14px' }}>
+                      <Image src={courseAssetUrl(c.cover_image_path)} alt={c.title} fill style={{ objectFit: 'cover' }}/>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
                     <div style={{
                       width: '32px', height: '32px', borderRadius: 'var(--radius-sm)', flexShrink: 0,
