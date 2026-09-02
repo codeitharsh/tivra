@@ -3,9 +3,10 @@
 import { useState, useTransition } from 'react'
 import { createClient as createSBClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
   Plus, Trash2, Loader2, Lock, Unlock,
-  ChevronDown, ChevronUp, CircleDot, AlertTriangle, Check, Lightbulb,
+  ChevronDown, ChevronUp, CircleDot, AlertTriangle, Check, Lightbulb, BarChart3,
 } from 'lucide-react'
 
 interface Phase {
@@ -259,6 +260,13 @@ export default function TeacherAssessmentsClient({
                   </span>
 
                   <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
+                    <Link
+                      href={`/teacher/assessments/${aId}/scores`}
+                      className="btn btn-ghost"
+                      style={{ fontSize: '11px', padding: '5px 10px' }}
+                      title="View student scores">
+                      <BarChart3 size={11}/> Scores
+                    </Link>
                     <button
                       className={assessment.is_manually_unlocked ? 'btn btn-danger' : 'btn btn-success'}
                       onClick={() => toggleUnlock(aId!, assessment.is_manually_unlocked as boolean)}

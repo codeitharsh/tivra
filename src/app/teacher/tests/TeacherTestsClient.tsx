@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
   Plus, Trash2, Loader2, Lock, Unlock,
   ChevronDown, ChevronUp, X, Check, CircleDot, Clock3, Pencil,
-  AlertTriangle, Lightbulb, Info, ClipboardList, Globe,
+  AlertTriangle, Lightbulb, Info, ClipboardList, Globe, BarChart3,
 } from 'lucide-react'
 import { createClient as createSBClient } from '@supabase/supabase-js'
 
@@ -341,6 +342,13 @@ export default function TeacherTestsClient({ phases, tests, programId, batches }
           })()}
 
           <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
+            <Link
+              href={`/teacher/tests/${tid}/scores`}
+              className="btn btn-ghost"
+              style={{ fontSize: '11px', padding: '5px 10px' }}
+              title="View student scores">
+              <BarChart3 size={11}/> Scores
+            </Link>
             <button
               className={t.is_manually_unlocked ? 'btn btn-danger' : 'btn btn-success'}
               onClick={() => toggleUnlock(tid, t.is_manually_unlocked as boolean)}
