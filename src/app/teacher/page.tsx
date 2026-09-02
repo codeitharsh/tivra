@@ -26,22 +26,28 @@ export default async function TeacherHomePage() {
   const [
     { count: totalStudents },
     { count: openDoubts },
-    { data: myModulesRaw },
+    { data: allModulesRaw },
     { data: upcomingSessions },
   ] = await Promise.all([
     admin.from('profiles').select('*',{count:'exact',head:true})
       .eq('role','student').eq('access_status','active'),
     admin.from('doubts').select('*',{count:'exact',head:true}).eq('is_resolved',false),
-    // Modules assigned to this teacher
+    // All modules across every programme — there is no real per-teacher
+    // module-assignment feature anywhere in the app (assigned_teacher_id
+    // is never written by any admin UI or API route), so scoping this to
+    // .eq('assigned_teacher_id', user.id) made this permanently empty for
+    // every teacher: "Notes uploaded" always showed 0/0 regardless of how
+    // many notes actually existed, since real uploads (teacher/content)
+    // don't use or require that column at all.
     admin.from('modules').select('id, title, module_number, notes_url, is_unlocked, phases!phase_id(title, phase_number)')
-      .eq('assigned_teacher_id', user.id).order('module_number'),
+      .order('phase_id').order('module_number'),
     admin.from('live_sessions').select('id, title, scheduled_at, is_live, batch_id, batches!batch_id(name)')
       .eq('is_completed', false).order('scheduled_at').limit(3),
   ])
 
-  const myModules = (myModulesRaw   ?? []) as Record<string, unknown>[]
-  const sessions  = (upcomingSessions ?? []) as Record<string, unknown>[]
-  const notesUploaded = myModules.filter(m => m.notes_url).length
+  const allModules = (allModulesRaw   ?? []) as Record<string, unknown>[]
+  const sessions    = (upcomingSessions ?? []) as Record<string, unknown>[]
+  const notesUploaded = allModules.filter(m => m.notes_url).length
 
   // Recent unanswered doubts
   const { data: doubtsRaw } = await admin
@@ -66,8 +72,8 @@ export default async function TeacherHomePage() {
           <div className="r-grid-4" style={{ marginBottom:'28px' }}>
             {[
               { Icon:Users,    label:'Active students', value: totalStudents ?? 0, color:'var(--accent-2)' },
-              { Icon:FileText, label:'My modules',      value: myModules.length,   color:'var(--accent)'  },
-              { Icon:Upload,   label:'Notes uploaded',  value: `${notesUploaded}/${myModules.length}`, color:'var(--green)' },
+              { Icon:FileText, label:'Total modules',   value: allModules.length,  color:'var(--accent)'  },
+              { Icon:Upload,   label:'Notes uploaded',  value: `${notesUploaded}/${allModules.length}`, color:'var(--green)' },
               { Icon:MessageCircle, label:'Open doubts', value: openDoubts ?? 0,    color:'var(--amber)' },
             ].map(s => (
               <div key={s.label} className="stat-card">
@@ -86,20 +92,19 @@ export default async function TeacherHomePage() {
             <div className="card" style={{ padding:'20px' }}>
               <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px',
                 marginBottom:'14px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <span>My assigned modules</span>
+                <span>Course modules</span>
                 <Link href="/teacher/content" style={{ fontSize:'12px', color:'var(--accent-2)', textDecoration:'none', fontFamily:'var(--font-mono)' }}>
                   UPLOAD NOTES →
                 </Link>
               </div>
-              {myModules.length === 0 ? (
+              {allModules.length === 0 ? (
                 <div style={{ textAlign:'center', padding:'24px', color:'var(--muted)', fontSize:'13px' }}>
                   <BookOpen size={26} color="var(--muted2)" style={{ marginBottom:'8px' }}/>
-                  <div>No modules assigned yet.</div>
-                  <div>Ask your admin to assign modules to you.</div>
+                  <div>No modules found.</div>
                 </div>
               ) : (
                 <div style={{ display:'flex', flexDirection:'column', gap:'6px', maxHeight:'280px', overflowY:'auto' }}>
-                  {myModules.map(m => {
+                  {allModules.map(m => {
                     const ph = m.phases as Record<string,unknown>|null
                     return (
                       <div key={m.id as string} style={{
