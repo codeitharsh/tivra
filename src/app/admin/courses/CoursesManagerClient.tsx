@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  Loader2, Plus, X, Check, Trash2, ChevronDown, ChevronUp, Layers, ArrowRight,
+  Loader2, Plus, X, Check, Trash2, ChevronDown, ChevronUp, Layers, ArrowRight, Users,
 } from 'lucide-react'
 
 interface Course {
@@ -216,9 +216,14 @@ export default function CoursesManagerClient({
                   </label>
                 </div>
 
-                <Link href={`/admin/courses/${c.id}`} className="btn btn-primary" style={{ fontSize: '13px', alignSelf: 'flex-start' }}>
-                  <Layers size={13}/> Manage modules & lessons <ArrowRight size={13}/>
-                </Link>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <Link href={`/admin/courses/${c.id}`} className="btn btn-primary" style={{ fontSize: '13px' }}>
+                    <Layers size={13}/> Manage modules & lessons <ArrowRight size={13}/>
+                  </Link>
+                  <Link href={`/admin/courses/${c.id}/learners`} className="btn btn-ghost" style={{ fontSize: '13px' }}>
+                    <Users size={13}/> View learners
+                  </Link>
+                </div>
               </div>
             )}
           </div>

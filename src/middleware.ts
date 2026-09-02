@@ -138,6 +138,12 @@ export async function middleware(request: NextRequest) {
 
   // ── STEP 4: Admin routes ───────────────────────────────────
   if (matches(pathname, ADMIN_ROUTES)) {
+    // Course management is available to teachers too — every page under
+    // /admin/courses already gates on ['admin','teacher'] itself, but
+    // without this carve-out this blanket admin-only check redirects a
+    // teacher away before any of those pages ever run.
+    if (matches(pathname, ['/admin/courses']) && ['admin', 'teacher'].includes(role))
+      return response
     if (role !== 'admin')
       return NextResponse.redirect(new URL('/dashboard', request.url))
     return response
