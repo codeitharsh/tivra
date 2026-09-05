@@ -9,7 +9,7 @@ import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
 const LINKS = [
   { href: '/programs',   label: 'Programmes' },
-  { href: '/free-notes', label: 'Free Notes' },
+  { href: '/free-notes', label: 'Handwritten Notes' },
   { href: '/courses',    label: 'Courses' },
   { href: '/about',      label: 'About' },
   { href: '/contact',    label: 'Contact' },

@@ -24,9 +24,14 @@ export default async function AdminFreeNotesPage() {
     .select('id, name, slug, description, is_active, display_order')
     .order('display_order')
 
+  const { data: unitsRaw } = await admin
+    .from('units')
+    .select('id, subject_id, title, unit_number')
+    .order('unit_number')
+
   const { data: notesRaw } = await admin
     .from('free_notes')
-    .select('id, subject_id, title, note_number, notes_url')
+    .select('id, unit_id, title, note_number, notes_url')
     .order('note_number')
 
   const subjects = (subjectsRaw ?? []) as {
@@ -34,8 +39,12 @@ export default async function AdminFreeNotesPage() {
     is_active: boolean; display_order: number
   }[]
 
+  const units = (unitsRaw ?? []) as {
+    id: string; subject_id: string; title: string; unit_number: number
+  }[]
+
   const notes = (notesRaw ?? []) as {
-    id: string; subject_id: string; title: string; note_number: number; notes_url: string | null
+    id: string; unit_id: string; title: string; note_number: number; notes_url: string | null
   }[]
 
   return (
@@ -43,11 +52,11 @@ export default async function AdminFreeNotesPage() {
       <Sidebar profile={profile}/>
       <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
         <Topbar
-          title="Free Notes"
-          subtitle="Manage the self-study library — subjects and notes, open to every registered user"
+          title="Handwritten Notes"
+          subtitle="Manage the self-study library — subjects, units, and topics, open to every registered user"
         />
         <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
-          <FreeNotesManagerClient subjects={subjects} notes={notes}/>
+          <FreeNotesManagerClient subjects={subjects} units={units} notes={notes}/>
         </div>
       </main>
     </div>

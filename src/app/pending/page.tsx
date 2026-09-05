@@ -181,7 +181,7 @@ export default async function PendingPage() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
                   <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', color: 'var(--text)' }}>
-                    Free Notes
+                    Handwritten Notes
                   </span>
                   <span className="pill" style={{ background: 'var(--accent-2-dim)', color: 'var(--accent-2)' }}>Free</span>
                 </div>

@@ -30,7 +30,7 @@ function buildStudentNav(enrolledPrograms: { name: string; slug: string }[]) {
   // and middleware.ts STEP 8) — it belongs right alongside Dashboard as
   // an unconditional entry, not gated behind having enrolled programmes
   // the way everything else in this function is.
-  const freeNotes  = { href:'/free-notes', label:'Free Notes', icon:Library }
+  const freeNotes  = { href:'/free-notes', label:'Handwritten Notes', icon:Library }
   // Self-paced courses are the same "open to everyone" precedent as Free
   // Notes (see migrations/2026-08-24-self-paced-courses.sql and
   // middleware.ts STEP 8) — unconditional for the same reason.
@@ -94,7 +94,7 @@ const NAV_ADMIN = [
   { href:'/admin',                 label:'Overview',        icon:BarChart3 },
   { href:'/admin/analytics',       label:'Analytics',       icon:TrendingUp },
   { href:'/admin/programs',        label:'Programmes',      icon:BookMarked },
-  { href:'/admin/free-notes',      label:'Free Notes',      icon:Library },
+  { href:'/admin/free-notes',      label:'Handwritten Notes', icon:Library },
   { href:'/admin/courses',         label:'Courses',         icon:BookOpen },
   { href:'/admin/batches',         label:'Batches',         icon:Layers },
   { href:'/admin/students',        label:'All Users',       icon:Users },

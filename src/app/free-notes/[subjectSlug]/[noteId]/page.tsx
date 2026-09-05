@@ -1,13 +1,15 @@
 export const runtime = 'edge'
 
 import { redirect, notFound } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import TopicReaderClient from '@/components/free-notes/TopicReaderClient'
+import { getSubjectProgress } from '@/lib/free-notes-progress'
 import type { Profile } from '@/types/database'
-import { FileText, Download, ChevronRight } from 'lucide-react'
+
+interface UnitRow { id: string; title: string; unit_number: number }
+interface NoteRow { id: string; unit_id: string; title: string; note_number: number; notes_url: string | null }
 
 export default async function FreeNoteViewerPage({
   params,
@@ -15,6 +17,10 @@ export default async function FreeNoteViewerPage({
   params: Promise<{ subjectSlug: string; noteId: string }>
 }) {
   const { subjectSlug, noteId } = await params
+
+  // Unlike browsing the syllabus, actually opening a topic's PDF still
+  // requires login (middleware.ts STEP 1d only carves out the 2-segment
+  // /free-notes and /free-notes/{subjectSlug} paths).
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -34,19 +40,36 @@ export default async function FreeNoteViewerPage({
   if (!subjectRow) notFound()
   const subject = subjectRow as { id: string; name: string; slug: string }
 
-  const { data: noteRow } = await admin
+  const { data: unitsRaw } = await admin
+    .from('units')
+    .select('id, title, unit_number')
+    .eq('subject_id', subject.id)
+    .order('unit_number')
+  const units = (unitsRaw ?? []) as UnitRow[]
+  const unitIds = units.map(u => u.id)
+
+  const { data: notesRaw } = unitIds.length > 0 ? await admin
     .from('free_notes')
-    .select('id, title, note_number, notes_url, subject_id')
-    .eq('id', noteId)
-    .maybeSingle()
+    .select('id, unit_id, title, note_number, notes_url')
+    .in('unit_id', unitIds)
+    .order('note_number') : { data: [] }
+  const allNotes = (notesRaw ?? []) as NoteRow[]
 
-  if (!noteRow) notFound()
-  const note = noteRow as { id: string; title: string; note_number: number; notes_url: string | null; subject_id: string }
+  const note = allNotes.find(n => n.id === noteId)
+  if (!note) notFound()
 
-  // Cross-check: this note must actually belong to the subject resolved
-  // from the URL slug — same reasoning as the paid content viewer's
-  // module/programme cross-check.
-  if (note.subject_id !== subject.id) notFound()
+  const currentUnit = units.find(u => u.id === note.unit_id)
+  if (!currentUnit) notFound()
+
+  // Flattened unit -> topic order, used for both the sidebar TOC and
+  // prev/next navigation — a topic's neighbor can be the last topic of
+  // the previous unit or the first topic of the next one.
+  const flatOrder = units.flatMap(u => allNotes.filter(n => n.unit_id === u.id))
+  const currentIndex = flatOrder.findIndex(n => n.id === noteId)
+  const prevNoteId = currentIndex > 0 ? flatOrder[currentIndex - 1].id : null
+  const nextNoteId = currentIndex < flatOrder.length - 1 ? flatOrder[currentIndex + 1].id : null
+
+  const progress = await getSubjectProgress(admin, user.id, subject.id)
 
   let signedUrl: string | null = null
   if (note.notes_url) {
@@ -56,67 +79,33 @@ export default async function FreeNoteViewerPage({
     signedUrl = urlData?.signedUrl ?? null
   }
 
+  const tocUnits = units.map(u => ({
+    id: u.id,
+    title: u.title,
+    unitNumber: u.unit_number,
+    topics: allNotes
+      .filter(n => n.unit_id === u.id)
+      .map(n => ({ id: n.id, title: n.title, noteNumber: n.note_number })),
+  }))
+
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title={note.title} subtitle={subject.name}/>
-        <div style={{ padding:'28px', maxWidth:'900px' }}>
-
-          <div style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'12px', color:'var(--muted)', marginBottom:'20px' }}>
-            <Link href="/free-notes" style={{ color:'var(--muted)', textDecoration:'none' }}>Free Notes</Link>
-            <ChevronRight size={13}/>
-            <Link href={`/free-notes/${subject.slug}`} style={{ color:'var(--muted)', textDecoration:'none' }}>{subject.name}</Link>
-            <ChevronRight size={13}/>
-            <span style={{ color:'var(--text)' }}>{note.title}</span>
-          </div>
-
-          {signedUrl ? (
-            <div className="card" style={{ marginBottom: '20px', padding: '0', overflow: 'hidden' }}>
-              <div style={{
-                padding: '16px 20px', borderBottom: '1px solid var(--border)',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px', display:'flex', alignItems:'center', gap:'8px' }}>
-                  <FileText size={15}/> {note.title}
-                </div>
-                <a
-                  href={signedUrl}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn-ghost"
-                  style={{ fontSize: '12px', padding: '6px 14px' }}
-                >
-                  <Download size={13}/> Download PDF
-                </a>
-              </div>
-              <iframe
-                src={signedUrl}
-                style={{ width: '100%', height: '600px', border: 'none', display: 'block' }}
-                title={note.title}
-              />
-            </div>
-          ) : (
-            <div className="card" style={{
-              marginBottom: '20px', textAlign: 'center', padding: '48px',
-              background: 'var(--card2)',
-            }}>
-              <FileText size={28} color="var(--muted2)" style={{ marginBottom: '12px' }}/>
-              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', marginBottom: '6px' }}>
-                Notes not uploaded yet
-              </div>
-              <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
-                Check back soon — this note is being prepared.
-              </div>
-            </div>
-          )}
-
-          <Link href={`/free-notes/${subject.slug}`} className="btn btn-ghost" style={{ fontSize: '13px' }}>
-            ← Back to {subject.name}
-          </Link>
-        </div>
-      </main>
+      <TopicReaderClient
+        subjectSlug={subject.slug}
+        subjectName={subject.name}
+        tocUnits={tocUnits}
+        currentNoteId={note.id}
+        currentNoteTitle={note.title}
+        currentUnitTitle={currentUnit.title}
+        prevNoteId={prevNoteId}
+        nextNoteId={nextNoteId}
+        signedUrl={signedUrl}
+        initialCompletedNoteIds={[...progress.completedNoteIds]}
+        initialPercent={progress.percent}
+        initialTotal={progress.total}
+        initialCompleted={progress.completed}
+      />
     </div>
   )
 }

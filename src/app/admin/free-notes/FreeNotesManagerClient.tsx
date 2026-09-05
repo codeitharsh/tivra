@@ -1,35 +1,42 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Loader2, Upload, CheckCircle2, Trash2, Plus, X, Check,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, FolderPlus,
 } from 'lucide-react'
 
 interface Subject {
   id: string; name: string; slug: string; description: string | null
   is_active: boolean; display_order: number
 }
+interface Unit {
+  id: string; subject_id: string; title: string; unit_number: number
+}
 interface Note {
-  id: string; subject_id: string; title: string; note_number: number; notes_url: string | null
+  id: string; unit_id: string; title: string; note_number: number; notes_url: string | null
 }
 
 const BLANK_SUBJECT = { name: '', description: '' }
-const BLANK_NOTE     = { title: '', note_number: '' }
+const BLANK_UNIT     = { title: '', unit_number: '' }
+const BLANK_TOPIC    = { title: '', note_number: '', file: null as File | null }
 
-export default function FreeNotesManagerClient({ subjects, notes }: { subjects: Subject[]; notes: Note[] }) {
+export default function FreeNotesManagerClient({
+  subjects, units, notes,
+}: { subjects: Subject[]; units: Unit[]; notes: Note[] }) {
   const router = useRouter()
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedSubjectId, setExpandedSubjectId] = useState<string | null>(null)
+  const [expandedUnitId, setExpandedUnitId] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
-  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({})
 
   const [showCreateSubject, setShowCreateSubject] = useState(false)
   const [subjectForm, setSubjectForm] = useState(BLANK_SUBJECT)
   const [creatingSubject, setCreatingSubject] = useState(false)
 
-  const [noteForms, setNoteForms] = useState<Record<string, typeof BLANK_NOTE>>({})
+  const [unitForms, setUnitForms] = useState<Record<string, typeof BLANK_UNIT>>({})
+  const [topicForms, setTopicForms] = useState<Record<string, typeof BLANK_TOPIC>>({})
 
   function showToast(msg: string, type: 'success' | 'error') {
     setToast({ msg, type })
@@ -76,7 +83,7 @@ export default function FreeNotesManagerClient({ subjects, notes }: { subjects: 
   }
 
   async function deleteSubject(subjectId: string, name: string) {
-    if (!window.confirm(`Delete "${name}" and all of its notes? This can't be undone.`)) return
+    if (!window.confirm(`Delete "${name}" and all of its units/topics? This can't be undone.`)) return
     setBusy(`del-subject-${subjectId}`)
     try {
       await callApi({ action: 'delete_subject', subjectId })
@@ -89,18 +96,18 @@ export default function FreeNotesManagerClient({ subjects, notes }: { subjects: 
     }
   }
 
-  async function createNote(subjectId: string) {
-    const form = noteForms[subjectId] ?? BLANK_NOTE
-    if (!form.title.trim())    { showToast('Note title is required', 'error'); return }
-    if (!form.note_number)     { showToast('Note number is required', 'error'); return }
-    setBusy(`add-note-${subjectId}`)
+  async function createUnit(subjectId: string) {
+    const form = unitForms[subjectId] ?? BLANK_UNIT
+    if (!form.title.trim()) { showToast('Unit title is required', 'error'); return }
+    if (!form.unit_number)  { showToast('Unit number is required', 'error'); return }
+    setBusy(`add-unit-${subjectId}`)
     try {
       await callApi({
-        action: 'create_note', subjectId,
-        title: form.title.trim(), noteNumber: Number(form.note_number),
+        action: 'create_unit', subjectId,
+        title: form.title.trim(), unitNumber: Number(form.unit_number),
       })
-      showToast('✓ Note added — now upload its PDF', 'success')
-      setNoteForms(p => ({ ...p, [subjectId]: BLANK_NOTE }))
+      showToast('✓ Unit added', 'success')
+      setUnitForms(p => ({ ...p, [subjectId]: BLANK_UNIT }))
       router.refresh()
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed', 'error')
@@ -109,12 +116,66 @@ export default function FreeNotesManagerClient({ subjects, notes }: { subjects: 
     }
   }
 
-  async function deleteNote(noteId: string) {
-    if (!window.confirm('Delete this note?')) return
-    setBusy(`del-note-${noteId}`)
+  async function deleteUnit(unitId: string, title: string) {
+    if (!window.confirm(`Delete "${title}" and all of its topics? This can't be undone.`)) return
+    setBusy(`del-unit-${unitId}`)
+    try {
+      await callApi({ action: 'delete_unit', unitId })
+      showToast('✓ Unit deleted', 'success')
+      router.refresh()
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed', 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  // Combined "add topic" flow — creates the metadata row and (if a
+  // file was picked) uploads its PDF in the same submit, instead of
+  // the old two-step "create row, then separately click Upload"
+  // interaction. Meaningfully faster when adding many topics.
+  async function createTopic(unitId: string, subjectId: string) {
+    const form = topicForms[unitId] ?? BLANK_TOPIC
+    if (!form.title.trim()) { showToast('Topic title is required', 'error'); return }
+    if (!form.note_number)  { showToast('Topic number is required', 'error'); return }
+    if (form.file) {
+      if (!form.file.name.endsWith('.pdf')) { showToast('Only PDF files are allowed', 'error'); return }
+      if (form.file.size > 50 * 1024 * 1024) { showToast('File too large (max 50MB)', 'error'); return }
+    }
+
+    setBusy(`add-topic-${unitId}`)
+    try {
+      const { noteId } = await callApi({
+        action: 'create_note', unitId,
+        title: form.title.trim(), noteNumber: Number(form.note_number),
+      }) as { noteId: string }
+
+      if (form.file) {
+        const fd = new FormData()
+        fd.append('file', form.file)
+        fd.append('note_id', noteId)
+        fd.append('subject_id', subjectId)
+        const res = await fetch('/api/upload-free-note', { method: 'POST', body: fd })
+        const data = await res.json() as { success?: boolean; error?: string }
+        if (!res.ok || !data.success) throw new Error(data.error ?? 'Topic created, but the PDF upload failed — upload it separately below.')
+      }
+
+      showToast(form.file ? '✓ Topic added and PDF uploaded' : '✓ Topic added — upload its PDF below', 'success')
+      setTopicForms(p => ({ ...p, [unitId]: BLANK_TOPIC }))
+      router.refresh()
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed', 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function deleteTopic(noteId: string) {
+    if (!window.confirm('Delete this topic?')) return
+    setBusy(`del-topic-${noteId}`)
     try {
       await callApi({ action: 'delete_note', noteId })
-      showToast('✓ Note deleted', 'success')
+      showToast('✓ Topic deleted', 'success')
       router.refresh()
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed', 'error')
@@ -123,7 +184,7 @@ export default function FreeNotesManagerClient({ subjects, notes }: { subjects: 
     }
   }
 
-  async function uploadNotePdf(subjectId: string, noteId: string, file: File) {
+  async function uploadTopicPdf(subjectId: string, noteId: string, file: File) {
     if (!file.name.endsWith('.pdf')) { showToast('Only PDF files are allowed', 'error'); return }
     if (file.size > 50 * 1024 * 1024) { showToast('File too large (max 50MB)', 'error'); return }
 
@@ -193,9 +254,10 @@ export default function FreeNotesManagerClient({ subjects, notes }: { subjects: 
       )}
 
       {subjects.map(s => {
-        const subjectNotes = notes.filter(n => n.subject_id === s.id).sort((a, b) => a.note_number - b.note_number)
-        const isOpen = expandedId === s.id
-        const noteForm = noteForms[s.id] ?? BLANK_NOTE
+        const subjectUnits = units.filter(u => u.subject_id === s.id).sort((a, b) => a.unit_number - b.unit_number)
+        const subjectTopicCount = notes.filter(n => subjectUnits.some(u => u.id === n.unit_id)).length
+        const isOpen = expandedSubjectId === s.id
+        const unitForm = unitForms[s.id] ?? BLANK_UNIT
 
         return (
           <div key={s.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -205,12 +267,12 @@ export default function FreeNotesManagerClient({ subjects, notes }: { subjects: 
                 display: 'flex', alignItems: 'center', gap: '14px',
                 borderBottom: isOpen ? '1px solid var(--border)' : 'none',
               }}
-              onClick={() => setExpandedId(isOpen ? null : s.id)}
+              onClick={() => setExpandedSubjectId(isOpen ? null : s.id)}
             >
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px' }}>{s.name}</div>
                 <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
-                  /free-notes/{s.slug} · {subjectNotes.length} note{subjectNotes.length !== 1 ? 's' : ''}
+                  /free-notes/{s.slug} · {subjectUnits.length} unit{subjectUnits.length !== 1 ? 's' : ''} · {subjectTopicCount} topic{subjectTopicCount !== 1 ? 's' : ''}
                 </div>
               </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--muted)', cursor: 'pointer' }} onClick={e => e.stopPropagation()}>
@@ -226,61 +288,121 @@ export default function FreeNotesManagerClient({ subjects, notes }: { subjects: 
             </div>
 
             {isOpen && (
-              <div style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '18px' }}>
-                  {subjectNotes.length === 0 && (
-                    <div style={{ fontSize: '13px', color: 'var(--muted)', padding: '12px 0' }}>No notes yet — add one below.</div>
-                  )}
-                  {subjectNotes.map(n => (
-                    <div key={n.id} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-                      padding: '10px 14px', borderRadius: 'var(--radius-sm)',
-                      background: 'var(--card2)', border: '1px solid var(--border)',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '11px', color: 'var(--muted)' }}>#{n.note_number}</span>
-                        <span style={{ fontSize: '13px' }}>{n.title}</span>
-                        {n.notes_url && <CheckCircle2 size={13} color="var(--green)"/>}
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                        <input
-                          ref={el => { fileInputs.current[n.id] = el }}
-                          type="file" accept=".pdf" style={{ display: 'none' }}
-                          onChange={e => { const f = e.target.files?.[0]; if (f) uploadNotePdf(s.id, n.id, f); e.target.value = '' }}
-                        />
-                        <button className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px' }}
-                          disabled={busy === `upload-${n.id}`}
-                          onClick={() => fileInputs.current[n.id]?.click()}>
-                          {busy === `upload-${n.id}` ? <Loader2 size={11} className="spin"/> : (n.notes_url ? 'Replace PDF' : <><Upload size={11}/> Upload PDF</>)}
-                        </button>
-                        <button className="btn btn-danger" style={{ fontSize: '11px', padding: '5px 10px' }}
-                          disabled={busy === `del-note-${n.id}`}
-                          onClick={() => deleteNote(n.id)}>
-                          {busy === `del-note-${n.id}` ? <Loader2 size={11} className="spin"/> : <Trash2 size={11}/>}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {subjectUnits.length === 0 && (
+                  <div style={{ fontSize: '13px', color: 'var(--muted)' }}>No units yet — add one below.</div>
+                )}
 
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ width: '90px' }}>
+                {subjectUnits.map(u => {
+                  const unitTopics = notes.filter(n => n.unit_id === u.id).sort((a, b) => a.note_number - b.note_number)
+                  const unitOpen = expandedUnitId === u.id
+                  const topicForm = topicForms[u.id] ?? BLANK_TOPIC
+
+                  return (
+                    <div key={u.id} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          padding: '12px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px',
+                          background: 'var(--card2)', borderBottom: unitOpen ? '1px solid var(--border)' : 'none',
+                        }}
+                        onClick={() => setExpandedUnitId(unitOpen ? null : u.id)}
+                      >
+                        <div style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>
+                          Unit {u.unit_number}: {u.title}
+                          <span style={{ fontWeight: 400, color: 'var(--muted)', marginLeft: '8px' }}>
+                            {unitTopics.length} topic{unitTopics.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <button className="btn btn-danger" onClick={e => { e.stopPropagation(); deleteUnit(u.id, u.title) }}
+                          disabled={busy === `del-unit-${u.id}`} style={{ fontSize: '11px', padding: '4px 8px' }}>
+                          {busy === `del-unit-${u.id}` ? <Loader2 size={11} className="spin"/> : <Trash2 size={11}/>}
+                        </button>
+                        {unitOpen ? <ChevronUp size={14} style={{ color: 'var(--muted)' }}/> : <ChevronDown size={14} style={{ color: 'var(--muted)' }}/>}
+                      </div>
+
+                      {unitOpen && (
+                        <div style={{ padding: '16px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                            {unitTopics.length === 0 && (
+                              <div style={{ fontSize: '13px', color: 'var(--muted)', padding: '4px 0' }}>No topics yet — add one below.</div>
+                            )}
+                            {unitTopics.map(n => (
+                              <div key={n.id} style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+                                padding: '10px 14px', borderRadius: 'var(--radius-sm)',
+                                background: 'var(--card2)', border: '1px solid var(--border)',
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '11px', color: 'var(--muted)' }}>#{n.note_number}</span>
+                                  <span style={{ fontSize: '13px' }}>{n.title}</span>
+                                  {n.notes_url && <CheckCircle2 size={13} color="var(--green)"/>}
+                                </div>
+                                <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                                  <label className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px', cursor: 'pointer' }}>
+                                    <input type="file" accept=".pdf" style={{ display: 'none' }}
+                                      disabled={busy === `upload-${n.id}`}
+                                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadTopicPdf(s.id, n.id, f); e.target.value = '' }}/>
+                                    {busy === `upload-${n.id}` ? <Loader2 size={11} className="spin"/> : (n.notes_url ? 'Replace PDF' : <><Upload size={11}/> Upload PDF</>)}
+                                  </label>
+                                  <button className="btn btn-danger" style={{ fontSize: '11px', padding: '5px 10px' }}
+                                    disabled={busy === `del-topic-${n.id}`}
+                                    onClick={() => deleteTopic(n.id)}>
+                                    {busy === `del-topic-${n.id}` ? <Loader2 size={11} className="spin"/> : <Trash2 size={11}/>}
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
+                            <div style={{ width: '80px' }}>
+                              <label className="form-label">No.</label>
+                              <input className="form-input" type="number" min="1" placeholder="1"
+                                value={topicForm.note_number}
+                                onChange={e => setTopicForms(p => ({ ...p, [u.id]: { ...topicForm, note_number: e.target.value } }))}/>
+                            </div>
+                            <div style={{ flex: 1, minWidth: '180px' }}>
+                              <label className="form-label">Topic title</label>
+                              <input className="form-input" placeholder="e.g. Inheritance"
+                                value={topicForm.title}
+                                onChange={e => setTopicForms(p => ({ ...p, [u.id]: { ...topicForm, title: e.target.value } }))}/>
+                            </div>
+                            <div style={{ width: '180px' }}>
+                              <label className="form-label">PDF (optional now)</label>
+                              <input className="form-input" type="file" accept=".pdf" style={{ padding: '7px 10px', fontSize: '12px' }}
+                                onChange={e => setTopicForms(p => ({ ...p, [u.id]: { ...topicForm, file: e.target.files?.[0] ?? null } }))}/>
+                            </div>
+                            <button className="btn btn-primary" onClick={() => createTopic(u.id, s.id)}
+                              disabled={busy === `add-topic-${u.id}`} style={{ fontSize: '12px', padding: '9px 18px' }}>
+                              {busy === `add-topic-${u.id}`
+                                ? <Loader2 size={13} className="spin"/>
+                                : <><Plus size={13}/> Add topic</>}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: '4px' }}>
+                  <div style={{ width: '80px' }}>
                     <label className="form-label">No.</label>
                     <input className="form-input" type="number" min="1" placeholder="1"
-                      value={noteForm.note_number}
-                      onChange={e => setNoteForms(p => ({ ...p, [s.id]: { ...noteForm, note_number: e.target.value } }))}/>
+                      value={unitForm.unit_number}
+                      onChange={e => setUnitForms(p => ({ ...p, [s.id]: { ...unitForm, unit_number: e.target.value } }))}/>
                   </div>
                   <div style={{ flex: 1, minWidth: '200px' }}>
-                    <label className="form-label">Note title</label>
-                    <input className="form-input" placeholder="e.g. Arrays & Strings"
-                      value={noteForm.title}
-                      onChange={e => setNoteForms(p => ({ ...p, [s.id]: { ...noteForm, title: e.target.value } }))}/>
+                    <label className="form-label">Unit title</label>
+                    <input className="form-input" placeholder="e.g. Object-Oriented Programming"
+                      value={unitForm.title}
+                      onChange={e => setUnitForms(p => ({ ...p, [s.id]: { ...unitForm, title: e.target.value } }))}/>
                   </div>
-                  <button className="btn btn-primary" onClick={() => createNote(s.id)}
-                    disabled={busy === `add-note-${s.id}`} style={{ fontSize: '12px', padding: '9px 18px' }}>
-                    {busy === `add-note-${s.id}`
+                  <button className="btn btn-ghost" onClick={() => createUnit(s.id)}
+                    disabled={busy === `add-unit-${s.id}`} style={{ fontSize: '12px', padding: '9px 18px' }}>
+                    {busy === `add-unit-${s.id}`
                       ? <Loader2 size={13} className="spin"/>
-                      : <><Plus size={13}/> Add note</>}
+                      : <><FolderPlus size={13}/> Add unit</>}
                   </button>
                 </div>
               </div>

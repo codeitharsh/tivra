@@ -89,34 +89,101 @@ export async function POST(req: NextRequest) {
       const { subjectId } = body as { subjectId?: string }
       if (!subjectId) return NextResponse.json({ error: 'subjectId required' }, { status: 400 })
 
-      // Best-effort: remove any uploaded PDFs for this subject's notes
-      // before the cascade delete removes the rows that reference them.
-      const { data: notesRaw } = await sb.from('free_notes').select('notes_url').eq('subject_id', subjectId)
-      const paths = ((notesRaw ?? []) as { notes_url: string | null }[])
-        .map(n => n.notes_url).filter((p): p is string => !!p)
-      if (paths.length > 0) await sb.storage.from('free-notes').remove(paths)
+      // Best-effort: remove any uploaded PDFs for every topic across
+      // every unit of this subject before the cascade delete removes
+      // the rows that reference them. free_notes no longer has a
+      // direct subject_id — resolve via its units first.
+      const { data: unitsRaw } = await sb.from('units').select('id').eq('subject_id', subjectId)
+      const unitIds = ((unitsRaw ?? []) as { id: string }[]).map(u => u.id)
+      if (unitIds.length > 0) {
+        const { data: notesRaw } = await sb.from('free_notes').select('notes_url').in('unit_id', unitIds)
+        const paths = ((notesRaw ?? []) as { notes_url: string | null }[])
+          .map(n => n.notes_url).filter((p): p is string => !!p)
+        if (paths.length > 0) await sb.storage.from('free-notes').remove(paths)
+      }
 
       const { error } = await sb.from('subjects').delete().eq('id', subjectId)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
     }
 
-    // ── CREATE NOTE (metadata row — file upload is a separate call) ──
-    if (body.action === 'create_note') {
-      const { subjectId, title, noteNumber } = body as {
-        subjectId?: string; title?: string; noteNumber?: number
+    // ── CREATE UNIT ────────────────────────────────────────────
+    if (body.action === 'create_unit') {
+      const { subjectId, title, unitNumber } = body as {
+        subjectId?: string; title?: string; unitNumber?: number
       }
-      if (!subjectId || !title?.trim() || !noteNumber) {
-        return NextResponse.json({ error: 'subjectId, title, and noteNumber are required' }, { status: 400 })
+      if (!subjectId || !title?.trim() || !unitNumber) {
+        return NextResponse.json({ error: 'subjectId, title, and unitNumber are required' }, { status: 400 })
       }
 
-      const { data, error } = await sb.from('free_notes').insert({
-        subject_id: subjectId, title: title.trim(), note_number: noteNumber,
+      const { data, error } = await sb.from('units').insert({
+        subject_id: subjectId, title: title.trim(), unit_number: unitNumber,
       }).select('id').single()
 
       if (error) {
         if (error.code === '23505') {
-          return NextResponse.json({ error: `Note number ${noteNumber} already exists for this subject` }, { status: 409 })
+          return NextResponse.json({ error: `Unit number ${unitNumber} already exists for this subject` }, { status: 409 })
+        }
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, id: data.id })
+    }
+
+    // ── UPDATE UNIT ────────────────────────────────────────────
+    if (body.action === 'update_unit') {
+      const { unitId, title, unitNumber } = body as {
+        unitId?: string; title?: string; unitNumber?: number
+      }
+      if (!unitId) return NextResponse.json({ error: 'unitId required' }, { status: 400 })
+
+      const updates: Record<string, unknown> = {}
+      if (title !== undefined)      updates.title       = title.trim()
+      if (unitNumber !== undefined) updates.unit_number = unitNumber
+
+      const { error } = await sb.from('units').update(updates).eq('id', unitId)
+      if (error) {
+        if (error.code === '23505') {
+          return NextResponse.json({ error: `Unit number ${unitNumber} already exists for this subject` }, { status: 409 })
+        }
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true })
+    }
+
+    // ── DELETE UNIT ────────────────────────────────────────────
+    if (body.action === 'delete_unit') {
+      const { unitId } = body as { unitId?: string }
+      if (!unitId) return NextResponse.json({ error: 'unitId required' }, { status: 400 })
+
+      // Best-effort: remove any uploaded PDFs for this unit's topics
+      // before the cascade delete removes the rows that reference them.
+      const { data: notesRaw } = await sb.from('free_notes').select('notes_url').eq('unit_id', unitId)
+      const paths = ((notesRaw ?? []) as { notes_url: string | null }[])
+        .map(n => n.notes_url).filter((p): p is string => !!p)
+      if (paths.length > 0) await sb.storage.from('free-notes').remove(paths)
+
+      const { error } = await sb.from('units').delete().eq('id', unitId)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
+    // ── CREATE NOTE (a "topic" — metadata row only; file upload is a
+    //    separate call) ──────────────────────────────────────────
+    if (body.action === 'create_note') {
+      const { unitId, title, noteNumber } = body as {
+        unitId?: string; title?: string; noteNumber?: number
+      }
+      if (!unitId || !title?.trim() || !noteNumber) {
+        return NextResponse.json({ error: 'unitId, title, and noteNumber are required' }, { status: 400 })
+      }
+
+      const { data, error } = await sb.from('free_notes').insert({
+        unit_id: unitId, title: title.trim(), note_number: noteNumber,
+      }).select('id').single()
+
+      if (error) {
+        if (error.code === '23505') {
+          return NextResponse.json({ error: `Topic number ${noteNumber} already exists for this unit` }, { status: 409 })
         }
         return NextResponse.json({ error: error.message }, { status: 500 })
       }

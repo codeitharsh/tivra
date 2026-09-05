@@ -484,14 +484,14 @@ export default function HomePage() {
                 <h3 style={{
                   fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'21px',
                   color:'var(--text)', marginBottom:'10px',
-                }}>Free Notes</h3>
+                }}>Handwritten Notes</h3>
                 <p style={{ fontSize:'13.5px', color:'var(--muted)', lineHeight:1.7, marginBottom:'22px' }}>
                   Plain, well-organised notes for exam prep and interviews —
                   DSA, Computer Networks, OOPS, DBMS and more.
                 </p>
                 <div className="tick-rule" style={{ marginBottom:'18px' }}/>
                 <span className="oa-card-cta" style={{ color:'var(--accent-2)' }}>
-                  Browse Free Notes <ArrowRight size={13}/>
+                  Browse Handwritten Notes <ArrowRight size={13}/>
                 </span>
               </div>
             </Link>
