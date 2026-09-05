@@ -113,26 +113,17 @@ const TRUST_SIGNALS = [
 ]
 
 // ─────────────────────────────────────────────────────────────
-// PAGE
-// ─────────────────────────────────────────────────────────────
-
-export default function HomePage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
-  const [programmes, setProgrammes] = useState<ProgramCard[]>([])
-  const pricingRef = useRef<HTMLDivElement>(null)
-  const openAccessRef = useRef<HTMLDivElement>(null)
-  const featureRefs = useRef<(HTMLDivElement | null)[]>([])
-
+// SCROLL REVEAL — same lightweight CSS + IntersectionObserver
+// approach used everywhere on this page already (no animation
+// library — Motion/Framer would be a third animation system on a
+// page that already has this reveal pattern AND GSAP ScrollTrigger
+// for the Programmes stack). Extracted into two small hooks once a
+// single-block reveal was needed on 5 different sections and a
+// staggered-list reveal on 2 — past the point where inlining each
+// effect separately was still the simplest option.
+function useRevealOnScroll(ref: React.RefObject<HTMLElement | null>, threshold = 0.2) {
   useEffect(() => {
-    fetch('/api/programs').then(r => r.json()).then(d => setProgrammes(d.programs ?? [])).catch(() => {})
-  }, [])
-
-  // The pricing section is a single editorial block, not a grid of
-  // cards — one reveal on the whole block reads as premium restraint;
-  // animating each line individually would feel fussy for this little
-  // content.
-  useEffect(() => {
-    const el = pricingRef.current
+    const el = ref.current
     if (!el) return
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -141,32 +132,16 @@ export default function HomePage() {
           observer.unobserve(entry.target)
         }
       })
-    }, { threshold: 0.2 })
+    }, { threshold })
     observer.observe(el)
     return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+}
 
-  // Same single-block reveal treatment as the pricing section above —
-  // two cards is too little content to justify a staggered sequence.
+function useStaggerReveal(refs: React.RefObject<(HTMLElement | null)[]>) {
   useEffect(() => {
-    const el = openAccessRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible')
-          observer.unobserve(entry.target)
-        }
-      })
-    }, { threshold: 0.2 })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
-  // "Built for real careers" — each row reveals in sequence (index
-  // order, not row order) as it scrolls into view, once, then stays.
-  useEffect(() => {
-    const items = featureRefs.current.filter((el): el is HTMLDivElement => el !== null)
+    const items = refs.current.filter((el): el is HTMLElement => el !== null)
     if (items.length === 0) return
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -178,7 +153,48 @@ export default function HomePage() {
     }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' })
     items.forEach(el => observer.observe(el))
     return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+}
+
+// ─────────────────────────────────────────────────────────────
+// PAGE
+// ─────────────────────────────────────────────────────────────
+
+export default function HomePage() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [programmes, setProgrammes] = useState<ProgramCard[]>([])
+  const heroRef = useRef<HTMLDivElement>(null)
+  const introRef = useRef<HTMLDivElement>(null)
+  const ctaRef = useRef<HTMLDivElement>(null)
+  const pricingRef = useRef<HTMLDivElement>(null)
+  const openAccessRef = useRef<HTMLDivElement>(null)
+  const featureRefs = useRef<(HTMLDivElement | null)[]>([])
+  const faqItemRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  useEffect(() => {
+    fetch('/api/programs').then(r => r.json()).then(d => setProgrammes(d.programs ?? [])).catch(() => {})
+  }, [])
+
+  // The hero is already in view at load, so this fires (almost)
+  // immediately rather than waiting for a scroll — a soft entrance
+  // instead of the page just snapping fully in.
+  useRevealOnScroll(heroRef, 0.05)
+  // "Introducing Tivra" and the CTA banner are each a single editorial
+  // block, not a grid of cards — one reveal on the whole block reads
+  // as premium restraint; animating each line individually would feel
+  // fussy for this little content. Same reasoning the pricing section
+  // and Open Access already used.
+  useRevealOnScroll(introRef)
+  useRevealOnScroll(pricingRef)
+  useRevealOnScroll(openAccessRef)
+  useRevealOnScroll(ctaRef)
+
+  // "Built for real careers" and the FAQ list — each row reveals in
+  // sequence (index order, not row order) as it scrolls into view,
+  // once, then stays.
+  useStaggerReveal(featureRefs)
+  useStaggerReveal(faqItemRefs)
 
   return (
     <div style={{ background:'var(--bg)', color:'var(--text)', overflowX:'hidden' }}>
@@ -187,7 +203,7 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════
           HERO
       ══════════════════════════════════════════════════ */}
-      <section style={{ position:'relative', overflow:'hidden' }}>
+      <section ref={heroRef} className="reveal" style={{ position:'relative', overflow:'hidden' }}>
         <div className="grid-lines">
           {[20, 40, 60, 80].map(p => (
             <div key={p} className="grid-line" style={{ left: `${p}%` }}/>
@@ -301,7 +317,7 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════
           SECTION 1 — INTRODUCING TIVRA
       ══════════════════════════════════════════════════ */}
-      <section style={{
+      <section ref={introRef} className="reveal" style={{
         borderTop:'1px solid var(--border)',
         padding:'clamp(64px,8vw,120px) clamp(20px,4vw,48px)',
       }}>
@@ -613,7 +629,11 @@ export default function HomePage() {
           <SH eyebrow="FAQ" title="Common questions"/>
           <div style={{ display:'flex', flexDirection:'column' }}>
             {FAQS.map(([q, a], i) => (
-              <div key={i} style={{ borderTop:'1px solid var(--border)' }}>
+              <div key={i}
+                ref={el => { faqItemRefs.current[i] = el }}
+                className="faq-item"
+                style={{ borderTop:'1px solid var(--border)', transitionDelay: `${i * 60}ms` }}
+              >
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)} style={{
                   width:'100%', padding:'20px 4px', cursor:'pointer',
                   background:'none', border:'none', color:'var(--text)',
@@ -642,7 +662,7 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════
           CTA BANNER
       ══════════════════════════════════════════════════ */}
-      <section style={{ padding:'0 clamp(20px,4vw,48px) clamp(64px,8vw,120px)' }}>
+      <section ref={ctaRef} className="reveal" style={{ padding:'0 clamp(20px,4vw,48px) clamp(64px,8vw,120px)' }}>
         <div style={{
           maxWidth:'1200px', margin:'0 auto', background:'var(--card)', border:'1px solid var(--border)',
           borderRadius:'var(--radius)', padding:'clamp(40px,5vw,72px) clamp(24px,4vw,60px)',
@@ -764,6 +784,12 @@ export default function HomePage() {
         .feature-item.from-right { transform: translateX(32px); }
         .feature-item.visible { opacity: 1; transform: translateX(0); }
         .feature-item:hover .feature-title { color: var(--accent); }
+
+        .faq-item {
+          opacity: 0; transform: translateY(20px);
+          transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.16,1,0.3,1);
+        }
+        .faq-item.visible { opacity: 1; transform: translateY(0); }
 
         @media (max-width: 1023px) {
           .hero-grid { grid-template-columns: 1fr !important; }
