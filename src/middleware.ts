@@ -119,6 +119,18 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
+  // ── STEP 1d: Free Notes browsing only — same reasoning as STEP 1c:
+  //    /free-notes (subject list) and /free-notes/{subjectSlug} (a
+  //    subject's note list) are public so anyone can see what's on
+  //    offer. Actually viewing/downloading a note's PDF
+  //    (/free-notes/{subjectSlug}/{noteId}) is a 3rd-segment path and
+  //    falls through to the login requirement below. The public nav
+  //    already links to /free-notes for logged-out visitors — before
+  //    this carve-out that link just bounced them to /login. ────────
+  if (pathname === '/free-notes' || /^\/free-notes\/[^/]+$/.test(pathname)) {
+    return response
+  }
+
   // ── STEP 2: Must be logged in ──────────────────────────────
   if (!user) {
     const url = new URL('/login', request.url)
