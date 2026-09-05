@@ -42,14 +42,33 @@ export async function POST(req: Request): Promise<Response> {
     // dashboard access, repeat.
     if (data.user) {
       const { data: profile } = await supabase
-        .from('profiles').select('access_status').eq('id', data.user.id).single()
-      const status = (profile as { access_status: string } | null)?.access_status
+        .from('profiles').select('access_status, last_login_date, streak_count').eq('id', data.user.id).single()
+      const p = profile as { access_status: string; last_login_date: string | null; streak_count: number | null } | null
 
-      if (status === 'restricted') {
+      if (p?.access_status === 'restricted') {
         await supabase.auth.signOut()
         return Response.json({
           error: 'Your account access has been suspended. Please contact contact@tivra.in to resolve this.',
         }, { status: 403 })
+      }
+
+      // ── Last login + daily streak ─────────────────────────────
+      // Both columns existed in the schema and were displayed all
+      // over the app (admin student list, profile page, dashboard)
+      // but nothing anywhere ever actually wrote to them — every
+      // account showed "Never" and a streak of 0 forever. Comparing
+      // calendar dates in UTC (last_login_date is a plain `date`
+      // column, no time component) — a login already recorded today
+      // is a no-op, yesterday extends the streak, anything older
+      // resets it to 1.
+      const toDateOnly = (d: Date) => d.toISOString().slice(0, 10)
+      const todayStr = toDateOnly(new Date())
+      if (p && p.last_login_date !== todayStr) {
+        const yesterdayStr = toDateOnly(new Date(Date.now() - 24 * 60 * 60 * 1000))
+        const newStreak = p.last_login_date === yesterdayStr ? (p.streak_count ?? 0) + 1 : 1
+        await supabase.from('profiles').update({
+          last_login_date: todayStr, streak_count: newStreak,
+        }).eq('id', data.user.id)
       }
     }
 
