@@ -82,10 +82,12 @@ const NAV_TEACHER = [
   { href:'/teacher/content',      label:'Upload Notes',   icon:Upload },
   { href:'/teacher/tests',        label:'Create Tests',   icon:ClipboardList },
   { href:'/teacher/assessments',  label:'Assessments',    icon:Target },
-  // Points into the /admin/courses subtree — that's the only place this
-  // feature is built, but middleware.ts STEP 4 explicitly carves out
-  // /admin/courses for teachers too, so this link works for them.
-  { href:'/admin/courses',        label:'Courses',        icon:BookOpen },
+  // Both point into /admin/* subtrees — that's the only place these
+  // features are built, but middleware.ts STEP 4 explicitly carves out
+  // /admin/courses and /admin/free-notes for teachers too, so these
+  // links work for them.
+  { href:'/admin/courses',        label:'Courses',            icon:BookOpen },
+  { href:'/admin/free-notes',     label:'Handwritten Notes',  icon:Library },
   { href:'/teacher/doubts',       label:'Resolve Doubts', icon:MessageCircle },
   { href:'/teacher/live',         label:'Schedule Class', icon:Video },
   { href:'/teacher/attendance',   label:'Attendance',     icon:CalendarCheck },

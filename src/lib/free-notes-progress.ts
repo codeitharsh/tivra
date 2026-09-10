@@ -20,18 +20,10 @@ export async function getSubjectProgress(
   studentId: string,
   subjectId: string
 ): Promise<SubjectProgress> {
-  const { data: unitsRaw } = await sb
-    .from('units')
-    .select('id')
-    .eq('subject_id', subjectId)
-
-  const unitIds = ((unitsRaw ?? []) as { id: string }[]).map(u => u.id)
-  if (unitIds.length === 0) return EMPTY
-
   const { data: notesRaw } = await sb
     .from('free_notes')
     .select('id')
-    .in('unit_id', unitIds)
+    .eq('subject_id', subjectId)
 
   const noteIds = ((notesRaw ?? []) as { id: string }[]).map(n => n.id)
   const total = noteIds.length

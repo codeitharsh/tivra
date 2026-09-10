@@ -5,8 +5,8 @@ import { createClient as createSB } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { getSubjectProgress } from '@/lib/free-notes-progress'
 
-// Deliberately untyped — units/free_notes/free_note_progress aren't
-// declared in src/types/database.ts, same gap as course_* tables (see
+// Deliberately untyped — free_notes/free_note_progress aren't declared
+// in src/types/database.ts, same gap as course_* tables (see
 // src/app/api/course-progress/route.ts for the identical reasoning).
 function adminSB() {
   return createSB(
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
       const { data: noteRow } = await admin
         .from('free_notes')
-        .select('id, unit_id, units!unit_id(subject_id, subjects!subject_id(id, is_active))')
+        .select('id, subject_id, subjects!subject_id(id, is_active)')
         .eq('id', noteId)
         .maybeSingle()
 
@@ -47,10 +47,7 @@ export async function POST(req: NextRequest) {
       // single-element array depending on relationship inference —
       // handled defensively since this directly gates a write.
       type SubjectJoin = { id: string; is_active: boolean } | { id: string; is_active: boolean }[] | null
-      type UnitJoin = { subject_id: string; subjects: SubjectJoin } | { subject_id: string; subjects: SubjectJoin }[] | null
-      const unitJoinRaw = (noteRow as { units: UnitJoin }).units
-      const unitJoin = Array.isArray(unitJoinRaw) ? unitJoinRaw[0] : unitJoinRaw
-      const subjectJoinRaw = unitJoin?.subjects
+      const subjectJoinRaw = (noteRow as { subjects: SubjectJoin }).subjects
       const subjectJoin = Array.isArray(subjectJoinRaw) ? subjectJoinRaw[0] : subjectJoinRaw
 
       if (!subjectJoin || !subjectJoin.is_active) {

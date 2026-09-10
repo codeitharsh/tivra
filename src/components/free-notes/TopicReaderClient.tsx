@@ -5,7 +5,7 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import {
-  ChevronRight, ChevronLeft, ChevronDown, ChevronUp, CheckCircle2, Circle,
+  ChevronRight, ChevronLeft, CheckCircle2, Circle,
   Menu, X, Loader2, Check, FileText,
 } from 'lucide-react'
 
@@ -21,15 +21,13 @@ const PdfViewer = dynamic(() => import('./PdfViewer'), { ssr: false, loading: ()
 ) })
 
 interface TocTopic { id: string; title: string; noteNumber: number }
-interface TocUnit { id: string; title: string; unitNumber: number; topics: TocTopic[] }
 
 interface Props {
   subjectSlug: string
   subjectName: string
-  tocUnits: TocUnit[]
+  tocTopics: TocTopic[]
   currentNoteId: string
   currentNoteTitle: string
-  currentUnitTitle: string
   prevNoteId: string | null
   nextNoteId: string | null
   signedUrl: string | null
@@ -41,15 +39,11 @@ interface Props {
 
 // Forked from src/components/course/LessonReaderClient.tsx — same
 // desktop sidebar / mobile drawer / sticky prev-next bar shape, adapted
-// for a Subject -> Unit -> Topic PDF library instead of a Course ->
-// Module -> Lesson block-content course. One deliberate difference:
-// units are individually collapsible (only the current one starts
-// open) since a subject can realistically have hundreds of topics
-// across many units — LessonReaderClient's modules are always all
-// expanded, which doesn't scale the same way here.
+// for a Subject -> Topic PDF library instead of a Course -> Module ->
+// Lesson block-content course. Flat topic list — no grouping layer.
 export default function TopicReaderClient({
-  subjectSlug, subjectName, tocUnits,
-  currentNoteId, currentNoteTitle, currentUnitTitle,
+  subjectSlug, subjectName, tocTopics,
+  currentNoteId, currentNoteTitle,
   prevNoteId, nextNoteId, signedUrl,
   initialCompletedNoteIds, initialPercent, initialTotal, initialCompleted,
 }: Props) {
@@ -60,9 +54,6 @@ export default function TopicReaderClient({
   const [completed, setCompleted] = useState(initialCompleted)
   const [marking, setMarking] = useState(false)
   const [tocOpen, setTocOpen] = useState(false)
-
-  const currentUnitId = tocUnits.find(u => u.topics.some(t => t.id === currentNoteId))?.id ?? null
-  const [expandedUnitId, setExpandedUnitId] = useState<string | null>(currentUnitId)
 
   const isComplete = completedIds.has(currentNoteId)
 
@@ -115,44 +106,24 @@ export default function TopicReaderClient({
           </>
         )}
       </div>
-      {tocUnits.map(u => {
-        const unitOpen = expandedUnitId === u.id
+      {tocTopics.map(t => {
+        const active = t.id === currentNoteId
+        const done = completedIds.has(t.id)
         return (
-          <div key={u.id} style={{ marginBottom: '2px' }}>
-            <button
-              onClick={() => setExpandedUnitId(unitOpen ? null : u.id)}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
-                padding: '10px 16px 6px', color: 'var(--muted2)',
-              }}
-            >
-              <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Unit {u.unitNumber} · {u.title}
-              </span>
-              {unitOpen ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
-            </button>
-            {unitOpen && u.topics.map(t => {
-              const active = t.id === currentNoteId
-              const done = completedIds.has(t.id)
-              return (
-                <Link key={t.id} href={`/free-notes/${subjectSlug}/${t.id}`} style={{ textDecoration: 'none' }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: '9px', padding: '8px 16px', margin: '1px 8px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: active ? 'var(--accent-dim)' : 'transparent',
-                    color: active ? 'var(--text)' : 'var(--muted)',
-                    fontSize: '13px', fontWeight: active ? 600 : 400,
-                    borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
-                  }}>
-                    {done ? <CheckCircle2 size={14} color="var(--green)" style={{ flexShrink: 0 }}/>
-                          : <Circle size={14} style={{ flexShrink: 0, opacity: 0.35 }}/>}
-                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
+          <Link key={t.id} href={`/free-notes/${subjectSlug}/${t.id}`} style={{ textDecoration: 'none' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '9px', padding: '8px 16px', margin: '1px 8px',
+              borderRadius: 'var(--radius-sm)',
+              background: active ? 'var(--accent-dim)' : 'transparent',
+              color: active ? 'var(--text)' : 'var(--muted)',
+              fontSize: '13px', fontWeight: active ? 600 : 400,
+              borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
+            }}>
+              {done ? <CheckCircle2 size={14} color="var(--green)" style={{ flexShrink: 0 }}/>
+                    : <Circle size={14} style={{ flexShrink: 0, opacity: 0.35 }}/>}
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
+            </div>
+          </Link>
         )
       })}
     </div>
@@ -208,9 +179,7 @@ export default function TopicReaderClient({
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--muted)', minWidth: 0, overflow: 'hidden' }}>
             <Link href="/free-notes" style={{ color: 'var(--muted)', textDecoration: 'none', flexShrink: 0 }}>Handwritten Notes</Link>
             <ChevronRight size={12} style={{ flexShrink: 0 }}/>
-            <Link href={`/free-notes/${subjectSlug}`} style={{ color: 'var(--muted)', textDecoration: 'none', flexShrink: 0 }}>{subjectName}</Link>
-            <ChevronRight size={12} style={{ flexShrink: 0 }}/>
-            <span style={{ color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUnitTitle}</span>
+            <span style={{ color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subjectName}</span>
           </div>
         </div>
 

@@ -51,21 +51,17 @@ export async function POST(req: NextRequest) {
 
     // Verify noteId actually belongs to subjectId, same reasoning as
     // upload-notes/route.ts: without this, a staff member could write
-    // a PDF to an arbitrary subjectId/noteId.pdf path. free_notes has
-    // no direct subject_id column — resolve it via unit_id -> units.
+    // a PDF to an arbitrary subjectId/noteId.pdf path.
     const { data: noteRow, error: noteErr } = await sb
       .from('free_notes')
-      .select('unit_id, units!unit_id(subject_id)')
+      .select('subject_id')
       .eq('id', noteId)
       .maybeSingle()
 
     if (noteErr || !noteRow) {
       return NextResponse.json({ error: 'Note not found' }, { status: 404 })
     }
-    type UnitJoin = { subject_id: string } | { subject_id: string }[] | null
-    const unitJoinRaw = (noteRow as { units: UnitJoin }).units
-    const unitJoin = Array.isArray(unitJoinRaw) ? unitJoinRaw[0] : unitJoinRaw
-    if (!unitJoin || unitJoin.subject_id !== subjectId) {
+    if ((noteRow as { subject_id: string }).subject_id !== subjectId) {
       return NextResponse.json({ error: 'note_id does not belong to the given subject_id' }, { status: 400 })
     }
 

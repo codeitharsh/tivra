@@ -8,8 +8,7 @@ import TopicReaderClient from '@/components/free-notes/TopicReaderClient'
 import { getSubjectProgress } from '@/lib/free-notes-progress'
 import type { Profile } from '@/types/database'
 
-interface UnitRow { id: string; title: string; unit_number: number }
-interface NoteRow { id: string; unit_id: string; title: string; note_number: number; notes_url: string | null }
+interface NoteRow { id: string; title: string; note_number: number; notes_url: string | null }
 
 export default async function FreeNoteViewerPage({
   params,
@@ -40,34 +39,19 @@ export default async function FreeNoteViewerPage({
   if (!subjectRow) notFound()
   const subject = subjectRow as { id: string; name: string; slug: string }
 
-  const { data: unitsRaw } = await admin
-    .from('units')
-    .select('id, title, unit_number')
-    .eq('subject_id', subject.id)
-    .order('unit_number')
-  const units = (unitsRaw ?? []) as UnitRow[]
-  const unitIds = units.map(u => u.id)
-
-  const { data: notesRaw } = unitIds.length > 0 ? await admin
+  const { data: notesRaw } = await admin
     .from('free_notes')
-    .select('id, unit_id, title, note_number, notes_url')
-    .in('unit_id', unitIds)
-    .order('note_number') : { data: [] }
+    .select('id, title, note_number, notes_url')
+    .eq('subject_id', subject.id)
+    .order('note_number')
   const allNotes = (notesRaw ?? []) as NoteRow[]
 
   const note = allNotes.find(n => n.id === noteId)
   if (!note) notFound()
 
-  const currentUnit = units.find(u => u.id === note.unit_id)
-  if (!currentUnit) notFound()
-
-  // Flattened unit -> topic order, used for both the sidebar TOC and
-  // prev/next navigation — a topic's neighbor can be the last topic of
-  // the previous unit or the first topic of the next one.
-  const flatOrder = units.flatMap(u => allNotes.filter(n => n.unit_id === u.id))
-  const currentIndex = flatOrder.findIndex(n => n.id === noteId)
-  const prevNoteId = currentIndex > 0 ? flatOrder[currentIndex - 1].id : null
-  const nextNoteId = currentIndex < flatOrder.length - 1 ? flatOrder[currentIndex + 1].id : null
+  const currentIndex = allNotes.findIndex(n => n.id === noteId)
+  const prevNoteId = currentIndex > 0 ? allNotes[currentIndex - 1].id : null
+  const nextNoteId = currentIndex < allNotes.length - 1 ? allNotes[currentIndex + 1].id : null
 
   const progress = await getSubjectProgress(admin, user.id, subject.id)
 
@@ -79,14 +63,7 @@ export default async function FreeNoteViewerPage({
     signedUrl = urlData?.signedUrl ?? null
   }
 
-  const tocUnits = units.map(u => ({
-    id: u.id,
-    title: u.title,
-    unitNumber: u.unit_number,
-    topics: allNotes
-      .filter(n => n.unit_id === u.id)
-      .map(n => ({ id: n.id, title: n.title, noteNumber: n.note_number })),
-  }))
+  const tocTopics = allNotes.map(n => ({ id: n.id, title: n.title, noteNumber: n.note_number }))
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
@@ -94,10 +71,9 @@ export default async function FreeNoteViewerPage({
       <TopicReaderClient
         subjectSlug={subject.slug}
         subjectName={subject.name}
-        tocUnits={tocUnits}
+        tocTopics={tocTopics}
         currentNoteId={note.id}
         currentNoteTitle={note.title}
-        currentUnitTitle={currentUnit.title}
         prevNoteId={prevNoteId}
         nextNoteId={nextNoteId}
         signedUrl={signedUrl}

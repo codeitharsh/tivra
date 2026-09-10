@@ -11,8 +11,7 @@ import { getSubjectProgress } from '@/lib/free-notes-progress'
 import type { Profile } from '@/types/database'
 import { FileText, ChevronRight, CheckCircle2, Circle, ArrowRight } from 'lucide-react'
 
-interface UnitRow { id: string; title: string; unit_number: number }
-interface NoteRow { id: string; unit_id: string; title: string; note_number: number; notes_url: string | null }
+interface NoteRow { id: string; title: string; note_number: number; notes_url: string | null }
 
 export default async function FreeNotesSubjectPage({
   params,
@@ -45,20 +44,11 @@ export default async function FreeNotesSubjectPage({
   if (!subjectRow) notFound()
   const subject = subjectRow as { id: string; name: string; slug: string; description: string | null }
 
-  const { data: unitsRaw } = await admin
-    .from('units')
-    .select('id, title, unit_number')
-    .eq('subject_id', subject.id)
-    .order('unit_number')
-
-  const units = (unitsRaw ?? []) as UnitRow[]
-  const unitIds = units.map(u => u.id)
-
-  const { data: notesRaw } = unitIds.length > 0 ? await admin
+  const { data: notesRaw } = await admin
     .from('free_notes')
-    .select('id, unit_id, title, note_number, notes_url')
-    .in('unit_id', unitIds)
-    .order('note_number') : { data: [] }
+    .select('id, title, note_number, notes_url')
+    .eq('subject_id', subject.id)
+    .order('note_number')
 
   const notes = (notesRaw ?? []) as NoteRow[]
   const totalTopics = notes.length
@@ -103,54 +93,43 @@ export default async function FreeNotesSubjectPage({
           <div style={{ fontSize: '14px' }}>No topics uploaded for this subject yet. Check back soon.</div>
         </div>
       ) : (
-        units.map(u => {
-          const unitNotes = notes.filter(n => n.unit_id === u.id)
-          if (unitNotes.length === 0) return null
-          return (
-            <div key={u.id} style={{ marginBottom: '20px' }}>
-              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', color: 'var(--text)', marginBottom: '10px' }}>
-                Unit {u.unit_number}: {u.title}
-              </div>
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                {unitNotes.map((n, i) => {
-                  const done = progress?.completedNoteIds.has(n.id) ?? false
-                  return (
-                    <Link
-                      key={n.id}
-                      href={`/free-notes/${subject.slug}/${n.id}`}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px',
-                        padding: '14px 20px', textDecoration: 'none', color: 'inherit',
-                        borderBottom: i < unitNotes.length - 1 ? '1px solid var(--border)' : 'none',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                        {progress
-                          ? (done
-                              ? <CheckCircle2 size={16} color="var(--green)" style={{ flexShrink: 0 }}/>
-                              : <Circle size={16} style={{ flexShrink: 0, opacity: 0.35 }}/>)
-                          : <span style={{
-                              width: '26px', height: '26px', borderRadius: 'var(--radius-sm)', flexShrink: 0,
-                              background: 'var(--card2)', border: '1px solid var(--border)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '10px', color: 'var(--muted)',
-                            }}>{n.note_number}</span>}
-                        <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)' }}>{n.title}</div>
-                      </div>
-                      {n.notes_url ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: 'var(--accent-2)', flexShrink: 0 }}>
-                          View <ArrowRight size={12}/>
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '11px', color: 'var(--muted2)', flexShrink: 0 }}>Coming soon</span>
-                      )}
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          {notes.map((n, i) => {
+            const done = progress?.completedNoteIds.has(n.id) ?? false
+            return (
+              <Link
+                key={n.id}
+                href={`/free-notes/${subject.slug}/${n.id}`}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px',
+                  padding: '14px 20px', textDecoration: 'none', color: 'inherit',
+                  borderBottom: i < notes.length - 1 ? '1px solid var(--border)' : 'none',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                  {progress
+                    ? (done
+                        ? <CheckCircle2 size={16} color="var(--green)" style={{ flexShrink: 0 }}/>
+                        : <Circle size={16} style={{ flexShrink: 0, opacity: 0.35 }}/>)
+                    : <span style={{
+                        width: '26px', height: '26px', borderRadius: 'var(--radius-sm)', flexShrink: 0,
+                        background: 'var(--card2)', border: '1px solid var(--border)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '10px', color: 'var(--muted)',
+                      }}>{n.note_number}</span>}
+                  <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)' }}>{n.title}</div>
+                </div>
+                {n.notes_url ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: 'var(--accent-2)', flexShrink: 0 }}>
+                    View <ArrowRight size={12}/>
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '11px', color: 'var(--muted2)', flexShrink: 0 }}>Coming soon</span>
+                )}
+              </Link>
+            )
+          })}
+        </div>
       )}
     </div>
   )

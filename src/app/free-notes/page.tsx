@@ -33,21 +33,11 @@ export default async function FreeNotesPage() {
     .eq('is_active', true)
     .order('display_order')
 
-  // free_notes has no direct subject_id — resolve topic counts per
-  // subject via units first.
-  const { data: unitsRaw } = await admin.from('units').select('id, subject_id')
-  const subjectIdByUnitId: Record<string, string> = {}
-  for (const u of (unitsRaw ?? []) as { id: string; subject_id: string }[]) {
-    subjectIdByUnitId[u.id] = u.subject_id
-  }
-
-  const { data: countsRaw } = await admin.from('free_notes').select('unit_id')
+  const { data: countsRaw } = await admin.from('free_notes').select('subject_id')
 
   const noteCountBySubject: Record<string, number> = {}
-  for (const n of (countsRaw ?? []) as { unit_id: string }[]) {
-    const subjectId = subjectIdByUnitId[n.unit_id]
-    if (!subjectId) continue
-    noteCountBySubject[subjectId] = (noteCountBySubject[subjectId] ?? 0) + 1
+  for (const n of (countsRaw ?? []) as { subject_id: string }[]) {
+    noteCountBySubject[n.subject_id] = (noteCountBySubject[n.subject_id] ?? 0) + 1
   }
 
   const subjects = (subjectsRaw ?? []) as SubjectRow[]
