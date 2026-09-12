@@ -70,7 +70,17 @@ export default async function CourseLandingPage({
   const lessonCountByModule: Record<string, number> = {}
   for (const l of lessons) lessonCountByModule[l.module_id] = (lessonCountByModule[l.module_id] ?? 0) + 1
 
-  const firstLessonId = lessons[0]?.id ?? null
+  // lessons is only ordered by lesson_number, which resets to 1 in every
+  // module — so lessons[0] could be any module's first lesson, not
+  // necessarily module 1's. Re-flatten in true module -> lesson order
+  // (same approach as the lesson reader page) before taking the first one.
+  const orderedLessons: { id: string; module_id: string; lesson_number: number }[] = []
+  for (const m of modules) {
+    for (const l of lessons.filter(l => l.module_id === m.id).sort((a, b) => a.lesson_number - b.lesson_number)) {
+      orderedLessons.push(l)
+    }
+  }
+  const firstLessonId = orderedLessons[0]?.id ?? null
 
   // Personalized state — only fetched for a logged-in visitor.
   let resumeLessonId = firstLessonId
