@@ -14,6 +14,7 @@ interface CourseRow {
   id: string; slug: string; title: string; description: string | null
   difficulty: string; estimated_duration_minutes: number | null; skills: string[]
   cover_image_path: string | null
+  price_inr: number | null; original_price_inr: number | null
 }
 
 const DIFFICULTY_META: Record<string, { label: string; color: string; bg: string }> = {
@@ -39,7 +40,7 @@ export default async function CoursesPage() {
   const admin = createAdminClient()
   const { data: coursesRaw } = await admin
     .from('courses')
-    .select('id, slug, title, description, difficulty, estimated_duration_minutes, skills, cover_image_path')
+    .select('id, slug, title, description, difficulty, estimated_duration_minutes, skills, cover_image_path, price_inr, original_price_inr')
     .eq('status', 'published')
     .order('display_order')
 
@@ -93,6 +94,18 @@ export default async function CoursesPage() {
                     </div>
                     <span className="pill" style={{ background: diff.bg, color: diff.color }}>{diff.label}</span>
                   </div>
+                  {c.price_inr && c.price_inr > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '10px' }}>
+                      {c.original_price_inr && c.original_price_inr > c.price_inr && (
+                        <span style={{ fontSize: '12px', color: 'var(--muted2)', textDecoration: 'line-through' }}>
+                          ₹{c.original_price_inr.toLocaleString('en-IN')}
+                        </span>
+                      )}
+                      <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', color: 'var(--text)' }}>
+                        ₹{c.price_inr.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  )}
                   <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '17px', color: 'var(--text)', marginBottom: '8px' }}>
                     {c.title}
                   </div>

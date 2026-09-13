@@ -9,26 +9,9 @@ import { createClient } from '@/lib/supabase/client'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 import { PROGRAM_META, DEFAULT_PROGRAM_META } from '@/lib/program-meta'
 
-// ── Razorpay type declaration ─────────────────────────────
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance
-  }
-}
-interface RazorpayOptions {
-  key:          string
-  amount:       number
-  currency:     string
-  name:         string
-  description:  string
-  image?:       string
-  order_id:     string
-  handler:      (res: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => void
-  prefill?:     { name?: string; email?: string; contact?: string }
-  theme?:       { color?: string }
-  modal?:       { ondismiss?: () => void }
-}
-interface RazorpayInstance { open(): void }
+// ── Razorpay type declaration — shared with CourseCheckout.tsx, see
+//    src/types/razorpay.d.ts for why this can't be declared per-file ──
+import '@/types/razorpay'
 
 // ── Plan shape, populated from `programs` via /api/programs ────────
 // No plan is ever hardcoded here — any active programme in the DB

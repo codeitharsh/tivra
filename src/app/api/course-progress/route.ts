@@ -5,6 +5,7 @@ import { createClient as createSB } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { getCourseProgress } from '@/lib/course-progress'
 import { checkAndIssueCourseCompletion } from '@/lib/course-completion'
+import { isPaidCourse, hasPurchasedCourse } from '@/lib/course-access'
 
 // Deliberately untyped (not the shared createAdminClient<Database>) —
 // course_* tables aren't declared in src/types/database.ts (same gap as
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
 
       const { data: lessonRow } = await admin
         .from('course_lessons')
-        .select('id, module_id, course_modules!module_id(course_id, courses!course_id(id, status))')
+        .select('id, module_id, course_modules!module_id(course_id, courses!course_id(id, status, price_inr))')
         .eq('id', lessonId)
         .maybeSingle()
 
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
       // Supabase's to-one join can come back as an object or a
       // single-element array depending on relationship inference —
       // handled defensively since this directly gates a write.
-      type ModuleJoin = { course_id: string; courses: { id: string; status: string } | { id: string; status: string }[] | null }
+      type ModuleJoin = { course_id: string; courses: { id: string; status: string; price_inr: number | null } | { id: string; status: string; price_inr: number | null }[] | null }
       const moduleJoinRaw = (lessonRow as { course_modules: ModuleJoin | ModuleJoin[] }).course_modules
       const moduleJoin = Array.isArray(moduleJoinRaw) ? moduleJoinRaw[0] : moduleJoinRaw
       const courseJoinRaw = moduleJoin?.courses
@@ -77,6 +78,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'This lesson is not currently available' }, { status: 404 })
       }
       const courseId = courseJoin.id
+
+      // Defense in depth against a direct API call bypassing the
+      // purchase-gated lesson-reader page for a paid course.
+      if (isPaidCourse(courseJoin.price_inr) && !(await hasPurchasedCourse(admin, user.id, courseId))) {
+        return NextResponse.json({ error: 'This course must be purchased first' }, { status: 403 })
+      }
 
       const { error: insertError } = await admin.from('course_lesson_progress').upsert({
         student_id: user.id, lesson_id: lessonId,

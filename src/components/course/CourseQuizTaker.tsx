@@ -16,6 +16,7 @@ interface Question {
 
 interface Quiz {
   id: string; title: string; passing_percent: number
+  quiz_type?: string
 }
 
 interface Attempt {
@@ -31,6 +32,7 @@ interface Props {
   latestAttempt: Attempt | null
   allAttempts: Attempt[]
   alreadyPassed: boolean
+  certificateIssued: boolean
   initialBreakdown: QuestionBreakdownItem[] | null
 }
 
@@ -38,11 +40,11 @@ type Screen = 'info' | 'taking' | 'result'
 
 export default function CourseQuizTaker({
   quiz, courseSlug, questions, lessonsDone,
-  latestAttempt, allAttempts, alreadyPassed, initialBreakdown,
+  latestAttempt, allAttempts, alreadyPassed, certificateIssued, initialBreakdown,
 }: Props) {
   const [screen, setScreen] = useState<Screen>(latestAttempt ? 'result' : 'info')
   const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [serverResult, setResult] = useState<{ score: number; passed: boolean; correct: number; total: number } | null>(null)
+  const [serverResult, setResult] = useState<{ score: number; passed: boolean; correct: number; total: number; certificateIssued: boolean } | null>(null)
   const [breakdown, setBreakdown] = useState<QuestionBreakdownItem[] | null>(initialBreakdown)
   const [currentQ, setCurrentQ] = useState(0)
   const [submitError, setError] = useState<string | null>(null)
@@ -67,6 +69,7 @@ export default function CourseQuizTaker({
         const data = await res.json() as {
           error?: string
           score?: number; passed?: boolean; correct?: number; total?: number
+          certificateIssued?: boolean
           breakdown?: QuestionBreakdownItem[]
         }
         if (!res.ok) {
@@ -78,6 +81,7 @@ export default function CourseQuizTaker({
           passed: data.passed ?? false,
           correct: data.correct ?? 0,
           total: data.total ?? questions.length,
+          certificateIssued: data.certificateIssued ?? false,
         })
         setBreakdown(data.breakdown ?? null)
         setScreen('result')
@@ -93,10 +97,12 @@ export default function CourseQuizTaker({
       <div className="card" style={{ textAlign: 'center', padding: '60px 40px', maxWidth: '520px', margin: '0 auto' }}>
         <Lock size={36} color="var(--muted2)" style={{ marginBottom: '16px' }}/>
         <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '20px', marginBottom: '8px' }}>
-          Finish the course first
+          {quiz.quiz_type === 'module_test' ? 'Finish this module first' : 'Finish the course first'}
         </div>
         <div style={{ fontSize: '14px', color: 'var(--muted)', maxWidth: '380px', margin: '0 auto 24px' }}>
-          Complete every lesson before taking the quiz.
+          {quiz.quiz_type === 'module_test'
+            ? 'Complete every lesson in this module before taking its test.'
+            : 'Complete every lesson (and every module test, if this course has them) before taking the final assessment.'}
         </div>
         <a href={`/courses/${courseSlug}`} className="btn btn-ghost" style={{ fontSize: '13px', display: 'inline-flex' }}>
           <ArrowLeft size={13}/> Back to course
@@ -139,7 +145,9 @@ export default function CourseQuizTaker({
         <div className="banner banner-brand" style={{ marginBottom: '24px' }}>
           <Award size={16} style={{ flexShrink: 0 }}/>
           <span style={{ fontSize: '13px' }}>
-            Passing this quiz unlocks your certificate. No time limit, and you can retake it as many times as you need.
+            {quiz.quiz_type === 'module_test'
+              ? 'Passing this module test is required for your certificate, alongside the other modules and the final assessment. No time limit, and you can retake it as many times as you need.'
+              : 'Passing this final assessment unlocks your certificate. No time limit, and you can retake it as many times as you need.'}
           </span>
         </div>
         <button className="btn btn-primary" onClick={() => setScreen('taking')}
@@ -157,6 +165,7 @@ export default function CourseQuizTaker({
   if (screen === 'result' && displayResult) {
     const score = displayResult.score_percent
     const passed = displayResult.passed
+    const certNowIssued = serverResult ? serverResult.certificateIssued : certificateIssued
     return (
       <div>
         <div style={{
@@ -176,12 +185,23 @@ export default function CourseQuizTaker({
             </div>
           )}
           <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px' }}>
-            {passed ? 'You passed — certificate issued.' : `Need ${quiz.passing_percent}% to pass. Retake any time.`}
+            {passed
+              ? certNowIssued
+                ? 'You passed — certificate issued.'
+                : quiz.quiz_type === 'module_test'
+                  ? 'Module test passed — keep going to earn your certificate.'
+                  : 'You passed.'
+              : `Need ${quiz.passing_percent}% to pass. Retake any time.`}
           </div>
-          {passed ? (
+          {passed && certNowIssued ? (
             <a href={`/courses/${courseSlug}/certificate`} className="btn btn-primary"
               style={{ fontSize: '14px', padding: '12px 28px', display: 'inline-flex' }}>
               <Trophy size={15}/> View certificate
+            </a>
+          ) : passed ? (
+            <a href={`/courses/${courseSlug}`} className="btn btn-primary"
+              style={{ fontSize: '14px', padding: '12px 28px', display: 'inline-flex' }}>
+              <ArrowRight size={15}/> Continue course
             </a>
           ) : (
             <button className="btn btn-primary" onClick={() => { setScreen('info'); setAnswers({}); setCurrentQ(0) }}

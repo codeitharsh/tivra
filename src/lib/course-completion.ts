@@ -40,27 +40,29 @@ export async function checkAndIssueCourseCompletion(
     return { issued: false }
   }
 
-  // A course with a "Test Your Knowledge" quiz requires a passing
-  // attempt before completion/certificate — courses without one (the
-  // quiz is optional, not every course has one) fall back to
-  // lesson-completion-only, unchanged from before this quiz feature.
-  const { data: quizRow } = await sb
+  // A course can have any number of quizzes — a free Beginner course
+  // typically has just one final "Test Your Knowledge" assessment, a
+  // paid Intermediate course additionally has one test per module
+  // (course_quizzes.module_id set). Every quiz row for this course must
+  // have a passed attempt before completion/certificate; a course with
+  // no quizzes at all falls back to lesson-completion-only, unchanged
+  // from before the quiz feature existed.
+  const { data: quizzesRaw } = await sb
     .from('course_quizzes')
     .select('id')
     .eq('course_id', courseId)
-    .maybeSingle()
 
-  const quiz = quizRow as { id: string } | null
-  if (quiz) {
-    const { data: passedAttempt } = await sb
+  const quizzes = (quizzesRaw ?? []) as { id: string }[]
+  if (quizzes.length > 0) {
+    const { data: passedAttemptsRaw } = await sb
       .from('course_quiz_attempts')
-      .select('id')
+      .select('quiz_id')
       .eq('student_id', studentId)
-      .eq('quiz_id', quiz.id)
       .eq('passed', true)
-      .maybeSingle()
+      .in('quiz_id', quizzes.map(q => q.id))
 
-    if (!passedAttempt) return { issued: false }
+    const passedQuizIds = new Set(((passedAttemptsRaw ?? []) as { quiz_id: string }[]).map(a => a.quiz_id))
+    if (!quizzes.every(q => passedQuizIds.has(q.id))) return { issued: false }
   }
 
   // onConflict guards against a race if two requests trigger this near-

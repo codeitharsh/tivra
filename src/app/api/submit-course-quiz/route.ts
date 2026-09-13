@@ -5,7 +5,8 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient as createSB } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { checkAndIssueCourseCompletion } from '@/lib/course-completion'
-import { getCourseProgress } from '@/lib/course-progress'
+import { isQuizUnlocked } from '@/lib/course-progress'
+import { isPaidCourse, hasPurchasedCourse } from '@/lib/course-access'
 import { buildBreakdown } from '@/lib/question-breakdown'
 
 function adminSB() {
@@ -42,21 +43,34 @@ export async function POST(req: NextRequest) {
 
     const { data: quizData } = await sb
       .from('course_quizzes')
-      .select('id, course_id, passing_percent')
+      .select('id, course_id, passing_percent, module_id, quiz_type, courses!course_id(price_inr)')
       .eq('id', quizId)
       .maybeSingle()
 
     if (!quizData) return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
-    const quiz = quizData as { id: string; course_id: string; passing_percent: number }
+    const quizRow = quizData as {
+      id: string; course_id: string; passing_percent: number
+      module_id: string | null; quiz_type: string
+      courses: { price_inr: number | null } | { price_inr: number | null }[] | null
+    }
+    const quiz = quizRow
+    const courseMeta = Array.isArray(quizRow.courses) ? quizRow.courses[0] : quizRow.courses
 
-    // Unlike paid-programme assessments, this quiz has no entitlement
-    // check to make (self-paced courses are open to any registered
-    // user) and no cooldown — it's a "test your knowledge" recap, not a
-    // high-stakes gate, so unlimited immediate retakes are allowed. It
-    // IS still required for course completion — see course-completion.ts.
-    const progress = await getCourseProgress(sb, user.id, quiz.course_id)
-    if (progress.totalRequired === 0 || progress.completedRequired < progress.totalRequired) {
-      return NextResponse.json({ error: 'Complete all lessons before taking the quiz' }, { status: 403 })
+    // Defense in depth against a direct API call bypassing the
+    // purchase-gated quiz page for a paid course.
+    if (isPaidCourse(courseMeta?.price_inr ?? null) && !(await hasPurchasedCourse(sb, user.id, quiz.course_id))) {
+      return NextResponse.json({ error: 'This course must be purchased first' }, { status: 403 })
+    }
+
+    // Unlike paid-programme assessments, these quizzes have no
+    // entitlement check to make (self-paced courses are open to any
+    // registered user, purchase gating happens separately for paid
+    // ones) and no cooldown — they're a knowledge check, not a
+    // high-stakes gate, so unlimited immediate retakes are allowed. A
+    // module test or final assessment IS still required for course
+    // completion — see course-completion.ts and isQuizUnlocked.
+    if (!(await isQuizUnlocked(sb, user.id, quiz))) {
+      return NextResponse.json({ error: 'Complete the required lessons before taking this test' }, { status: 403 })
     }
 
     // Fetch correct answers SERVER-SIDE only.

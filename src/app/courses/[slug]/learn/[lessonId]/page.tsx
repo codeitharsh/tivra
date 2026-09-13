@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import LessonBlockRenderer from '@/components/course/LessonBlockRenderer'
 import LessonReaderClient from '@/components/course/LessonReaderClient'
 import { getCourseProgress } from '@/lib/course-progress'
+import { isPaidCourse, hasPurchasedCourse } from '@/lib/course-access'
 import type { Profile } from '@/types/database'
 import type { CourseBlock } from '@/types/course'
 
@@ -29,13 +30,21 @@ export default async function LessonReaderPage({
   const admin = createAdminClient()
   const { data: courseRow } = await admin
     .from('courses')
-    .select('id, slug, title, is_certificate_enabled')
+    .select('id, slug, title, is_certificate_enabled, price_inr')
     .eq('slug', slug)
     .eq('status', 'published')
     .maybeSingle()
 
   if (!courseRow) notFound()
-  const course = courseRow as { id: string; slug: string; title: string; is_certificate_enabled: boolean }
+  const course = courseRow as { id: string; slug: string; title: string; is_certificate_enabled: boolean; price_inr: number | null }
+
+  // A paid course's lessons are only reachable once purchased — the
+  // landing page already hides the "start" link for an unpurchased
+  // course, this is defense in depth against jumping straight to a
+  // lesson URL, same posture as requireProgramAccess for paid programmes.
+  if (isPaidCourse(course.price_inr) && !(await hasPurchasedCourse(admin, user.id, course.id))) {
+    redirect(`/courses/${course.slug}`)
+  }
 
   const { data: modulesRaw } = await admin
     .from('course_modules')
@@ -78,23 +87,23 @@ export default async function LessonReaderPage({
     .eq('course_id', course.id)
     .maybeSingle()
 
-  const { data: quizRow } = await admin
+  const { data: quizzesRaw } = await admin
     .from('course_quizzes')
-    .select('id')
+    .select('id, title, module_id, quiz_type')
     .eq('course_id', course.id)
-    .maybeSingle()
-  const quiz = quizRow as { id: string } | null
+  const quizzes = (quizzesRaw ?? []) as {
+    id: string; title: string; module_id: string | null; quiz_type: 'module_test' | 'final_assessment'
+  }[]
 
-  let quizPassed = false
-  if (quiz) {
-    const { data: passedAttempt } = await admin
+  let passedQuizIds: string[] = []
+  if (quizzes.length > 0) {
+    const { data: passedAttemptsRaw } = await admin
       .from('course_quiz_attempts')
-      .select('id')
+      .select('quiz_id')
       .eq('student_id', user.id)
-      .eq('quiz_id', quiz.id)
       .eq('passed', true)
-      .maybeSingle()
-    quizPassed = !!passedAttempt
+      .in('quiz_id', quizzes.map(q => q.id))
+    passedQuizIds = Array.from(new Set(((passedAttemptsRaw ?? []) as { quiz_id: string }[]).map(a => a.quiz_id)))
   }
 
   const tocModules = modules.map(m => ({
@@ -129,8 +138,8 @@ export default async function LessonReaderPage({
         initialTotalRequired={progress.totalRequired}
         initialCompletedRequired={progress.completedRequired}
         initialCourseComplete={!!completionRow}
-        hasQuiz={!!quiz}
-        initialQuizPassed={quizPassed}
+        quizzes={quizzes.map(q => ({ id: q.id, title: q.title, moduleId: q.module_id, quizType: q.quiz_type }))}
+        initialPassedQuizIds={passedQuizIds}
       >
         <LessonBlockRenderer blocks={currentLesson.content ?? []}/>
       </LessonReaderClient>

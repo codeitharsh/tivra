@@ -10,6 +10,7 @@ import {
 
 interface TocLesson { id: string; title: string; lessonNumber: number; isRequired: boolean }
 interface TocModule { id: string; title: string; moduleNumber: number; lessons: TocLesson[] }
+interface QuizInfo { id: string; title: string; moduleId: string | null; quizType: 'module_test' | 'final_assessment' }
 
 interface Props {
   courseId: string
@@ -28,8 +29,8 @@ interface Props {
   initialTotalRequired: number
   initialCompletedRequired: number
   initialCourseComplete: boolean
-  hasQuiz: boolean
-  initialQuizPassed: boolean
+  quizzes: QuizInfo[]
+  initialPassedQuizIds: string[]
   children: ReactNode
 }
 
@@ -38,7 +39,7 @@ export default function LessonReaderClient({
   currentLessonId, currentLessonTitle, currentLessonDuration, currentModuleTitle,
   prevLessonId, nextLessonId,
   initialCompletedLessonIds, initialPercent, initialTotalRequired, initialCompletedRequired,
-  initialCourseComplete, hasQuiz, initialQuizPassed, children,
+  initialCourseComplete, quizzes, initialPassedQuizIds, children,
 }: Props) {
   const router = useRouter()
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set(initialCompletedLessonIds))
@@ -62,7 +63,33 @@ export default function LessonReaderClient({
 
   const isComplete = completedIds.has(currentLessonId)
   const allLessonsDone = totalRequired > 0 && completedRequired >= totalRequired
-  const needsQuiz = hasQuiz && allLessonsDone && !initialQuizPassed && !courseComplete
+
+  // Quiz-taking happens on a separate page, so passed-quiz state only
+  // ever needs to reflect what the server knew when this page loaded —
+  // no live updates needed here (matches how courseComplete/percent
+  // already only update from THIS page's own mark-complete calls).
+  const passedQuizIds = new Set(initialPassedQuizIds)
+  const moduleTests = quizzes.filter(q => q.quizType === 'module_test')
+  const finalAssessment = quizzes.find(q => q.quizType === 'final_assessment') ?? null
+
+  function isModuleDone(moduleId: string) {
+    const mod = tocModules.find(m => m.id === moduleId)
+    return !!mod && mod.lessons.length > 0 && mod.lessons.every(l => completedIds.has(l.id))
+  }
+
+  const currentModule = tocModules.find(m => m.lessons.some(l => l.id === currentLessonId)) ?? null
+  const currentModuleTest = currentModule ? moduleTests.find(q => q.moduleId === currentModule.id) : undefined
+  const currentModuleTestPending = !!currentModuleTest && !passedQuizIds.has(currentModuleTest.id)
+    && !!currentModule && isModuleDone(currentModule.id)
+
+  const allModuleTestsPassed = moduleTests.every(q => passedQuizIds.has(q.id))
+  const finalAssessmentPending = !!finalAssessment && !passedQuizIds.has(finalAssessment.id)
+    && allLessonsDone && allModuleTestsPassed && !courseComplete
+
+  // Any module test whose module is done but not yet passed, regardless
+  // of which lesson is currently open — for the always-visible sidebar
+  // list (a student may have finished module 1 while reading module 3).
+  const pendingModuleTests = moduleTests.filter(q => !passedQuizIds.has(q.id) && q.moduleId && isModuleDone(q.moduleId))
 
   // Resume-where-left-off bookkeeping — fire-and-forget, doesn't block
   // rendering the lesson.
@@ -122,11 +149,18 @@ export default function LessonReaderClient({
         <div style={{ height: '5px', borderRadius: '4px', background: 'var(--card2)', overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${percent}%`, background: 'var(--accent-2)', borderRadius: '4px' }}/>
         </div>
-        {needsQuiz && (
-          <Link href={`/courses/${courseSlug}/quiz`} className="btn btn-primary" style={{
+        {pendingModuleTests.map(q => (
+          <Link key={q.id} href={`/courses/${courseSlug}/quiz/${q.id}`} className="btn btn-primary" style={{
             fontSize: '11px', marginTop: '10px', width: '100%', justifyContent: 'center',
           }}>
-            <ClipboardList size={12}/> Take the quiz
+            <ClipboardList size={12}/> {q.title}
+          </Link>
+        ))}
+        {finalAssessmentPending && finalAssessment && (
+          <Link href={`/courses/${courseSlug}/quiz/${finalAssessment.id}`} className="btn btn-primary" style={{
+            fontSize: '11px', marginTop: '10px', width: '100%', justifyContent: 'center',
+          }}>
+            <ClipboardList size={12}/> {finalAssessment.title}
           </Link>
         )}
         {courseComplete && isCertificateEnabled && (
@@ -264,10 +298,17 @@ export default function LessonReaderClient({
                 {completedRequired}/{totalRequired} required lessons done
               </span>
             )}
-            {justCompleted && needsQuiz && (
+            {justCompleted && currentModuleTestPending && currentModuleTest && (
               <div style={{ marginTop: '14px' }}>
-                <Link href={`/courses/${courseSlug}/quiz`} className="btn btn-primary" style={{ fontSize: '13px' }}>
-                  <ClipboardList size={14}/> All lessons done — take the quiz
+                <Link href={`/courses/${courseSlug}/quiz/${currentModuleTest.id}`} className="btn btn-primary" style={{ fontSize: '13px' }}>
+                  <ClipboardList size={14}/> Module done — take the {currentModuleTest.title}
+                </Link>
+              </div>
+            )}
+            {justCompleted && !currentModuleTestPending && finalAssessmentPending && finalAssessment && (
+              <div style={{ marginTop: '14px' }}>
+                <Link href={`/courses/${courseSlug}/quiz/${finalAssessment.id}`} className="btn btn-primary" style={{ fontSize: '13px' }}>
+                  <ClipboardList size={14}/> All lessons done — take the {finalAssessment.title}
                 </Link>
               </div>
             )}
