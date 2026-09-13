@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   Plus, Trash2, Loader2, Lock, Unlock,
   ChevronDown, ChevronUp, X, Check, CircleDot, Clock3, Pencil,
-  AlertTriangle, Lightbulb, Info, ClipboardList, Globe, BarChart3,
+  AlertTriangle, Lightbulb, Info, ClipboardList, Globe, BarChart3, Copy,
 } from 'lucide-react'
 import { createClient as createSBClient } from '@supabase/supabase-js'
 
@@ -239,6 +239,28 @@ export default function TeacherTestsClient({ phases, tests, programId, batches }
     })
   }
 
+  // ── Duplicate a test into another batch ──────────────────
+  // Copies the test's core fields and its full question bank; always
+  // lands as a draft (no schedule/unlock inherited) so the teacher sets
+  // a fresh unlock time for the new batch rather than it silently going
+  // live. See duplicate_test in /api/tests for the full reasoning.
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
+
+  async function duplicateTest(testId: string, targetBatchId: string | null) {
+    setDuplicatingId(testId)
+    start(async () => {
+      const res = await fetch('/api/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'duplicate_test', testId, targetBatchId }),
+      })
+      const json = await res.json() as { error?: string }
+      if (!res.ok) showToast(json.error ?? 'Failed', 'error')
+      else { showToast('✓ Duplicated — set its schedule below', 'success'); router.refresh() }
+      setDuplicatingId(null)
+    })
+  }
+
   async function toggleUnlock(testId: string, current: boolean) {
     setSaving(`unlock-${testId}`)
     start(async () => {
@@ -349,6 +371,36 @@ export default function TeacherTestsClient({ phases, tests, programId, batches }
               title="View student scores">
               <BarChart3 size={11}/> Scores
             </Link>
+            {batches.length > 0 && (
+              <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                <select
+                  value=""
+                  disabled={duplicatingId === tid}
+                  onChange={e => {
+                    const val = e.target.value
+                    e.target.value = ''
+                    if (!val) return
+                    duplicateTest(tid, val === '__none__' ? null : val)
+                  }}
+                  title="Duplicate this test (with its questions) to another batch"
+                  style={{
+                    fontSize: '11px', padding: '5px 24px 5px 10px', borderRadius: 'var(--radius)',
+                    background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)',
+                    cursor: duplicatingId === tid ? 'default' : 'pointer', appearance: 'none',
+                  }}>
+                  <option value="" disabled>
+                    {duplicatingId === tid ? 'Duplicating…' : 'Duplicate to…'}
+                  </option>
+                  <option value="__none__">No specific batch</option>
+                  {batches.filter(b => b.id !== t.batch_id).map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+                {duplicatingId === tid
+                  ? <Loader2 size={11} style={{ position: 'absolute', right: '8px', animation: 'spin 1s linear infinite', pointerEvents: 'none' }}/>
+                  : <Copy size={11} style={{ position: 'absolute', right: '8px', color: 'var(--muted)', pointerEvents: 'none' }}/>}
+              </div>
+            )}
             <button
               className={t.is_manually_unlocked ? 'btn btn-danger' : 'btn btn-success'}
               onClick={() => toggleUnlock(tid, t.is_manually_unlocked as boolean)}

@@ -122,6 +122,8 @@ export async function POST(req: NextRequest) {
       testId?: string
       unlockDatetime2?: string
       questionId?: string
+      // For duplicate_test
+      targetBatchId?: string | null
       question?: {
         question_text: string
         options: string[]
@@ -197,6 +199,77 @@ export async function POST(req: NextRequest) {
       await notifyContentScheduled(sb, programId, 'test', title.trim(), unlockDatetime ?? null, batchId || null)
 
       return NextResponse.json({ success: true, testId })
+    }
+
+    // ── DUPLICATE TEST TO ANOTHER BATCH ───────────────────────
+    // Same programme/phase/week/title/topic/duration and the same
+    // question bank, copied verbatim — only batch_id differs. The copy
+    // always lands as a draft (unlock_datetime null, is_manually_unlocked
+    // false) rather than inheriting the source's schedule/unlock state,
+    // since "same test, next batch" almost always means a fresh
+    // schedule, not accidentally going live for a batch that hasn't
+    // started that week yet. No notification is sent here — one fires
+    // naturally when the teacher later sets a schedule or unlocks it,
+    // same as any newly created test.
+    if (body.action === 'duplicate_test') {
+      const { testId, targetBatchId } = body
+      if (!testId) return NextResponse.json({ error: 'Missing testId' }, { status: 400 })
+
+      const { data: sourceRow } = await sb
+        .from('weekly_tests')
+        .select('program_id, phase_id, week_number, title, topic, duration_minutes')
+        .eq('id', testId)
+        .maybeSingle()
+
+      if (!sourceRow) return NextResponse.json({ error: 'Source test not found' }, { status: 404 })
+      const source = sourceRow as {
+        program_id: string; phase_id: string; week_number: number
+        title: string; topic: string | null; duration_minutes: number
+      }
+
+      const { data: newTestData, error: newTestErr } = await sb
+        .from('weekly_tests')
+        .insert({
+          program_id:           source.program_id,
+          phase_id:             source.phase_id,
+          batch_id:             targetBatchId || null,
+          week_number:          source.week_number,
+          title:                source.title,
+          topic:                source.topic,
+          duration_minutes:     source.duration_minutes,
+          unlock_datetime:      null,
+          is_manually_unlocked: false,
+        })
+        .select('id')
+        .single()
+
+      if (newTestErr || !newTestData) {
+        return NextResponse.json({ error: newTestErr?.message ?? 'Failed to duplicate test' }, { status: 500 })
+      }
+      const newTestId = (newTestData as { id: string }).id
+
+      const { data: sourceQuestionsRaw } = await sb
+        .from('test_questions')
+        .select('question_text, options, correct_answer, explanation, order_num')
+        .eq('test_id', testId)
+        .order('order_num')
+
+      const sourceQuestions = (sourceQuestionsRaw ?? []) as {
+        question_text: string; options: string[]; correct_answer: string
+        explanation: string | null; order_num: number
+      }[]
+
+      if (sourceQuestions.length > 0) {
+        const { error: qErr } = await sb.from('test_questions').insert(
+          sourceQuestions.map(q => ({ ...q, test_id: newTestId }))
+        )
+        if (qErr) {
+          await sb.from('weekly_tests').delete().eq('id', newTestId)
+          return NextResponse.json({ error: qErr.message }, { status: 500 })
+        }
+      }
+
+      return NextResponse.json({ success: true, testId: newTestId })
     }
 
     // ── ADD QUESTION TO EXISTING TEST ─────────────────────────
