@@ -13,6 +13,14 @@
    No rounded corners on structural surfaces. No decorative gradients
    in UI chrome — the gradient stays reserved for the mark itself.  */
 :root {
+  /* Tivra is dark-only (no light theme) — without this, browsers assume
+     light-mode defaults for native UI chrome that isn't styled via CSS
+     (a <select>'s dropdown popup, date/time pickers, scrollbars), which
+     is why dropdown options could render as light text on a
+     browser-default white background regardless of our own dark
+     palette. */
+  color-scheme: dark;
+
   /* Backgrounds — near-black, matches the app-icon's mark backdrop */
   --bg:         #0b0b0d;
   --surface:    #111113;
@@ -254,7 +262,14 @@ h1,h2,h3,h4,h5,h6 { font-family: var(--font-serif), ui-serif, Georgia, serif; le
   outline: none; cursor: pointer;
 }
 .form-select:focus { border-color: var(--accent); }
-.form-select option { background: var(--card); }
+
+/* Every <select>'s option popup, regardless of which class or inline
+   style dresses up the closed select box (.form-select, .form-input, or
+   ad-hoc pill selects like the role picker in AccessTable) — option
+   text color already inherits correctly from whatever the select itself
+   sets, but background never inherits, so without this every dropdown
+   falls back to the browser's own default popup background. */
+select option { background: var(--card); }
 
 /* ─── Progress bar ────────────────────────────────────────── */
 .progress-track {
