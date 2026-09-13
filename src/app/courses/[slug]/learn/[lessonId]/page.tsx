@@ -78,6 +78,25 @@ export default async function LessonReaderPage({
     .eq('course_id', course.id)
     .maybeSingle()
 
+  const { data: quizRow } = await admin
+    .from('course_quizzes')
+    .select('id')
+    .eq('course_id', course.id)
+    .maybeSingle()
+  const quiz = quizRow as { id: string } | null
+
+  let quizPassed = false
+  if (quiz) {
+    const { data: passedAttempt } = await admin
+      .from('course_quiz_attempts')
+      .select('id')
+      .eq('student_id', user.id)
+      .eq('quiz_id', quiz.id)
+      .eq('passed', true)
+      .maybeSingle()
+    quizPassed = !!passedAttempt
+  }
+
   const tocModules = modules.map(m => ({
     id: m.id,
     title: m.title,
@@ -110,6 +129,8 @@ export default async function LessonReaderPage({
         initialTotalRequired={progress.totalRequired}
         initialCompletedRequired={progress.completedRequired}
         initialCourseComplete={!!completionRow}
+        hasQuiz={!!quiz}
+        initialQuizPassed={quizPassed}
       >
         <LessonBlockRenderer blocks={currentLesson.content ?? []}/>
       </LessonReaderClient>

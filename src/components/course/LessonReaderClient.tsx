@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   ChevronRight, ChevronLeft, CheckCircle2, Circle, Clock,
-  Menu, X, Award, Loader2, Check,
+  Menu, X, Award, Loader2, Check, ClipboardList,
 } from 'lucide-react'
 
 interface TocLesson { id: string; title: string; lessonNumber: number; isRequired: boolean }
@@ -28,6 +28,8 @@ interface Props {
   initialTotalRequired: number
   initialCompletedRequired: number
   initialCourseComplete: boolean
+  hasQuiz: boolean
+  initialQuizPassed: boolean
   children: ReactNode
 }
 
@@ -36,7 +38,7 @@ export default function LessonReaderClient({
   currentLessonId, currentLessonTitle, currentLessonDuration, currentModuleTitle,
   prevLessonId, nextLessonId,
   initialCompletedLessonIds, initialPercent, initialTotalRequired, initialCompletedRequired,
-  initialCourseComplete, children,
+  initialCourseComplete, hasQuiz, initialQuizPassed, children,
 }: Props) {
   const router = useRouter()
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set(initialCompletedLessonIds))
@@ -59,6 +61,8 @@ export default function LessonReaderClient({
   }
 
   const isComplete = completedIds.has(currentLessonId)
+  const allLessonsDone = totalRequired > 0 && completedRequired >= totalRequired
+  const needsQuiz = hasQuiz && allLessonsDone && !initialQuizPassed && !courseComplete
 
   // Resume-where-left-off bookkeeping — fire-and-forget, doesn't block
   // rendering the lesson.
@@ -118,6 +122,13 @@ export default function LessonReaderClient({
         <div style={{ height: '5px', borderRadius: '4px', background: 'var(--card2)', overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${percent}%`, background: 'var(--accent-2)', borderRadius: '4px' }}/>
         </div>
+        {needsQuiz && (
+          <Link href={`/courses/${courseSlug}/quiz`} className="btn btn-primary" style={{
+            fontSize: '11px', marginTop: '10px', width: '100%', justifyContent: 'center',
+          }}>
+            <ClipboardList size={12}/> Take the quiz
+          </Link>
+        )}
         {courseComplete && isCertificateEnabled && (
           <Link href={`/courses/${courseSlug}/certificate`} className="btn btn-ghost" style={{
             fontSize: '11px', marginTop: '10px', width: '100%', justifyContent: 'center',
@@ -252,6 +263,13 @@ export default function LessonReaderClient({
               <span style={{ marginLeft: '12px', fontSize: '12px', color: 'var(--green)' }}>
                 {completedRequired}/{totalRequired} required lessons done
               </span>
+            )}
+            {justCompleted && needsQuiz && (
+              <div style={{ marginTop: '14px' }}>
+                <Link href={`/courses/${courseSlug}/quiz`} className="btn btn-primary" style={{ fontSize: '13px' }}>
+                  <ClipboardList size={14}/> All lessons done — take the quiz
+                </Link>
+              </div>
             )}
           </div>
         </div>

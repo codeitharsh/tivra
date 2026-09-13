@@ -10,7 +10,7 @@ import PublicNav from '@/components/PublicNav'
 import { getCourseProgress } from '@/lib/course-progress'
 import { courseAssetUrl } from '@/lib/course-assets'
 import type { Profile } from '@/types/database'
-import { Clock, Layers, BookOpen, Award, CheckCircle2, ChevronRight, ArrowRight } from 'lucide-react'
+import { Clock, Layers, BookOpen, Award, CheckCircle2, ChevronRight, ArrowRight, ClipboardList } from 'lucide-react'
 
 const DIFFICULTY_META: Record<string, { label: string; color: string; bg: string }> = {
   beginner:     { label: 'Beginner',     color: 'var(--green)', bg: 'var(--green-dim)' },
@@ -82,10 +82,18 @@ export default async function CourseLandingPage({
   }
   const firstLessonId = orderedLessons[0]?.id ?? null
 
+  const { data: quizRow } = await admin
+    .from('course_quizzes')
+    .select('id')
+    .eq('course_id', course.id)
+    .maybeSingle()
+  const quiz = quizRow as { id: string } | null
+
   // Personalized state — only fetched for a logged-in visitor.
   let resumeLessonId = firstLessonId
-  let progress: { percent: number; totalRequired: number } | null = null
+  let progress: { percent: number; totalRequired: number; completedRequired: number } | null = null
   let isComplete = false
+  let quizPassed = false
 
   if (user) {
     const { data: enrollmentRow } = await admin
@@ -99,6 +107,17 @@ export default async function CourseLandingPage({
     resumeLessonId = lastLessonId ?? firstLessonId
 
     progress = await getCourseProgress(admin, user.id, course.id)
+
+    if (quiz) {
+      const { data: passedAttempt } = await admin
+        .from('course_quiz_attempts')
+        .select('id')
+        .eq('student_id', user.id)
+        .eq('quiz_id', quiz.id)
+        .eq('passed', true)
+        .maybeSingle()
+      quizPassed = !!passedAttempt
+    }
 
     const { data: completionRow } = await admin
       .from('course_completions')
@@ -194,27 +213,45 @@ export default async function CourseLandingPage({
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          {resumeLessonId ? (
-            // A plain link, not a click-to-enroll button — visiting the
-            // lesson itself is what creates the enrollment record (see
-            // set_last_lesson in LessonReaderClient), and for a logged-
-            // out visitor this link is exactly what the middleware uses
-            // to redirect to /login and bounce them straight back here
-            // afterwards (STEP 2's `next` param). No separate "enroll
-            // first" step needed for either case.
-            <Link href={`/courses/${course.slug}/learn/${resumeLessonId}`} className="btn btn-primary" style={{ fontSize: '13px' }}>
-              {user && resumeLessonId !== firstLessonId ? 'Continue learning' : 'Start course'} <ArrowRight size={13}/>
-            </Link>
-          ) : (
-            <span style={{ fontSize: '13px', color: 'var(--muted)' }}>This course has no lessons yet.</span>
-          )}
-          {isComplete && course.is_certificate_enabled && (
-            <Link href={`/courses/${course.slug}/certificate`} className="btn btn-ghost" style={{ fontSize: '13px' }}>
-              <Award size={13}/> View certificate
-            </Link>
-          )}
-        </div>
+        {(() => {
+          const allLessonsDone = !!progress && progress.totalRequired > 0 && progress.completedRequired >= progress.totalRequired
+          const needsQuiz = !!user && !!quiz && allLessonsDone && !quizPassed
+
+          return (
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              {needsQuiz ? (
+                <>
+                  <Link href={`/courses/${course.slug}/quiz`} className="btn btn-primary" style={{ fontSize: '13px' }}>
+                    <ClipboardList size={13}/> Take the quiz <ArrowRight size={13}/>
+                  </Link>
+                  {resumeLessonId && (
+                    <Link href={`/courses/${course.slug}/learn/${resumeLessonId}`} className="btn btn-ghost" style={{ fontSize: '13px' }}>
+                      Review lessons
+                    </Link>
+                  )}
+                </>
+              ) : resumeLessonId ? (
+                // A plain link, not a click-to-enroll button — visiting the
+                // lesson itself is what creates the enrollment record (see
+                // set_last_lesson in LessonReaderClient), and for a logged-
+                // out visitor this link is exactly what the middleware uses
+                // to redirect to /login and bounce them straight back here
+                // afterwards (STEP 2's `next` param). No separate "enroll
+                // first" step needed for either case.
+                <Link href={`/courses/${course.slug}/learn/${resumeLessonId}`} className="btn btn-primary" style={{ fontSize: '13px' }}>
+                  {user && resumeLessonId !== firstLessonId ? 'Continue learning' : 'Start course'} <ArrowRight size={13}/>
+                </Link>
+              ) : (
+                <span style={{ fontSize: '13px', color: 'var(--muted)' }}>This course has no lessons yet.</span>
+              )}
+              {isComplete && course.is_certificate_enabled && (
+                <Link href={`/courses/${course.slug}/certificate`} className="btn btn-ghost" style={{ fontSize: '13px' }}>
+                  <Award size={13}/> View certificate
+                </Link>
+              )}
+            </div>
+          )
+        })()}
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>

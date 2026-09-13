@@ -40,6 +40,29 @@ export async function checkAndIssueCourseCompletion(
     return { issued: false }
   }
 
+  // A course with a "Test Your Knowledge" quiz requires a passing
+  // attempt before completion/certificate — courses without one (the
+  // quiz is optional, not every course has one) fall back to
+  // lesson-completion-only, unchanged from before this quiz feature.
+  const { data: quizRow } = await sb
+    .from('course_quizzes')
+    .select('id')
+    .eq('course_id', courseId)
+    .maybeSingle()
+
+  const quiz = quizRow as { id: string } | null
+  if (quiz) {
+    const { data: passedAttempt } = await sb
+      .from('course_quiz_attempts')
+      .select('id')
+      .eq('student_id', studentId)
+      .eq('quiz_id', quiz.id)
+      .eq('passed', true)
+      .maybeSingle()
+
+    if (!passedAttempt) return { issued: false }
+  }
+
   // onConflict guards against a race if two requests trigger this near-
   // simultaneously (e.g. two tabs marking the last lesson complete).
   const { error } = await sb.from('course_completions').upsert({
