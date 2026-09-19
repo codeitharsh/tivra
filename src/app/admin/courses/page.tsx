@@ -19,7 +19,7 @@ export default async function AdminCoursesPage() {
   const admin = createAdminClient()
   const { data: coursesRaw } = await admin
     .from('courses')
-    .select('id, slug, title, description, difficulty, estimated_duration_minutes, skills, learning_outcomes, status, is_certificate_enabled, display_order')
+    .select('id, slug, title, description, difficulty, estimated_duration_minutes, skills, learning_outcomes, status, is_certificate_enabled, display_order, cover_image_path')
     .order('display_order')
 
   const { data: moduleCountsRaw } = await admin.from('course_modules').select('course_id')
@@ -33,6 +33,7 @@ export default async function AdminCoursesPage() {
     difficulty: string; estimated_duration_minutes: number | null
     skills: string[]; learning_outcomes: string[]
     status: string; is_certificate_enabled: boolean; display_order: number
+    cover_image_path: string | null
   }[]
 
   return (

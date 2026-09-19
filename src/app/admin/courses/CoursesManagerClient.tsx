@@ -1,17 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
-  Loader2, Plus, X, Check, Trash2, ChevronDown, ChevronUp, Layers, ArrowRight, Users,
+  Loader2, Plus, X, Check, Trash2, ChevronDown, ChevronUp, Layers, ArrowRight, Users, ImageUp,
 } from 'lucide-react'
+import { courseAssetUrl } from '@/lib/course-assets'
 
 interface Course {
   id: string; slug: string; title: string; description: string | null
   difficulty: string; estimated_duration_minutes: number | null
   skills: string[]; learning_outcomes: string[]
   status: string; is_certificate_enabled: boolean; display_order: number
+  cover_image_path: string | null
 }
 
 const BLANK_COURSE = {
@@ -24,6 +27,46 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string }> 
   review:    { label: 'Review',    color: '#f59e0b',       bg: 'rgba(245,158,11,0.1)' },
   published: { label: 'Published', color: 'var(--green)',  bg: 'var(--green-dim)' },
   archived:  { label: 'Archived',  color: 'var(--muted2)', bg: 'var(--card2)' },
+}
+
+function CoverUploader({
+  course, busy, onUpload,
+}: { course: Course; busy: boolean; onUpload: (file: File) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+      <div style={{
+        width: '96px', height: '54px', borderRadius: 'var(--radius-sm)', flexShrink: 0,
+        background: 'var(--card2)', border: '1px solid var(--border)', overflow: 'hidden',
+        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {course.cover_image_path ? (
+          <Image src={courseAssetUrl(course.cover_image_path)} alt="" fill style={{ objectFit: 'cover', objectPosition: 'top' }}/>
+        ) : (
+          <ImageUp size={16} color="var(--muted2)"/>
+        )}
+      </div>
+      <div>
+        <label className="form-label" style={{ marginBottom: '6px' }}>Cover image</label>
+        <input
+          ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp"
+          style={{ display: 'none' }}
+          onChange={e => {
+            const file = e.target.files?.[0]
+            if (file) onUpload(file)
+            e.target.value = ''
+          }}
+        />
+        <button type="button" className="btn btn-ghost" disabled={busy}
+          onClick={() => inputRef.current?.click()} style={{ fontSize: '12px', padding: '6px 12px' }}>
+          {busy
+            ? <><Loader2 size={12} className="spin"/> Uploading…</>
+            : <><ImageUp size={12}/> {course.cover_image_path ? 'Replace image' : 'Upload image'}</>}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export default function CoursesManagerClient({
@@ -80,6 +123,24 @@ export default function CoursesManagerClient({
     try {
       await callApi({ action: 'update_course', courseId, ...updates })
       showToast(successMsg, 'success')
+      router.refresh()
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed', 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function uploadCover(courseId: string, file: File) {
+    setBusy(`cover-${courseId}`)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('course_id', courseId)
+      const res = await fetch('/api/upload-course-cover', { method: 'POST', body: form })
+      const json = await res.json() as { error?: string }
+      if (!res.ok) throw new Error(json.error ?? 'Upload failed')
+      showToast('✓ Cover image updated', 'success')
       router.refresh()
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed', 'error')
@@ -198,6 +259,8 @@ export default function CoursesManagerClient({
 
             {isOpen && (
               <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <CoverUploader course={c} busy={busy === `cover-${c.id}`} onUpload={file => uploadCover(c.id, file)}/>
+
                 <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
                   <div style={{ flex: 1, minWidth: '160px' }}>
                     <label className="form-label">Status</label>
