@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Loader2, Upload, CheckCircle2, Trash2, Plus, X, Check,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, Eye, Pencil,
 } from 'lucide-react'
 
 interface Subject {
@@ -16,7 +16,7 @@ interface Note {
 }
 
 const BLANK_SUBJECT = { name: '', description: '' }
-const BLANK_TOPIC    = { title: '', note_number: '', file: null as File | null }
+type TopicForm = { title: string; note_number: string; file: File | null }
 
 export default function FreeNotesManagerClient({
   subjects, notes,
@@ -30,7 +30,22 @@ export default function FreeNotesManagerClient({
   const [subjectForm, setSubjectForm] = useState(BLANK_SUBJECT)
   const [creatingSubject, setCreatingSubject] = useState(false)
 
-  const [topicForms, setTopicForms] = useState<Record<string, typeof BLANK_TOPIC>>({})
+  const [topicForms, setTopicForms] = useState<Record<string, TopicForm>>({})
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<{ title: string; note_number: string }>({ title: '', note_number: '' })
+
+  // Auto-populate the "No." field with the next free number for this
+  // subject, instead of leaving it blank for the admin to work out by
+  // eye — one topic beyond whatever the highest existing number is.
+  function nextNoteNumber(subjectId: string): number {
+    const subjectNotes = notes.filter(n => n.subject_id === subjectId)
+    if (subjectNotes.length === 0) return 1
+    return Math.max(...subjectNotes.map(n => n.note_number)) + 1
+  }
+
+  function blankTopicForm(subjectId: string): TopicForm {
+    return { title: '', note_number: String(nextNoteNumber(subjectId)), file: null }
+  }
 
   function showToast(msg: string, type: 'success' | 'error') {
     setToast({ msg, type })
@@ -95,7 +110,7 @@ export default function FreeNotesManagerClient({
   // two-step "create row, then separately click Upload" interaction.
   // Meaningfully faster when adding many topics.
   async function createTopic(subjectId: string) {
-    const form = topicForms[subjectId] ?? BLANK_TOPIC
+    const form = topicForms[subjectId] ?? blankTopicForm(subjectId)
     if (!form.title.trim()) { showToast('Topic title is required', 'error'); return }
     if (!form.note_number)  { showToast('Topic number is required', 'error'); return }
     if (form.file) {
@@ -121,7 +136,14 @@ export default function FreeNotesManagerClient({
       }
 
       showToast(form.file ? '✓ Topic added and PDF uploaded' : '✓ Topic added — upload its PDF below', 'success')
-      setTopicForms(p => ({ ...p, [subjectId]: BLANK_TOPIC }))
+      // Drop the override entirely (rather than resetting to a stale
+      // blank form) so the next render recomputes the "No." field from
+      // the refreshed `notes` list — i.e. one past the topic just added.
+      setTopicForms(p => {
+        const next = { ...p }
+        delete next[subjectId]
+        return next
+      })
       router.refresh()
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed', 'error')
@@ -139,6 +161,43 @@ export default function FreeNotesManagerClient({
       router.refresh()
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed', 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  function startEditTopic(note: Note) {
+    setEditingNoteId(note.id)
+    setEditForm({ title: note.title, note_number: String(note.note_number) })
+  }
+
+  async function saveEditTopic(noteId: string) {
+    if (!editForm.title.trim()) { showToast('Topic title is required', 'error'); return }
+    if (!editForm.note_number)  { showToast('Topic number is required', 'error'); return }
+
+    setBusy(`edit-topic-${noteId}`)
+    try {
+      await callApi({
+        action: 'update_note', noteId,
+        title: editForm.title.trim(), noteNumber: Number(editForm.note_number),
+      })
+      showToast('✓ Topic updated', 'success')
+      setEditingNoteId(null)
+      router.refresh()
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed', 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function previewTopic(noteId: string) {
+    setBusy(`preview-${noteId}`)
+    try {
+      const { url } = await callApi({ action: 'get_note_preview_url', noteId }) as { url: string }
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not open preview', 'error')
     } finally {
       setBusy(null)
     }
@@ -216,7 +275,7 @@ export default function FreeNotesManagerClient({
       {subjects.map(s => {
         const subjectNotes = notes.filter(n => n.subject_id === s.id).sort((a, b) => a.note_number - b.note_number)
         const isOpen = expandedSubjectId === s.id
-        const topicForm = topicForms[s.id] ?? BLANK_TOPIC
+        const topicForm = topicForms[s.id] ?? blankTopicForm(s.id)
 
         return (
           <div key={s.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -252,32 +311,79 @@ export default function FreeNotesManagerClient({
                   {subjectNotes.length === 0 && (
                     <div style={{ fontSize: '13px', color: 'var(--muted)', padding: '12px 0' }}>No topics yet — add one below.</div>
                   )}
-                  {subjectNotes.map(n => (
+                  {subjectNotes.map(n => {
+                    const isEditing = editingNoteId === n.id
+                    return (
                     <div key={n.id} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
                       padding: '10px 14px', borderRadius: 'var(--radius-sm)',
                       background: 'var(--card2)', border: '1px solid var(--border)',
+                      flexWrap: isEditing ? 'wrap' : 'nowrap',
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '11px', color: 'var(--muted)' }}>#{n.note_number}</span>
-                        <span style={{ fontSize: '13px' }}>{n.title}</span>
-                        {n.notes_url && <CheckCircle2 size={13} color="var(--green)"/>}
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                        <label className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px', cursor: 'pointer' }}>
-                          <input type="file" accept=".pdf" style={{ display: 'none' }}
-                            disabled={busy === `upload-${n.id}`}
-                            onChange={e => { const f = e.target.files?.[0]; if (f) uploadTopicPdf(s.id, n.id, f); e.target.value = '' }}/>
-                          {busy === `upload-${n.id}` ? <Loader2 size={11} className="spin"/> : (n.notes_url ? 'Replace PDF' : <><Upload size={11}/> Upload PDF</>)}
-                        </label>
-                        <button className="btn btn-danger" style={{ fontSize: '11px', padding: '5px 10px' }}
-                          disabled={busy === `del-topic-${n.id}`}
-                          onClick={() => deleteTopic(n.id)}>
-                          {busy === `del-topic-${n.id}` ? <Loader2 size={11} className="spin"/> : <Trash2 size={11}/>}
-                        </button>
-                      </div>
+                      {isEditing ? (
+                        <>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', flex: 1, minWidth: '260px' }}>
+                            <div style={{ width: '70px' }}>
+                              <label className="form-label">No.</label>
+                              <input className="form-input" type="number" min="1" style={{ fontSize: '12px', padding: '7px 10px' }}
+                                value={editForm.note_number}
+                                onChange={e => setEditForm(f => ({ ...f, note_number: e.target.value }))}/>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <label className="form-label">Topic title</label>
+                              <input className="form-input" style={{ fontSize: '12px', padding: '7px 10px' }}
+                                value={editForm.title}
+                                onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}/>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                            <button className="btn btn-primary" style={{ fontSize: '11px', padding: '5px 10px' }}
+                              disabled={busy === `edit-topic-${n.id}`}
+                              onClick={() => saveEditTopic(n.id)}>
+                              {busy === `edit-topic-${n.id}` ? <Loader2 size={11} className="spin"/> : <Check size={11}/>}
+                            </button>
+                            <button className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px' }}
+                              onClick={() => setEditingNoteId(null)}>
+                              <X size={11}/>
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '11px', color: 'var(--muted)' }}>#{n.note_number}</span>
+                            <span style={{ fontSize: '13px' }}>{n.title}</span>
+                            {n.notes_url && <CheckCircle2 size={13} color="var(--green)"/>}
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                            {n.notes_url && (
+                              <button className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px' }}
+                                disabled={busy === `preview-${n.id}`}
+                                onClick={() => previewTopic(n.id)} title="Preview the uploaded PDF">
+                                {busy === `preview-${n.id}` ? <Loader2 size={11} className="spin"/> : <Eye size={11}/>}
+                              </button>
+                            )}
+                            <button className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px' }}
+                              onClick={() => startEditTopic(n)} title="Edit title/number">
+                              <Pencil size={11}/>
+                            </button>
+                            <label className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px', cursor: 'pointer' }}>
+                              <input type="file" accept=".pdf" style={{ display: 'none' }}
+                                disabled={busy === `upload-${n.id}`}
+                                onChange={e => { const f = e.target.files?.[0]; if (f) uploadTopicPdf(s.id, n.id, f); e.target.value = '' }}/>
+                              {busy === `upload-${n.id}` ? <Loader2 size={11} className="spin"/> : (n.notes_url ? 'Replace PDF' : <><Upload size={11}/> Upload PDF</>)}
+                            </label>
+                            <button className="btn btn-danger" style={{ fontSize: '11px', padding: '5px 10px' }}
+                              disabled={busy === `del-topic-${n.id}`}
+                              onClick={() => deleteTopic(n.id)}>
+                              {busy === `del-topic-${n.id}` ? <Loader2 size={11} className="spin"/> : <Trash2 size={11}/>}
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>

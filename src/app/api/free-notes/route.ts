@@ -125,17 +125,82 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, noteId: data.id })
     }
 
-    // ── DELETE NOTE ────────────────────────────────────────────
-    if (body.action === 'delete_note') {
+    // ── UPDATE NOTE (edit a topic's title/number) ──────────────
+    if (body.action === 'update_note') {
+      const { noteId, title, noteNumber } = body as {
+        noteId?: string; title?: string; noteNumber?: number
+      }
+      if (!noteId) return NextResponse.json({ error: 'noteId required' }, { status: 400 })
+
+      const updates: Record<string, unknown> = {}
+      if (title !== undefined)      updates.title       = title.trim()
+      if (noteNumber !== undefined) updates.note_number = noteNumber
+
+      if (Object.keys(updates).length === 0) {
+        return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
+      }
+
+      const { error } = await sb.from('free_notes').update(updates).eq('id', noteId)
+      if (error) {
+        if (error.code === '23505') {
+          return NextResponse.json({ error: `Topic number ${noteNumber} already exists for this subject` }, { status: 409 })
+        }
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true })
+    }
+
+    // ── PREVIEW A NOTE'S PDF (signed URL — free-notes is a private
+    //    bucket, same as the student-facing reader) ────────────
+    if (body.action === 'get_note_preview_url') {
       const { noteId } = body as { noteId?: string }
       if (!noteId) return NextResponse.json({ error: 'noteId required' }, { status: 400 })
 
       const { data: noteRow } = await sb.from('free_notes').select('notes_url').eq('id', noteId).maybeSingle()
       const notesUrl = (noteRow as { notes_url: string | null } | null)?.notes_url
+      if (!notesUrl) return NextResponse.json({ error: 'No PDF uploaded for this topic yet' }, { status: 404 })
+
+      const { data: signed, error } = await sb.storage.from('free-notes').createSignedUrl(notesUrl, 3600)
+      if (error || !signed) return NextResponse.json({ error: error?.message ?? 'Could not sign URL' }, { status: 500 })
+      return NextResponse.json({ success: true, url: signed.signedUrl })
+    }
+
+    // ── DELETE NOTE ────────────────────────────────────────────
+    // Also closes the gap left behind: every remaining topic numbered
+    // above the deleted one shifts down by 1, so numbers stay
+    // contiguous (1, 2, 3, ...) instead of skipping the deleted slot.
+    // Progress is tracked by lesson/note ID, not by number, so
+    // renumbering doesn't affect anyone's completion state — it only
+    // changes each topic's displayed position.
+    if (body.action === 'delete_note') {
+      const { noteId } = body as { noteId?: string }
+      if (!noteId) return NextResponse.json({ error: 'noteId required' }, { status: 400 })
+
+      const { data: noteRow } = await sb.from('free_notes')
+        .select('notes_url, subject_id, note_number').eq('id', noteId).maybeSingle()
+      if (!noteRow) return NextResponse.json({ error: 'Topic not found' }, { status: 404 })
+
+      const { notes_url: notesUrl, subject_id: subjectId, note_number: deletedNumber } =
+        noteRow as { notes_url: string | null; subject_id: string; note_number: number }
+
       if (notesUrl) await sb.storage.from('free-notes').remove([notesUrl])
 
       const { error } = await sb.from('free_notes').delete().eq('id', noteId)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+      // Shift everything after the gap down by 1, in ascending order —
+      // each update vacates the slot the next one needs, so this never
+      // collides with the unique(subject_id, note_number) constraint.
+      const { data: laterNotes } = await sb.from('free_notes')
+        .select('id, note_number')
+        .eq('subject_id', subjectId)
+        .gt('note_number', deletedNumber)
+        .order('note_number', { ascending: true })
+
+      for (const later of (laterNotes ?? []) as { id: string; note_number: number }[]) {
+        await sb.from('free_notes').update({ note_number: later.note_number - 1 }).eq('id', later.id)
+      }
+
       return NextResponse.json({ success: true })
     }
 
