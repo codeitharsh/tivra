@@ -11,7 +11,7 @@ import { PROGRAM_META, DEFAULT_PROGRAM_META } from '@/lib/program-meta'
 
 // ── Razorpay type declaration — shared with CourseCheckout.tsx, see
 //    src/types/razorpay.d.ts for why this can't be declared per-file ──
-import '@/types/razorpay'
+import type {} from '@/types/razorpay'
 
 // ── Plan shape, populated from `programs` via /api/programs ────────
 // No plan is ever hardcoded here — any active programme in the DB

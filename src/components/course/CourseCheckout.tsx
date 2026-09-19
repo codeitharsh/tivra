@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, ShoppingCart, AlertTriangle, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import '@/types/razorpay'
+import type {} from '@/types/razorpay'
 
 // Same Razorpay checkout.js flow as src/app/payment/page.tsx's
 // handlePay, adapted into a compact inline buy button rather than a
