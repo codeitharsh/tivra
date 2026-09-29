@@ -9,8 +9,9 @@ import {
 import type { CourseBlock, CourseBlockType } from '@/types/course'
 import { BLOCK_TYPE_LABELS, newBlock } from '@/types/course'
 import LessonBlockRenderer from '@/components/course/LessonBlockRenderer'
+import { createClient } from '@/lib/supabase/client'
 
-const BLOCK_TYPES: CourseBlockType[] = ['heading', 'paragraph', 'image', 'code', 'table', 'callout', 'list', 'divider', 'quiz', 'toggle', 'tabs']
+const BLOCK_TYPES: CourseBlockType[] = ['heading', 'paragraph', 'image', 'video', 'code', 'table', 'callout', 'list', 'divider', 'quiz', 'toggle', 'tabs']
 
 export default function LessonBlockEditorClient({
   courseId, lessonId, initialContent,
@@ -83,6 +84,34 @@ export default function LessonBlockEditorClient({
       if (!res.ok || !data.success || !data.path) throw new Error(data.error ?? 'Upload failed')
       updateBlock(blockId, { path: data.path } as Partial<CourseBlock>)
       showToast('✓ Image uploaded', 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Upload failed', 'error')
+    } finally {
+      setUploadingFor(null)
+    }
+  }
+
+  async function uploadVideo(blockId: string, file: File) {
+    if (file.type !== 'video/mp4') {
+      showToast('Only MP4 videos are supported', 'error')
+      return
+    }
+    setUploadingFor(blockId)
+    try {
+      const res = await fetch('/api/admin/course-video-upload-url', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ course_id: courseId }),
+      })
+      const data = await res.json() as { success?: boolean; path?: string; token?: string; error?: string }
+      if (!res.ok || !data.success || !data.path || !data.token) throw new Error(data.error ?? 'Could not get upload URL')
+
+      const sb = createClient()
+      const { error: upErr } = await sb.storage.from('course-videos')
+        .uploadToSignedUrl(data.path, data.token, file, { contentType: 'video/mp4' })
+      if (upErr) throw upErr
+
+      updateBlock(blockId, { path: data.path } as Partial<CourseBlock>)
+      showToast('✓ Video uploaded', 'success')
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Upload failed', 'error')
     } finally {
@@ -163,6 +192,28 @@ export default function LessonBlockEditorClient({
                     value={block.alt} onChange={e => updateBlock(block.id, { alt: e.target.value })}/>
                   <input className="form-input" placeholder="Caption (optional)" style={{ fontSize: '12px' }}
                     value={block.caption} onChange={e => updateBlock(block.id, { caption: e.target.value })}/>
+                </div>
+              )}
+
+              {block.type === 'video' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input
+                    ref={el => { fileInputs.current[block.id] = el }}
+                    type="file" accept="video/mp4" style={{ display: 'none' }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadVideo(block.id, f); e.target.value = '' }}
+                  />
+                  <button className="btn btn-ghost" style={{ fontSize: '12px', alignSelf: 'flex-start' }}
+                    disabled={uploadingFor === block.id} onClick={() => fileInputs.current[block.id]?.click()}>
+                    {uploadingFor === block.id ? <><Loader2 size={12} className="spin"/> Uploading… this can take a minute</> : <><Upload size={12}/> {block.path ? 'Replace video' : 'Upload video (MP4)'}</>}
+                  </button>
+                  {block.path && (
+                    // eslint-disable-next-line jsx-a11y/media-has-caption
+                    <video controls preload="metadata" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: '#000' }}>
+                      <source src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/course-videos/${block.path}`} type="video/mp4"/>
+                    </video>
+                  )}
+                  <input className="form-input" placeholder="Caption shown under the video (optional)" style={{ fontSize: '12px' }}
+                    value={block.title} onChange={e => updateBlock(block.id, { title: e.target.value })}/>
                 </div>
               )}
 

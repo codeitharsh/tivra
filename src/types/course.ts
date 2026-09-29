@@ -17,6 +17,7 @@ export type CourseBlock =
   | { id: string; type: 'heading';  text: string; level: 2 | 3 }
   | { id: string; type: 'paragraph'; text: string }
   | { id: string; type: 'image';    path: string; alt: string; caption: string }
+  | { id: string; type: 'video';    path: string; posterPath: string; title: string }
   | { id: string; type: 'code';     language: string; code: string }
   | { id: string; type: 'table';    headers: string[]; rows: string[][] }
   | { id: string; type: 'callout';  variant: 'info' | 'warning' | 'tip'; text: string }
@@ -32,6 +33,7 @@ export const BLOCK_TYPE_LABELS: Record<CourseBlockType, string> = {
   heading:   'Heading',
   paragraph: 'Paragraph',
   image:     'Image',
+  video:     'Video',
   code:      'Code Block',
   table:     'Table',
   callout:   'Callout',
@@ -48,6 +50,7 @@ export function newBlock(type: CourseBlockType): CourseBlock {
     case 'heading':   return { id, type, text: '', level: 2 }
     case 'paragraph': return { id, type, text: '' }
     case 'image':     return { id, type, path: '', alt: '', caption: '' }
+    case 'video':     return { id, type, path: '', posterPath: '', title: '' }
     case 'code':      return { id, type, language: 'text', code: '' }
     case 'table':     return { id, type, headers: ['Column 1', 'Column 2'], rows: [['', '']] }
     case 'callout':   return { id, type, variant: 'info', text: '' }

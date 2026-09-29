@@ -14,13 +14,17 @@ import TabsBlock from './blocks/TabsBlock'
 // pane, both call sites keep rendering through one shared code path.
 
 const CALLOUT_STYLES: Record<string, { bg: string; border: string; color: string }> = {
-  info:    { bg: 'var(--accent-2-dim)', border: 'rgba(0,212,255,0.25)', color: 'var(--accent-2)' },
+  info:    { bg: 'var(--accent-2-dim)', border: 'rgba(74,63,224,0.25)', color: 'var(--accent-2)' },
   warning: { bg: 'var(--yellow-dim, rgba(245,158,11,0.1))', border: 'rgba(245,158,11,0.3)', color: '#f59e0b' },
   tip:     { bg: 'var(--green-dim)', border: 'rgba(74,222,128,0.25)', color: 'var(--green)' },
 }
 
 function courseAssetUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/course-assets/${path}`
+}
+
+function courseVideoUrl(path: string): string {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/course-videos/${path}`
 }
 
 export default function LessonBlockRenderer({ blocks }: { blocks: CourseBlock[] }) {
@@ -63,6 +67,24 @@ export default function LessonBlockRenderer({ blocks }: { blocks: CourseBlock[] 
                 {block.caption && (
                   <figcaption style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px', textAlign: 'center' }}>
                     {block.caption}
+                  </figcaption>
+                )}
+              </figure>
+            )
+          case 'video':
+            return (
+              <figure key={block.id} style={{ margin: '20px 0' }}>
+                <video
+                  controls
+                  preload="metadata"
+                  poster={block.posterPath ? courseAssetUrl(block.posterPath) : undefined}
+                  style={{ width: '100%', borderRadius: 'var(--radius)', display: 'block', border: '1px solid var(--border)', background: '#000' }}
+                >
+                  <source src={courseVideoUrl(block.path)} type="video/mp4"/>
+                </video>
+                {block.title && (
+                  <figcaption style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px', textAlign: 'center' }}>
+                    {block.title}
                   </figcaption>
                 )}
               </figure>
