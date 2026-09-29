@@ -34,7 +34,10 @@ export default function LessonBlockEditorClient({
   }
 
   function addBlock(type: CourseBlockType) {
-    setBlocks(prev => [...prev, newBlock(type)])
+    // Video is the one block type meant to open a lesson (matches every
+    // lesson's existing layout), so it goes to the front instead of the
+    // back like every other block type.
+    setBlocks(prev => type === 'video' ? [newBlock(type), ...prev] : [...prev, newBlock(type)])
     setDirty(true)
   }
 
