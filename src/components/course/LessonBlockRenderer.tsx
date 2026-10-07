@@ -4,6 +4,7 @@ import CodeBlock from './blocks/CodeBlock'
 import QuizBlock from './blocks/QuizBlock'
 import ToggleBlock from './blocks/ToggleBlock'
 import TabsBlock from './blocks/TabsBlock'
+import PdfBlock from './blocks/PdfBlock'
 
 // This component itself stays a plain server-renderable function — most
 // block types are static markup, no client JS needed. quiz/toggle/tabs/
@@ -27,7 +28,7 @@ function courseVideoUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/course-videos/${path}`
 }
 
-export default function LessonBlockRenderer({ blocks }: { blocks: CourseBlock[] }) {
+export default function LessonBlockRenderer({ blocks, lessonId }: { blocks: CourseBlock[]; lessonId: string }) {
   if (blocks.length === 0) {
     return (
       <div style={{ padding: '32px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>
@@ -150,6 +151,8 @@ export default function LessonBlockRenderer({ blocks }: { blocks: CourseBlock[] 
           }
           case 'divider':
             return <hr key={block.id} style={{ margin: '24px 0', border: 'none', borderTop: '1px solid var(--border)' }}/>
+          case 'pdf':
+            return <PdfBlock key={block.id} lessonId={lessonId} blockId={block.id} path={block.path} title={block.title}/>
           default:
             return null
         }

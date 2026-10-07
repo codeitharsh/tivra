@@ -11,7 +11,7 @@ import { BLOCK_TYPE_LABELS, newBlock } from '@/types/course'
 import LessonBlockRenderer from '@/components/course/LessonBlockRenderer'
 import { createClient } from '@/lib/supabase/client'
 
-const BLOCK_TYPES: CourseBlockType[] = ['heading', 'paragraph', 'image', 'video', 'code', 'table', 'callout', 'list', 'divider', 'quiz', 'toggle', 'tabs']
+const BLOCK_TYPES: CourseBlockType[] = ['heading', 'paragraph', 'image', 'video', 'pdf', 'code', 'table', 'callout', 'list', 'divider', 'quiz', 'toggle', 'tabs']
 
 export default function LessonBlockEditorClient({
   courseId, lessonId, initialContent,
@@ -122,6 +122,26 @@ export default function LessonBlockEditorClient({
     }
   }
 
+  async function uploadPdf(blockId: string, file: File) {
+    setUploadingFor(blockId)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('course_id', courseId)
+      form.append('lesson_id', lessonId)
+      form.append('block_id', blockId)
+      const res = await fetch('/api/upload-course-pdf', { method: 'POST', body: form })
+      const data = await res.json() as { success?: boolean; path?: string; error?: string }
+      if (!res.ok || !data.success || !data.path) throw new Error(data.error ?? 'Upload failed')
+      updateBlock(blockId, { path: data.path } as Partial<CourseBlock>)
+      showToast('✓ PDF uploaded', 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Upload failed', 'error')
+    } finally {
+      setUploadingFor(null)
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -216,6 +236,27 @@ export default function LessonBlockEditorClient({
                     </video>
                   )}
                   <input className="form-input" placeholder="Caption shown under the video (optional)" style={{ fontSize: '12px' }}
+                    value={block.title} onChange={e => updateBlock(block.id, { title: e.target.value })}/>
+                </div>
+              )}
+
+              {block.type === 'pdf' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input
+                    ref={el => { fileInputs.current[block.id] = el }}
+                    type="file" accept="application/pdf" style={{ display: 'none' }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadPdf(block.id, f); e.target.value = '' }}
+                  />
+                  <button className="btn btn-ghost" style={{ fontSize: '12px', alignSelf: 'flex-start' }}
+                    disabled={uploadingFor === block.id} onClick={() => fileInputs.current[block.id]?.click()}>
+                    {uploadingFor === block.id ? <Loader2 size={12} className="spin"/> : <><Upload size={12}/> {block.path ? 'Replace PDF' : 'Upload PDF'}</>}
+                  </button>
+                  {block.path && (
+                    <div style={{ fontSize: '11px', color: 'var(--muted2)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>
+                      {block.path}
+                    </div>
+                  )}
+                  <input className="form-input" placeholder="Document title (shown above the PDF)" style={{ fontSize: '12px' }}
                     value={block.title} onChange={e => updateBlock(block.id, { title: e.target.value })}/>
                 </div>
               )}
@@ -408,7 +449,7 @@ export default function LessonBlockEditorClient({
             Live preview
           </div>
           <div className="card" style={{ padding: '24px', position: 'sticky', top: '20px' }}>
-            <LessonBlockRenderer blocks={blocks}/>
+            <LessonBlockRenderer blocks={blocks} lessonId={lessonId}/>
           </div>
         </div>
       </div>

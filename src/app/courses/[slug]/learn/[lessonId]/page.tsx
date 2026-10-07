@@ -141,7 +141,7 @@ export default async function LessonReaderPage({
         quizzes={quizzes.map(q => ({ id: q.id, title: q.title, moduleId: q.module_id, quizType: q.quiz_type }))}
         initialPassedQuizIds={passedQuizIds}
       >
-        <LessonBlockRenderer blocks={currentLesson.content ?? []}/>
+        <LessonBlockRenderer blocks={currentLesson.content ?? []} lessonId={currentLesson.id}/>
       </LessonReaderClient>
     </div>
   )

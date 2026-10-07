@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Upload, CheckCircle2, Eye, Trash2, Plus, X, Check } from 'lucide-react'
+import { Loader2, Upload, CheckCircle2, Eye, Trash2, Plus, X, Check, GraduationCap, ArrowRight } from 'lucide-react'
 
 interface ProgramRow {
   id: string; name: string; slug: string
@@ -42,6 +42,7 @@ export default function ProgramsManagerClient({ programs }: { programs: ProgramR
   const [uploading,  setUploading]  = useState<string | null>(null)
   const [previewing, setPreviewing] = useState<string | null>(null)
   const [deleting,   setDeleting]   = useState<string | null>(null)
+  const [migrating,  setMigrating]  = useState<string | null>(null)
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({})
 
   // ── New programme creation ────────────────────────────────
@@ -147,6 +148,30 @@ export default function ProgramsManagerClient({ programs }: { programs: ProgramR
       showToast(err instanceof Error ? err.message : 'Delete failed', 'error')
     } finally {
       setDeleting(null)
+    }
+  }
+
+  async function migrateToCourse(programId: string, programName: string) {
+    if (!window.confirm(
+      `Create a new self-paced course from "${programName}"? This copies its phases/modules as ` +
+      `a draft course (one PDF-notes lesson per module) — "${programName}" itself is left completely ` +
+      `untouched. You can review and enrich the new course before publishing it.`
+    )) return
+
+    setMigrating(programId)
+    try {
+      const res = await fetch('/api/admin/courses', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'seed_from_program', programId }),
+      })
+      const data = await res.json() as { success?: boolean; courseId?: string; error?: string }
+      if (!res.ok || !data.success || !data.courseId) throw new Error(data.error ?? 'Could not create course')
+      showToast('✓ Draft course created', 'success')
+      router.push(`/admin/courses/${data.courseId}`)
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed', 'error')
+    } finally {
+      setMigrating(null)
     }
   }
 
@@ -405,6 +430,13 @@ export default function ProgramsManagerClient({ programs }: { programs: ProgramR
                   </button>
                 </>
               )}
+              <button className="btn btn-ghost" style={{ fontSize: '12px', marginLeft: 'auto' }}
+                disabled={migrating === p.id}
+                onClick={() => migrateToCourse(p.id, p.name)}>
+                {migrating === p.id
+                  ? <Loader2 size={13} className="spin"/>
+                  : <><GraduationCap size={13}/> Create self-paced course from this programme <ArrowRight size={13}/></>}
+              </button>
             </div>
           </div>
         )

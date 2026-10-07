@@ -26,6 +26,7 @@ export type CourseBlock =
   | { id: string; type: 'quiz';     question: string; options: string[]; correct_index: number; explanation: string }
   | { id: string; type: 'toggle';   label: string; text: string }
   | { id: string; type: 'tabs';     tabs: { label: string; language: string; code: string }[] }
+  | { id: string; type: 'pdf';      path: string; title: string }
 
 export type CourseBlockType = CourseBlock['type']
 
@@ -42,6 +43,7 @@ export const BLOCK_TYPE_LABELS: Record<CourseBlockType, string> = {
   quiz:      'Quiz (self-check)',
   toggle:    'Toggle / Reveal',
   tabs:      'Tabbed Code',
+  pdf:       'PDF Document',
 }
 
 export function newBlock(type: CourseBlockType): CourseBlock {
@@ -59,5 +61,6 @@ export function newBlock(type: CourseBlockType): CourseBlock {
     case 'quiz':      return { id, type, question: '', options: ['', ''], correct_index: 0, explanation: '' }
     case 'toggle':    return { id, type, label: 'Try it yourself', text: '' }
     case 'tabs':      return { id, type, tabs: [{ label: 'Tab 1', language: 'bash', code: '' }, { label: 'Tab 2', language: 'bash', code: '' }] }
+    case 'pdf':       return { id, type, path: '', title: '' }
   }
 }

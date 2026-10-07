@@ -134,6 +134,88 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
+    // ── MIGRATION: seed a draft course from an existing live programme ──
+    // Purely additive — only ever inserts new `courses`/`course_modules`/
+    // `course_lessons` rows; never reads back results into, writes to, or
+    // deletes anything in `programs`/`phases`/`modules`. The created
+    // course always lands in 'draft' so nothing becomes customer-facing
+    // as a side effect of running this.
+    if (body.action === 'seed_from_program') {
+      const { programId } = body as { programId?: string }
+      if (!programId) return NextResponse.json({ error: 'programId required' }, { status: 400 })
+
+      const { data: programRow } = await sb
+        .from('programs')
+        .select('id, name, description, tagline, difficulty')
+        .eq('id', programId)
+        .maybeSingle()
+      if (!programRow) return NextResponse.json({ error: 'Programme not found' }, { status: 404 })
+      const program = programRow as {
+        id: string; name: string; description: string | null
+        tagline: string | null; difficulty: string | null
+      }
+
+      const { data: phasesRaw } = await sb
+        .from('phases')
+        .select('id, title, phase_number')
+        .eq('program_id', programId)
+        .order('phase_number')
+      const phases = (phasesRaw ?? []) as { id: string; title: string; phase_number: number }[]
+
+      const phaseIds = phases.map(p => p.id)
+      const { data: modulesRaw } = phaseIds.length > 0 ? await sb
+        .from('modules')
+        .select('id, phase_id, title, module_number, notes_url')
+        .in('phase_id', phaseIds)
+        .order('module_number') : { data: [] }
+      const modules = (modulesRaw ?? []) as {
+        id: string; phase_id: string; title: string; module_number: number; notes_url: string | null
+      }[]
+
+      // Slug collision is expected on a re-run (or if a course with a
+      // matching name already exists) — append a short suffix rather
+      // than failing the whole migration.
+      const baseSlug = slugify(program.name) || 'programme-course'
+      let slug = baseSlug
+      let courseId: string | null = null
+      for (let attempt = 0; attempt < 5 && !courseId; attempt++) {
+        const { data: created, error: createErr } = await sb.from('courses').insert({
+          title: program.name,
+          slug,
+          description: program.description?.trim() || program.tagline?.trim() || null,
+          difficulty: program.difficulty && ['beginner', 'intermediate', 'advanced'].includes(program.difficulty) ? program.difficulty : 'beginner',
+          status: 'draft',
+          created_by: user.id,
+        }).select('id').single()
+
+        if (!createErr && created) { courseId = created.id; break }
+        if (createErr?.code === '23505') { slug = `${baseSlug}-${attempt + 2}`; continue }
+        if (createErr) return NextResponse.json({ error: createErr.message }, { status: 500 })
+      }
+      if (!courseId) return NextResponse.json({ error: 'Could not find an available slug for this programme' }, { status: 500 })
+
+      for (const phase of phases) {
+        const { data: createdModule, error: modErr } = await sb.from('course_modules').insert({
+          course_id: courseId, title: phase.title, module_number: phase.phase_number,
+        }).select('id').single()
+        if (modErr) return NextResponse.json({ error: `Failed creating module for phase "${phase.title}": ${modErr.message}` }, { status: 500 })
+
+        const phaseModules = modules.filter(m => m.phase_id === phase.id)
+        for (const mod of phaseModules) {
+          const content = mod.notes_url
+            ? [{ id: crypto.randomUUID(), type: 'pdf', path: mod.notes_url, title: `${mod.title} Notes` }]
+            : []
+          const { error: lessonErr } = await sb.from('course_lessons').insert({
+            module_id: createdModule.id, title: mod.title, lesson_number: mod.module_number,
+            estimated_duration_minutes: 15, is_required: true, content,
+          })
+          if (lessonErr) return NextResponse.json({ error: `Failed creating lesson "${mod.title}": ${lessonErr.message}` }, { status: 500 })
+        }
+      }
+
+      return NextResponse.json({ success: true, courseId, slug })
+    }
+
     // ── MODULES ──────────────────────────────────────────────
     if (body.action === 'create_module') {
       const { courseId, title } = body as { courseId?: string; title?: string }
