@@ -10,7 +10,7 @@ import {
   Upload, Settings2, ShieldCheck, UserCheck,
   BarChart3, Users, Home, TrendingUp, Layers, BookMarked,
   Target, Menu, X, ChevronRight, Gift, FileText, GraduationCap, Lock,
-  Library,
+  Library, Briefcase,
 } from 'lucide-react'
 
 import type { Profile, UserRole } from '@/types/database'
@@ -82,11 +82,12 @@ const NAV_TEACHER = [
   { href:'/teacher/content',      label:'Upload Notes',   icon:Upload },
   { href:'/teacher/tests',        label:'Create Tests',   icon:ClipboardList },
   { href:'/teacher/assessments',  label:'Assessments',    icon:Target },
-  // Both point into /admin/* subtrees — that's the only place these
+  // All three point into /admin/* subtrees — that's the only place these
   // features are built, but middleware.ts STEP 4 explicitly carves out
-  // /admin/courses and /admin/free-notes for teachers too, so these
-  // links work for them.
+  // /admin/courses, /admin/free-notes, and /admin/career-paths for
+  // teachers too, so these links work for them.
   { href:'/admin/courses',        label:'Courses',            icon:BookOpen },
+  { href:'/admin/career-paths',   label:'Career Paths',       icon:Briefcase },
   { href:'/admin/free-notes',     label:'Handwritten Notes',  icon:Library },
   { href:'/teacher/doubts',       label:'Resolve Doubts', icon:MessageCircle },
   { href:'/teacher/live',         label:'Schedule Class', icon:Video },
@@ -98,6 +99,7 @@ const NAV_ADMIN = [
   { href:'/admin/programs',        label:'Programmes',      icon:BookMarked },
   { href:'/admin/free-notes',      label:'Handwritten Notes', icon:Library },
   { href:'/admin/courses',         label:'Courses',         icon:BookOpen },
+  { href:'/admin/career-paths',    label:'Career Paths',    icon:Briefcase },
   { href:'/admin/batches',         label:'Batches',         icon:Layers },
   { href:'/admin/students',        label:'All Users',       icon:Users },
   { href:'/admin/enrollments',     label:'Enrollments',     icon:GraduationCap },

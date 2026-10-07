@@ -131,6 +131,16 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
+  // ── STEP 1e: Explore / career-path bundle landing pages — same
+  //    reasoning as STEP 1c: /explore (browse by skill/technology/role,
+  //    Phase 4) and /explore/roles/{slug} (a single bundle's landing
+  //    page) are public so anyone can see what's on offer. Buying a
+  //    bundle happens through the page-level login gate on the checkout
+  //    action itself, not here. ─────────────────────────────────────
+  if (pathname === '/explore' || /^\/explore\/roles\/[^/]+$/.test(pathname)) {
+    return response
+  }
+
   // ── STEP 2: Must be logged in ──────────────────────────────
   if (!user) {
     const url = new URL('/login', request.url)
@@ -155,7 +165,7 @@ export async function middleware(request: NextRequest) {
     // ['admin','teacher'] itself, but without this carve-out this
     // blanket admin-only check redirects a teacher away before any of
     // those pages ever run.
-    if (matches(pathname, ['/admin/courses', '/admin/free-notes']) && ['admin', 'teacher'].includes(role))
+    if (matches(pathname, ['/admin/courses', '/admin/free-notes', '/admin/career-paths']) && ['admin', 'teacher'].includes(role))
       return response
     if (role !== 'admin')
       return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -179,16 +189,16 @@ export async function middleware(request: NextRequest) {
 
   // ── STEP 8: PENDING PAYMENT ────────────────────────────────
   // Student hasn't paid → they can only access /pending, /payment,
-  // /profile, /free-notes, /courses, and /certificates (self-paced
-  // courses — and any certificate earned from one — are open to any
-  // registered user regardless of payment status, same precedent as
-  // Free Notes — see migrations/2026-08-24-self-paced-courses.sql).
-  // Every other route is blocked.
+  // /profile, /free-notes, /courses, /explore, and /certificates
+  // (self-paced courses/bundles — and any certificate earned from one —
+  // are open to any registered user regardless of payment status, same
+  // precedent as Free Notes — see migrations/2026-08-24-self-paced-
+  // courses.sql). Every other route is blocked.
   if (status === 'pending_payment') {
     if (
       pathname.startsWith('/profile') || pathname.startsWith('/payment') ||
       pathname.startsWith('/free-notes') || pathname.startsWith('/courses') ||
-      pathname.startsWith('/certificates')
+      pathname.startsWith('/explore') || pathname.startsWith('/certificates')
     ) return response
     return NextResponse.redirect(new URL('/pending', request.url))
   }
