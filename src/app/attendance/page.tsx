@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 import LockedFeature from '@/components/LockedFeature'
@@ -23,13 +22,9 @@ export default async function AttendancePage() {
   const isEnrolled = profile.access_status === 'active'
   if (!isEnrolled) {
     return (
-      <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-        <Sidebar profile={profile}/>
-        <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-          <Topbar title="My Attendance"/>
-          <LockedFeature feature="My Attendance" description="Track your class attendance — available after enrolment."/>
-        </main>
-      </div>
+      <AuthShell profile={profile} title="My Attendance" noContainer>
+        <LockedFeature feature="My Attendance" description="Track your class attendance — available after enrolment."/>
+      </AuthShell>
     )
   }
 
@@ -54,12 +49,7 @@ export default async function AttendancePage() {
   }
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="My Attendance" subtitle="Recorded automatically when you join live classes"/>
-        <div style={{ padding:'28px', maxWidth:'800px' }}>
-
+    <AuthShell profile={profile} title="My Attendance" subtitle="Recorded automatically when you join live classes" maxWidth={800}>
           {/* Attendance rate */}
           <div style={{
             background: pct >= 75 ? 'var(--green-dim)' : 'var(--amber-dim)',
@@ -147,8 +137,6 @@ export default async function AttendancePage() {
               </table>
             </div>
           )}
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

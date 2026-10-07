@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import CountdownCell from './CountdownCell'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { requireProgramAccess } from '@/lib/program-access'
@@ -195,11 +194,7 @@ export default async function TestsPage({
   )
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar title="Weekly Tests" subtitle={`${program.name} — Tests unlock on admin-scheduled date and time`}/>
-        <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
+    <AuthShell profile={profile} title="Weekly Tests" subtitle={`${program.name} — Tests unlock on admin-scheduled date and time`}>
           <div className="banner banner-info">
             <Info size={16} style={{ flexShrink: 0 }}/>
             <span style={{ fontSize: '13px' }}>
@@ -210,8 +205,6 @@ export default async function TestsPage({
           {testsByPhase.map(({ phaseNum, tests: phaseTests }) => (
             <TestTable key={phaseNum} phaseTests={phaseTests} phaseNum={phaseNum}/>
           ))}
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

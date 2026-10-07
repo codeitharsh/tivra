@@ -4,8 +4,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import PublicNav from '@/components/PublicNav'
 import { getCourseProgress } from '@/lib/course-progress'
 import { courseAssetUrl } from '@/lib/course-assets'
@@ -350,13 +349,9 @@ export default async function CourseLandingPage({
 
   if (profile) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-        <Sidebar profile={profile}/>
-        <main className="sidebar-layout-main" style={{ flex: 1, overflow: 'auto' }}>
-          <Topbar title={course.title} subtitle="Self-paced course"/>
-          {body}
-        </main>
-      </div>
+      <AuthShell profile={profile} title={course.title} subtitle="Self-paced course" noContainer>
+        {body}
+      </AuthShell>
     )
   }
 

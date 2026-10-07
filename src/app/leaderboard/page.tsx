@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 import LockedFeature from '@/components/LockedFeature'
@@ -23,13 +22,9 @@ export default async function LeaderboardPage() {
   const isEnrolled = profile.access_status === 'active'
   if (!isEnrolled) {
     return (
-      <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-        <Sidebar profile={profile}/>
-        <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-          <Topbar title="Leaderboard"/>
-          <LockedFeature feature="Leaderboard" description="See your ranking among peers — available after enrolment."/>
-        </main>
-      </div>
+      <AuthShell profile={profile} title="Leaderboard" noContainer>
+        <LockedFeature feature="Leaderboard" description="See your ranking among peers — available after enrolment."/>
+      </AuthShell>
     )
   }
 
@@ -73,11 +68,7 @@ export default async function LeaderboardPage() {
   const medalColors = ['var(--amber)', '#b8bfc9', '#c9905b']
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Leaderboard" subtitle="Top scores across all weekly tests"/>
-        <div style={{ padding:'28px', maxWidth:'700px' }}>
+    <AuthShell profile={profile} title="Leaderboard" subtitle="Top scores across all weekly tests" maxWidth={700}>
           <div className="card" style={{ padding:0, overflow:'hidden' }}>
             <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--border)' }}>
               <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px' }}>
@@ -134,8 +125,6 @@ export default async function LeaderboardPage() {
               })
             )}
           </div>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

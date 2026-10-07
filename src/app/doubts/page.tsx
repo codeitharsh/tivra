@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import DoubtsClient from './DoubtsClient'
 import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
@@ -23,13 +22,9 @@ export default async function DoubtsPage() {
   const isEnrolled = profile.access_status === 'active'
   if (!isEnrolled) {
     return (
-      <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-        <Sidebar profile={profile}/>
-        <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-          <Topbar title="Doubt Corner"/>
-          <LockedFeature feature="Doubt Corner" description="Ask questions and get answers from teachers — available after enrolment."/>
-        </main>
-      </div>
+      <AuthShell profile={profile} title="Doubt Corner" noContainer>
+        <LockedFeature feature="Doubt Corner" description="Ask questions and get answers from teachers — available after enrolment."/>
+      </AuthShell>
     )
   }
 
@@ -60,18 +55,12 @@ export default async function DoubtsPage() {
   const modules = (modulesRaw ?? []) as Record<string, unknown>[]
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Doubt Corner" subtitle="Post questions, get answers from your teacher"/>
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="Doubt Corner" subtitle="Post questions, get answers from your teacher">
           <DoubtsClient
             doubts={doubts}
             modules={(modules as {id:string;title:string}[])}
             userRole={profile.role ?? 'student'}
           />
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

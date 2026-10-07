@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import type { Profile } from '@/types/database'
 import { Users, TrendingUp, Trophy } from 'lucide-react'
 
@@ -54,15 +53,12 @@ export default async function TestScoresPage({
   const highScore = scores.length === 0 ? 0 : Math.round(Math.max(...scores))
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className="sidebar-layout-main" style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar
-          title={`Week ${test.week_number} — ${test.topic ?? test.title}`}
-          subtitle={phase ? `Phase ${phase.phase_number}: ${phase.title} — Scores` : 'Scores'}
-        />
-        <div style={{ padding: '28px', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
-
+    <AuthShell
+      profile={profile}
+      title={`Week ${test.week_number} — ${test.topic ?? test.title}`}
+      subtitle={phase ? `Phase ${phase.phase_number}: ${phase.title} — Scores` : 'Scores'}
+      maxWidth={900}
+    >
           <div style={{ marginBottom: '16px' }}>
             <Link href="/teacher/tests" style={{ fontSize: '13px', color: 'var(--muted)', textDecoration: 'none' }}>
               ← Back to weekly tests
@@ -86,7 +82,7 @@ export default async function TestScoresPage({
             </div>
             <div className="card" style={{ padding: '18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <Trophy size={14} color="var(--amber, #f59e0b)"/>
+                <Trophy size={14} color="var(--amber-text)"/>
                 <span className="stat-label">Highest score</span>
               </div>
               <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '26px' }}>{highScore}%</div>
@@ -119,7 +115,7 @@ export default async function TestScoresPage({
                         <td>
                           <span style={{
                             fontWeight: 600, fontSize: '14px',
-                            color: score >= 75 ? 'var(--green)' : score >= 50 ? 'var(--amber, #f59e0b)' : 'var(--red)',
+                            color: score >= 75 ? 'var(--green-text)' : score >= 50 ? 'var(--amber-text)' : 'var(--red-text)',
                           }}>{score}%</span>
                         </td>
                         <td style={{ fontSize: '13px', color: 'var(--muted)' }}>
@@ -132,8 +128,6 @@ export default async function TestScoresPage({
               </table>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

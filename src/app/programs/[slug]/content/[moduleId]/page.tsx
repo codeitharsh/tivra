@@ -4,8 +4,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import MarkCompleteButton from './MarkCompleteButton'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { requireProgramAccess } from '@/lib/program-access'
@@ -98,13 +97,7 @@ export default async function ModulePage({
   const phaseNum   = mod.phases?.phase_number ?? 1
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar title={mod.title} subtitle={`Phase ${phaseNum}: ${phaseTitle}`}/>
-
-        <div style={{ padding: '28px', maxWidth: '900px' }}>
-
+    <AuthShell profile={profile} title={mod.title} subtitle={`Phase ${phaseNum}: ${phaseTitle}`} maxWidth={900}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             fontSize: '12px', color: 'var(--muted)', marginBottom: '24px',
@@ -251,8 +244,6 @@ export default async function ModulePage({
               <MessageCircle size={13}/> Post a doubt
             </Link>
           </div>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

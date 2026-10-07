@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 import WhatsAppBanner from '@/components/WhatsAppBanner'
@@ -247,16 +246,7 @@ export default async function DashboardPage({
   const primarySlug = enrolledProgramsList.length === 1 ? enrolledProgramsList[0].slug : null
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={p}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar
-          title="Dashboard"
-          subtitle={`Welcome back, ${p.full_name?.split(' ')[0] ?? 'Student'}`}
-        />
-
-        <div style={{ padding:'28px', maxWidth:'1100px', margin:'0 auto', width:'100%' }}>
-
+    <AuthShell profile={p} title="Dashboard" subtitle={`Welcome back, ${p.full_name?.split(' ')[0] ?? 'Student'}`}>
           {showPayBanner && (
             <div className="banner banner-warning">
               <CreditCard size={18} style={{ flexShrink:0 }}/>
@@ -551,8 +541,6 @@ export default async function DashboardPage({
               <WhatsAppBanner/>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

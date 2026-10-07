@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import type { Profile } from '@/types/database'
 import { GraduationCap, Download, Share2, Trophy, ArrowRight } from 'lucide-react'
 
@@ -44,12 +43,7 @@ export default async function CourseCertificatePage({
   } | null
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className="sidebar-layout-main" style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar title="Certificate" subtitle={course.title}/>
-        <div style={{ padding: '28px', maxWidth: '700px' }}>
-
+    <AuthShell profile={profile} title="Certificate" subtitle={course.title} maxWidth={700}>
           {!completion ? (
             <div style={{ textAlign: 'center', padding: '60px 40px' }}>
               <div style={{
@@ -129,8 +123,6 @@ export default async function CourseCertificatePage({
               </div>
             </>
           )}
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

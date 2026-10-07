@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import Image from 'next/image'
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import PublicNav from '@/components/PublicNav'
 import { courseAssetUrl } from '@/lib/course-assets'
 import type { Profile } from '@/types/database'
@@ -145,13 +144,9 @@ export default async function CoursesPage() {
 
   if (profile) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-        <Sidebar profile={profile}/>
-        <main className="sidebar-layout-main" style={{ flex: 1, overflow: 'auto' }}>
-          <Topbar title="Self-Paced Courses" subtitle="Structured, self-paced learning with a certificate on completion — open to everyone"/>
-          {body}
-        </main>
-      </div>
+      <AuthShell profile={profile} title="Self-Paced Courses" subtitle="Structured, self-paced learning with a certificate on completion — open to everyone" noContainer>
+        {body}
+      </AuthShell>
     )
   }
 

@@ -2,8 +2,7 @@ export const runtime = 'edge'
 
 import { redirect, notFound } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import CourseQuizTaker from '@/components/course/CourseQuizTaker'
 import { isQuizUnlocked } from '@/lib/course-progress'
 import { isPaidCourse, hasPurchasedCourse } from '@/lib/course-access'
@@ -108,11 +107,12 @@ export default async function CourseQuizPage({
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className="sidebar-layout-main" style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar title={quiz.title} subtitle={`${course.title} · ${questions.length} questions · pass mark ${quiz.passing_percent}%`}/>
-        <div style={{ padding: '28px', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+    <AuthShell
+      profile={profile}
+      title={quiz.title}
+      subtitle={`${course.title} · ${questions.length} questions · pass mark ${quiz.passing_percent}%`}
+      maxWidth={760}
+    >
           <CourseQuizTaker
             quiz={quiz}
             courseSlug={course.slug}
@@ -124,8 +124,6 @@ export default async function CourseQuizPage({
             certificateIssued={certificateIssued}
             initialBreakdown={breakdown}
           />
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

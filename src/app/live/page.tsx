@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
 import LockedFeature from '@/components/LockedFeature'
@@ -24,13 +23,9 @@ export default async function LivePage() {
   const isEnrolled = profile.access_status === 'active'
   if (!isEnrolled) {
     return (
-      <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-        <Sidebar profile={profile}/>
-        <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-          <Topbar title="Live Classes"/>
-          <LockedFeature feature="Live Classes" description="Join live instructor-led sessions — available after enrolment."/>
-        </main>
-      </div>
+      <AuthShell profile={profile} title="Live Classes" noContainer>
+        <LockedFeature feature="Live Classes" description="Join live instructor-led sessions — available after enrolment."/>
+      </AuthShell>
     )
   }
 
@@ -96,12 +91,7 @@ export default async function LivePage() {
   }
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Live Classes" subtitle="Join button appears 15 minutes before class starts"/>
-        <div style={{ padding:'28px', maxWidth:'800px' }}>
-
+    <AuthShell profile={profile} title="Live Classes" subtitle="Join button appears 15 minutes before class starts" maxWidth={800}>
           {sessions.length === 0 ? (
             <div className="card" style={{ textAlign:'center', padding:'48px', color:'var(--muted)' }}>
               <Video size={28} color="var(--muted2)" style={{ marginBottom:'12px' }}/>
@@ -169,8 +159,6 @@ export default async function LivePage() {
               })}
             </div>
           )}
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

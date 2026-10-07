@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { requireProgramAccess } from '@/lib/program-access'
 import type { Profile } from '@/types/database'
@@ -96,12 +95,7 @@ export default async function CertificatePage({
   const hasCerts = certs.length > 0 || completions.length > 0
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar title="My Certificates" subtitle={`${program.name} — earned by passing phase assessments with ≥75%`}/>
-        <div style={{ padding: '28px', maxWidth: '800px' }}>
-
+    <AuthShell profile={profile} title="My Certificates" subtitle={`${program.name} — earned by passing phase assessments with ≥75%`} maxWidth={800}>
           {completions.map(comp => (
             <div key={comp.id} style={{ marginBottom: '32px' }}>
               <div className="card" style={{
@@ -286,8 +280,6 @@ export default async function CertificatePage({
               </div>
             </div>
           ))}
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import AssessmentTaker from './AssessmentTaker'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { requireProgramAccess } from '@/lib/program-access'
@@ -141,14 +140,12 @@ export default async function TakeAssessmentPage({
   const phase = assessment.phases
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile} />
-      <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar
-          title={assessment.title}
-          subtitle={`Phase ${phase?.phase_number ?? ''}: ${phase?.title ?? ''} · ${assessment.total_questions} questions · ${assessment.duration_minutes} min`}
-        />
-        <div style={{ padding: '28px', maxWidth: '860px', margin: '0 auto', width: '100%' }}>
+    <AuthShell
+      profile={profile}
+      title={assessment.title}
+      subtitle={`Phase ${phase?.phase_number ?? ''}: ${phase?.title ?? ''} · ${assessment.total_questions} questions · ${assessment.duration_minutes} min`}
+      maxWidth={860}
+    >
           <AssessmentTaker
             assessment={assessment}
             questions={questions}
@@ -164,8 +161,6 @@ export default async function TakeAssessmentPage({
             studentName={profile.full_name ?? 'Student'}
             slug={slug}
           />
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

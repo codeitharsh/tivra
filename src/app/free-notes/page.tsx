@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import PublicNav from '@/components/PublicNav'
 import type { Profile } from '@/types/database'
 import { Library, ArrowRight } from 'lucide-react'
@@ -102,13 +101,9 @@ export default async function FreeNotesPage() {
 
   if (profile) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-        <Sidebar profile={profile}/>
-        <main className="sidebar-layout-main" style={{ flex: 1, overflow: 'auto' }}>
-          <Topbar title="Handwritten Notes" subtitle="Self-study material for college exams and interview prep — open to everyone"/>
-          {body}
-        </main>
-      </div>
+      <AuthShell profile={profile} title="Handwritten Notes" subtitle="Self-study material for college exams and interview prep — open to everyone" noContainer>
+        {body}
+      </AuthShell>
     )
   }
 

@@ -4,8 +4,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import PublicNav from '@/components/PublicNav'
 import { getSubjectProgress } from '@/lib/free-notes-progress'
 import type { Profile } from '@/types/database'
@@ -136,13 +135,9 @@ export default async function FreeNotesSubjectPage({
 
   if (profile) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-        <Sidebar profile={profile}/>
-        <main className="sidebar-layout-main" style={{ flex: 1, overflow: 'auto' }}>
-          <Topbar title={subject.name} subtitle={subject.description ?? 'Free self-study notes'}/>
-          {body}
-        </main>
-      </div>
+      <AuthShell profile={profile} title={subject.name} subtitle={subject.description ?? 'Free self-study notes'} noContainer>
+        {body}
+      </AuthShell>
     )
   }
 

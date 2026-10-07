@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import TestTaker from './TestTaker'
 import { requireActiveStudent } from '@/lib/access-gate'
 import { requireProgramAccess } from '@/lib/program-access'
@@ -108,14 +107,12 @@ export default async function TakeTestPage({
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar
-          title={`Week ${test.week_number}: ${test.topic ?? test.title}`}
-          subtitle={`${questions.length} questions · ${test.duration_minutes} minutes`}
-        />
-        <div style={{ padding: '28px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+    <AuthShell
+      profile={profile}
+      title={`Week ${test.week_number}: ${test.topic ?? test.title}`}
+      subtitle={`${questions.length} questions · ${test.duration_minutes} minutes`}
+      maxWidth={800}
+    >
           <TestTaker
             test={test}
             questions={questions}
@@ -125,8 +122,6 @@ export default async function TakeTestPage({
             studentId={user.id}
             slug={slug}
           />
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

@@ -2,8 +2,7 @@ export const runtime = 'edge'
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import ProfileEditClient from './ProfileEditClient'
 import { requireActiveStudent } from '@/lib/access-gate'
 import type { Profile } from '@/types/database'
@@ -22,14 +21,8 @@ export default async function ProfilePage() {
   // login (above) but NOT requireActiveStudent here.
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="My Profile" subtitle="View and update your account details"/>
-        <div style={{ padding:'28px', maxWidth:'640px' }}>
+    <AuthShell profile={profile} title="My Profile" subtitle="View and update your account details" maxWidth={640}>
           <ProfileEditClient profile={profile}/>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }
