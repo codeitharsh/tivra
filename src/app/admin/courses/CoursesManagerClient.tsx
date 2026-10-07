@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
-  Loader2, Plus, X, Check, Trash2, ChevronDown, ChevronUp, Layers, ArrowRight, Users, ImageUp,
+  Loader2, Plus, X, Check, Trash2, ChevronDown, ChevronUp, Layers, ArrowRight, Users, ImageUp, ClipboardList,
 } from 'lucide-react'
 import { courseAssetUrl } from '@/lib/course-assets'
 
@@ -15,11 +15,13 @@ interface Course {
   skills: string[]; learning_outcomes: string[]
   status: string; is_certificate_enabled: boolean; display_order: number
   cover_image_path: string | null
+  price_inr: number | null; original_price_inr: number | null; track_slug: string | null
 }
 
 const BLANK_COURSE = {
   title: '', description: '', difficulty: 'beginner',
   estimatedDurationMinutes: '', skills: '', learningOutcomes: '',
+  priceInr: '', originalPriceInr: '', trackSlug: '',
 }
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
@@ -106,6 +108,9 @@ export default function CoursesManagerClient({
         difficulty: form.difficulty,
         estimatedDurationMinutes: form.estimatedDurationMinutes ? Number(form.estimatedDurationMinutes) : undefined,
         skills: form.skills, learningOutcomes: form.learningOutcomes,
+        priceInr: form.priceInr ? Number(form.priceInr) : undefined,
+        originalPriceInr: form.originalPriceInr ? Number(form.originalPriceInr) : undefined,
+        trackSlug: form.trackSlug.trim() || undefined,
       })
       showToast('✓ Course created as a draft', 'success')
       setForm(BLANK_COURSE)
@@ -205,6 +210,23 @@ export default function CoursesManagerClient({
                   onChange={e => setForm(f => ({ ...f, estimatedDurationMinutes: e.target.value }))}/>
               </div>
             </div>
+            <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '140px' }}>
+                <label className="form-label">Price (₹, blank = free)</label>
+                <input className="form-input" type="number" min="0" placeholder="e.g. 999"
+                  value={form.priceInr} onChange={e => setForm(f => ({ ...f, priceInr: e.target.value }))}/>
+              </div>
+              <div style={{ flex: 1, minWidth: '140px' }}>
+                <label className="form-label">Original price (₹, optional)</label>
+                <input className="form-input" type="number" min="0" placeholder="Strikethrough price"
+                  value={form.originalPriceInr} onChange={e => setForm(f => ({ ...f, originalPriceInr: e.target.value }))}/>
+              </div>
+              <div style={{ flex: 1, minWidth: '140px' }}>
+                <label className="form-label">Track slug (optional)</label>
+                <input className="form-input" placeholder="e.g. python-track"
+                  value={form.trackSlug} onChange={e => setForm(f => ({ ...f, trackSlug: e.target.value }))}/>
+              </div>
+            </div>
             <div>
               <label className="form-label">Skills covered (comma-separated)</label>
               <input className="form-input" placeholder="Arrays, Linked Lists, Recursion"
@@ -279,9 +301,42 @@ export default function CoursesManagerClient({
                   </label>
                 </div>
 
+                <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: '140px' }}>
+                    <label className="form-label">Price (₹, blank = free)</label>
+                    <input className="form-input" type="number" min="0" placeholder="Free" disabled={busy === c.id}
+                      defaultValue={c.price_inr ?? ''}
+                      onBlur={e => {
+                        const next = e.target.value ? Number(e.target.value) : null
+                        if (next !== c.price_inr) updateCourse(c.id, { priceInr: next }, '✓ Price updated')
+                      }}/>
+                  </div>
+                  <div style={{ flex: 1, minWidth: '140px' }}>
+                    <label className="form-label">Original price (₹, optional)</label>
+                    <input className="form-input" type="number" min="0" placeholder="Strikethrough price" disabled={busy === c.id}
+                      defaultValue={c.original_price_inr ?? ''}
+                      onBlur={e => {
+                        const next = e.target.value ? Number(e.target.value) : null
+                        if (next !== c.original_price_inr) updateCourse(c.id, { originalPriceInr: next }, '✓ Original price updated')
+                      }}/>
+                  </div>
+                  <div style={{ flex: 1, minWidth: '140px' }}>
+                    <label className="form-label">Track slug (optional)</label>
+                    <input className="form-input" placeholder="e.g. python-track" disabled={busy === c.id}
+                      defaultValue={c.track_slug ?? ''}
+                      onBlur={e => {
+                        const next = e.target.value.trim() || null
+                        if (next !== c.track_slug) updateCourse(c.id, { trackSlug: next }, '✓ Track slug updated')
+                      }}/>
+                  </div>
+                </div>
+
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   <Link href={`/admin/courses/${c.id}`} className="btn btn-primary" style={{ fontSize: '13px' }}>
                     <Layers size={13}/> Manage modules & lessons <ArrowRight size={13}/>
+                  </Link>
+                  <Link href={`/admin/courses/${c.id}/quizzes`} className="btn btn-ghost" style={{ fontSize: '13px' }}>
+                    <ClipboardList size={13}/> Manage quizzes
                   </Link>
                   <Link href={`/admin/courses/${c.id}/learners`} className="btn btn-ghost" style={{ fontSize: '13px' }}>
                     <Users size={13}/> View learners

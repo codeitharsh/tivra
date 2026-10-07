@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Loader2, Plus, Trash2, ChevronUp, ChevronDown, ChevronLeft,
-  Pencil, FileEdit, Clock,
+  Pencil, FileEdit, Clock, ClipboardList,
 } from 'lucide-react'
 
 interface CourseModule { id: string; title: string; module_number: number }
@@ -172,9 +172,14 @@ export default function CourseEditorClient({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <Link href="/admin/courses" style={{ fontSize: '12px', color: 'var(--muted)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-        <ChevronLeft size={12}/> All courses
-      </Link>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Link href="/admin/courses" style={{ fontSize: '12px', color: 'var(--muted)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <ChevronLeft size={12}/> All courses
+        </Link>
+        <Link href={`/admin/courses/${course.id}/quizzes`} className="btn btn-ghost" style={{ fontSize: '12px' }}>
+          <ClipboardList size={12}/> Manage quizzes
+        </Link>
+      </div>
 
       {sortedModules.length === 0 && (
         <div className="card" style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>

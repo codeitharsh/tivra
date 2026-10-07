@@ -59,9 +59,10 @@ export async function POST(req: NextRequest) {
 
     // ── COURSES ──────────────────────────────────────────────
     if (body.action === 'create_course') {
-      const { title, description, difficulty, estimatedDurationMinutes, skills, learningOutcomes } = body as {
+      const { title, description, difficulty, estimatedDurationMinutes, skills, learningOutcomes, priceInr, originalPriceInr, trackSlug } = body as {
         title?: string; description?: string; difficulty?: string
         estimatedDurationMinutes?: number; skills?: string; learningOutcomes?: string
+        priceInr?: number; originalPriceInr?: number; trackSlug?: string
       }
       const trimmedTitle = title?.trim()
       if (!trimmedTitle) return NextResponse.json({ error: 'Course title is required' }, { status: 400 })
@@ -76,6 +77,9 @@ export async function POST(req: NextRequest) {
         estimated_duration_minutes: estimatedDurationMinutes || null,
         skills: toArray(skills),
         learning_outcomes: toArray(learningOutcomes),
+        price_inr: priceInr || null,
+        original_price_inr: originalPriceInr || null,
+        track_slug: trackSlug?.trim() || null,
         created_by: user.id,
       }).select('id, slug').single()
 
@@ -87,10 +91,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.action === 'update_course') {
-      const { courseId, title, description, difficulty, estimatedDurationMinutes, skills, learningOutcomes, status, isCertificateEnabled, displayOrder } = body as {
+      const { courseId, title, description, difficulty, estimatedDurationMinutes, skills, learningOutcomes, status, isCertificateEnabled, displayOrder, priceInr, originalPriceInr, trackSlug } = body as {
         courseId?: string; title?: string; description?: string; difficulty?: string
         estimatedDurationMinutes?: number; skills?: string; learningOutcomes?: string
         status?: string; isCertificateEnabled?: boolean; displayOrder?: number
+        priceInr?: number | null; originalPriceInr?: number | null; trackSlug?: string | null
       }
       if (!courseId) return NextResponse.json({ error: 'courseId required' }, { status: 400 })
 
@@ -104,6 +109,9 @@ export async function POST(req: NextRequest) {
       if (status !== undefined && ['draft', 'review', 'published', 'archived'].includes(status)) updates.status = status
       if (isCertificateEnabled !== undefined) updates.is_certificate_enabled = isCertificateEnabled
       if (displayOrder !== undefined)    updates.display_order = displayOrder
+      if (priceInr !== undefined)        updates.price_inr = priceInr || null
+      if (originalPriceInr !== undefined) updates.original_price_inr = originalPriceInr || null
+      if (trackSlug !== undefined)       updates.track_slug = trackSlug?.trim() || null
 
       const { error } = await sb.from('courses').update(updates).eq('id', courseId)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -244,6 +252,90 @@ export async function POST(req: NextRequest) {
       const { error } = await sb.from('course_lessons').update({
         content, updated_at: new Date().toISOString(),
       }).eq('id', lessonId)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
+    // ── QUIZZES ──────────────────────────────────────────────
+    if (body.action === 'create_quiz') {
+      const { courseId, title, quizType, moduleId, passingPercent } = body as {
+        courseId?: string; title?: string; quizType?: string; moduleId?: string | null; passingPercent?: number
+      }
+      if (!courseId) return NextResponse.json({ error: 'courseId required' }, { status: 400 })
+      if (quizType !== 'module_test' && quizType !== 'final_assessment') {
+        return NextResponse.json({ error: 'quizType must be module_test or final_assessment' }, { status: 400 })
+      }
+      if (quizType === 'module_test' && !moduleId) {
+        return NextResponse.json({ error: 'moduleId required for a module test' }, { status: 400 })
+      }
+
+      const { data, error } = await sb.from('course_quizzes').insert({
+        course_id: courseId,
+        title: title?.trim() || (quizType === 'final_assessment' ? 'Final Assessment' : 'Module Test'),
+        quiz_type: quizType,
+        module_id: quizType === 'module_test' ? moduleId : null,
+        passing_percent: passingPercent || 70,
+      }).select('id').single()
+
+      if (error) {
+        if (error.code === '23505') return NextResponse.json({ error: 'A quiz already exists for this course/module' }, { status: 409 })
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, id: data.id })
+    }
+
+    if (body.action === 'update_quiz') {
+      const { quizId, title, passingPercent } = body as { quizId?: string; title?: string; passingPercent?: number }
+      if (!quizId) return NextResponse.json({ error: 'quizId required' }, { status: 400 })
+      const updates: Record<string, unknown> = {}
+      if (title !== undefined) updates.title = title.trim()
+      if (passingPercent !== undefined) updates.passing_percent = passingPercent
+      const { error } = await sb.from('course_quizzes').update(updates).eq('id', quizId)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
+    if (body.action === 'delete_quiz') {
+      const { quizId } = body as { quizId?: string }
+      if (!quizId) return NextResponse.json({ error: 'quizId required' }, { status: 400 })
+      const { error } = await sb.from('course_quizzes').delete().eq('id', quizId)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
+    // ── QUIZ QUESTIONS ───────────────────────────────────────
+    if (body.action === 'create_quiz_question') {
+      const { quizId, questionText, options, correctAnswer, explanation } = body as {
+        quizId?: string; questionText?: string; options?: string[]; correctAnswer?: string; explanation?: string
+      }
+      if (!quizId || !questionText?.trim()) return NextResponse.json({ error: 'quizId and questionText are required' }, { status: 400 })
+      if (!Array.isArray(options) || options.length < 2 || options.some(o => !o?.trim())) {
+        return NextResponse.json({ error: 'At least 2 non-empty options are required' }, { status: 400 })
+      }
+      if (!correctAnswer || !options.includes(correctAnswer)) {
+        return NextResponse.json({ error: 'correctAnswer must match one of the options' }, { status: 400 })
+      }
+
+      const { data: existing } = await sb.from('course_quiz_questions').select('order_num').eq('quiz_id', quizId).order('order_num', { ascending: false }).limit(1)
+      const nextOrder = ((existing?.[0] as { order_num: number } | undefined)?.order_num ?? 0) + 1
+
+      const { data, error } = await sb.from('course_quiz_questions').insert({
+        quiz_id: quizId,
+        question_text: questionText.trim(),
+        options,
+        correct_answer: correctAnswer,
+        explanation: explanation?.trim() || null,
+        order_num: nextOrder,
+      }).select('id').single()
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true, id: data.id })
+    }
+
+    if (body.action === 'delete_quiz_question') {
+      const { questionId } = body as { questionId?: string }
+      if (!questionId) return NextResponse.json({ error: 'questionId required' }, { status: 400 })
+      const { error } = await sb.from('course_quiz_questions').delete().eq('id', questionId)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
     }
