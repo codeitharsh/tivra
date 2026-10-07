@@ -79,7 +79,7 @@ export default function CourseCheckout({ courseSlug, courseTitle, priceInr, orig
         currency:    orderData.currency ?? 'INR',
         name:        'Tivra',
         description: courseTitle,
-        image:       '/tivra-logo-no-bg.png',
+        image:       '/brand/tivra-icon-dark.png',
         order_id:    orderData.order_id,
 
         handler: async (response) => {

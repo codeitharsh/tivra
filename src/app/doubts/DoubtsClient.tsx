@@ -91,7 +91,7 @@ export default function DoubtsClient({ doubts, userRole, modules }: Props) {
             <button key={f} onClick={() => setFilter(f)} style={{
               padding: '6px 14px', borderRadius: 'var(--radius-pill)', border: 'none',
               cursor: 'pointer', fontSize: '12px', fontWeight: 600, fontFamily: 'var(--font-sans)',
-              background: filter === f ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
+              background: filter === f ? 'var(--accent)' : 'rgba(0,0,0,0.06)',
               color: filter === f ? 'var(--on-accent)' : 'var(--muted)',
             }}>
               {f.charAt(0).toUpperCase() + f.slice(1)}

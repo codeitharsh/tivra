@@ -2,8 +2,7 @@ export const runtime = 'edge'
 
 import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import CoursesManagerClient from './CoursesManagerClient'
 import type { Profile } from '@/types/database'
 
@@ -37,14 +36,8 @@ export default async function AdminCoursesPage() {
   }[]
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className="sidebar-layout-main" style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar title="Self-Paced Courses" subtitle="Create and manage the self-paced course library"/>
-        <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
+    <AuthShell profile={profile} title="Self-Paced Courses" subtitle="Create and manage the self-paced course library">
           <CoursesManagerClient courses={courses} moduleCounts={moduleCounts}/>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

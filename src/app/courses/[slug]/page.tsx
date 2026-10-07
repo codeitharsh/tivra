@@ -15,9 +15,9 @@ import type { Profile } from '@/types/database'
 import { Clock, Layers, BookOpen, Award, CheckCircle2, ChevronRight, ArrowRight, ClipboardList, Lock } from 'lucide-react'
 
 const DIFFICULTY_META: Record<string, { label: string; color: string; bg: string }> = {
-  beginner:     { label: 'Beginner',     color: 'var(--green)', bg: 'var(--green-dim)' },
-  intermediate: { label: 'Intermediate', color: '#f59e0b',      bg: 'rgba(245,158,11,0.1)' },
-  advanced:     { label: 'Advanced',     color: 'var(--red)',   bg: 'var(--red-dim)' },
+  beginner:     { label: 'Beginner',     color: 'var(--green-text)', bg: 'var(--green-dim)' },
+  intermediate: { label: 'Intermediate', color: 'var(--amber-text)', bg: 'var(--amber-dim)' },
+  advanced:     { label: 'Advanced',     color: 'var(--red-text)',   bg: 'var(--red-dim)' },
 }
 
 export default async function CourseLandingPage({

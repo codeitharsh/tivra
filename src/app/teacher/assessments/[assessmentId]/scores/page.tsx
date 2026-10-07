@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import type { Profile } from '@/types/database'
 import { Users, TrendingUp, CheckCircle2 } from 'lucide-react'
 
@@ -56,15 +55,12 @@ export default async function AssessmentScoresPage({
   const passedCount = attempts.filter(a => a.passed).length
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className="sidebar-layout-main" style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar
-          title={phase ? `Phase ${phase.phase_number}: ${phase.title}` : assessment.title}
-          subtitle={program ? `${program.name} — Assessment scores` : 'Assessment scores'}
-        />
-        <div style={{ padding: '28px', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
-
+    <AuthShell
+      profile={profile}
+      title={phase ? `Phase ${phase.phase_number}: ${phase.title}` : assessment.title}
+      subtitle={program ? `${program.name} — Assessment scores` : 'Assessment scores'}
+      maxWidth={900}
+    >
           <div style={{ marginBottom: '16px' }}>
             <Link href="/teacher/assessments" style={{ fontSize: '13px', color: 'var(--muted)', textDecoration: 'none' }}>
               ← Back to assessments
@@ -88,7 +84,7 @@ export default async function AssessmentScoresPage({
             </div>
             <div className="card" style={{ padding: '18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <CheckCircle2 size={14} color="var(--amber, #f59e0b)"/>
+                <CheckCircle2 size={14} color="var(--amber-text)"/>
                 <span className="stat-label">Passed (≥{Math.round(assessment.passing_percent)}%)</span>
               </div>
               <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '26px' }}>{passedCount}/{attempts.length}</div>
@@ -122,13 +118,13 @@ export default async function AssessmentScoresPage({
                         <td>
                           <span style={{
                             fontWeight: 600, fontSize: '14px',
-                            color: a.passed ? 'var(--green)' : 'var(--red)',
+                            color: a.passed ? 'var(--green-text)' : 'var(--red-text)',
                           }}>{score}%</span>
                         </td>
                         <td>
                           {a.passed
-                            ? <span className="pill" style={{ background: 'var(--green-dim)', color: 'var(--green)' }}>Passed</span>
-                            : <span className="pill" style={{ background: 'var(--red-dim)', color: 'var(--red)' }}>Failed</span>}
+                            ? <span className="pill pill-active">Passed</span>
+                            : <span className="pill pill-restricted">Failed</span>}
                         </td>
                         <td style={{ fontSize: '13px', color: 'var(--muted)' }}>
                           {new Date(a.submitted_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -140,8 +136,6 @@ export default async function AssessmentScoresPage({
               </table>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import AttendanceClient from '@/app/admin/attendance/AttendanceClient'
 import type { Profile } from '@/types/database'
 
@@ -46,18 +45,12 @@ export default async function TeacherAttendancePage() {
     .eq('role','student').eq('access_status','active')
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Attendance" subtitle="Session attendance records · Export CSV"/>
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="Attendance" subtitle="Session attendance records · Export CSV">
           <AttendanceClient
             sessions={sessionList}
             attendanceMap={attendanceMap}
             totalStudents={totalStudents ?? 0}
           />
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

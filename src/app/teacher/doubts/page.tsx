@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import DoubtsClient from '@/app/doubts/DoubtsClient'
 import type { Profile } from '@/types/database'
 
@@ -39,18 +38,12 @@ export default async function TeacherDoubtsPage() {
   const modules = (modsRaw   ?? []) as { id: string; title: string }[]
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Resolve Doubts" subtitle={`${doubts.filter(d => !d.is_resolved).length} open doubts waiting`}/>
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="Resolve Doubts" subtitle={`${doubts.filter(d => !d.is_resolved).length} open doubts waiting`}>
           <DoubtsClient
             doubts={doubts}
             modules={modules}
             userRole={profile.role ?? 'teacher'}
           />
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

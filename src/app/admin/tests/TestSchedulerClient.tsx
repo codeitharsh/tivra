@@ -146,7 +146,7 @@ function TestGroup({
                   </td>
                   <td>
                     <span className="pill" style={{
-                      background: isUnlocked ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+                      background: isUnlocked ? 'var(--green-dim)' : 'rgba(0,0,0,0.06)',
                       color: isUnlocked ? 'var(--green)' : 'var(--muted)',
                     }}>
                       {isUnlocked ? <><CircleDot size={11}/> Open</> : <><Lock size={11}/> Locked</>}

@@ -461,7 +461,7 @@ export default function TeacherAssessmentsClient({
                                         fontSize: '11px', padding: '2px 8px', borderRadius: '6px',
                                         display: 'inline-flex', alignItems: 'center', gap: '3px',
                                         background: isCorrect
-                                          ? 'var(--green-dim)' : 'rgba(255,255,255,0.05)',
+                                          ? 'var(--green-dim)' : 'rgba(0,0,0,0.05)',
                                         color:      isCorrect ? 'var(--green)' : 'var(--muted)',
                                         border: `1px solid ${isCorrect
                                           ? 'rgba(74,222,128,0.2)' : 'transparent'}`,
@@ -494,7 +494,7 @@ export default function TeacherAssessmentsClient({
                     <div style={{
                       padding: '16px', borderRadius: 'var(--radius)',
                       background: 'var(--accent-2-dim)',
-                      border: '1px solid rgba(23,174,224,0.2)',
+                      border: '1px solid rgba(74,63,224,0.2)',
                     }}>
                       <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '12px',
                         color: 'var(--accent-2)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -515,7 +515,7 @@ export default function TeacherAssessmentsClient({
                               <span style={{
                                 width: '20px', height: '20px', borderRadius: '5px', flexShrink: 0,
                                 background: editQ[aId]?.correct_answer === letter
-                                  ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+                                  ? 'var(--green-dim)' : 'rgba(0,0,0,0.06)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '10px',
                                 color: editQ[aId]?.correct_answer === letter

@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import LiveSessionsClient from './LiveSessionsClient'
 import type { Profile } from '@/types/database'
 
@@ -41,18 +40,12 @@ export default async function TeacherLivePage() {
   const batches  = (batchesRaw  ?? []) as { id: string; name: string; batch_type: string; status: string }[]
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Live Sessions" subtitle="Schedule and manage your live classes"/>
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="Live Sessions" subtitle="Schedule and manage your live classes">
           <LiveSessionsClient
             sessions={sessions}
             phases={phases}
             batches={batches}
           />
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   Video, FlaskConical, ClipboardList, Award, MessageCircle,
   Target, FileCheck, MessagesSquare,
@@ -37,12 +38,12 @@ function Eyebrow({ label }: { label: string }) {
   return (
     <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'20px' }}>
       <span style={{
-        width:'14px', height:'8px', background:'var(--accent)',
+        width:'14px', height:'8px', background:'var(--accent-2)',
         clipPath:'polygon(30% 0, 100% 0, 70% 100%, 0 100%)',
       }}/>
       <span style={{
-        fontFamily:'var(--font-mono), monospace', fontSize:'11px',
-        letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--muted)',
+        fontFamily:'var(--font-mono), monospace', fontSize:'var(--text-eyebrow-size)',
+        letterSpacing:'var(--text-eyebrow-tracking)', textTransform:'uppercase', color:'var(--muted)',
       }}>{label}</span>
     </div>
   )
@@ -54,7 +55,7 @@ function SH({ eyebrow, title, sub }: { eyebrow: string; title: React.ReactNode; 
       <Eyebrow label={eyebrow}/>
       <h2 style={{
         fontFamily:'var(--font-serif), serif', fontWeight:600,
-        fontSize:'clamp(1.7rem,4.2vw,3.2rem)',
+        fontSize:'var(--text-h2)',
         lineHeight:1.08, letterSpacing:'-0.02em', color:'var(--text)',
         marginBottom: sub ? '14px' : '0',
       }}>{title}</h2>
@@ -212,7 +213,7 @@ export default function HomePage() {
 
         <div style={{
           maxWidth:'1240px', margin:'0 auto', position:'relative', zIndex:1,
-          padding:'clamp(64px,10vw,120px) clamp(20px,4vw,48px) clamp(56px,7vw,88px)',
+          padding:'clamp(64px,10vw,120px) var(--space-container-x) clamp(56px,7vw,88px)',
           display:'grid', gridTemplateColumns:'minmax(0,1fr) 300px', gap:'clamp(32px,5vw,64px)',
         }} className="hero-grid">
 
@@ -230,7 +231,7 @@ export default function HomePage() {
 
             <h1 style={{
               fontFamily:'var(--font-serif), serif', fontWeight:600,
-              fontSize:'clamp(3rem,7.5vw,6rem)',
+              fontSize:'var(--text-display)',
               letterSpacing:'-0.03em', lineHeight:0.98,
               color:'var(--text)', marginBottom:'8px',
             }}>
@@ -274,7 +275,7 @@ export default function HomePage() {
           </div>
 
           {/* Instrument readout panel */}
-          <div className="hero-readout tv-clip" style={{
+          <div className="hero-readout" style={{
             border:'1px solid var(--border)', borderRadius:'var(--radius)',
             padding:'20px', height:'fit-content', background:'var(--card)',
           }}>
@@ -319,7 +320,7 @@ export default function HomePage() {
       ══════════════════════════════════════════════════ */}
       <section ref={introRef} className="reveal" style={{
         borderTop:'1px solid var(--border)',
-        padding:'clamp(64px,8vw,120px) clamp(20px,4vw,48px)',
+        padding:'clamp(64px,8vw,120px) var(--space-container-x)',
       }}>
         <div style={{ maxWidth:'1200px', margin:'0 auto' }}>
           <Eyebrow label="Introducing Tivra"/>
@@ -330,7 +331,7 @@ export default function HomePage() {
             <div>
               <h2 style={{
                 fontFamily:'var(--font-serif), serif', fontWeight:600,
-                fontSize:'clamp(1.7rem,4vw,3rem)',
+                fontSize:'var(--text-h2)',
                 lineHeight:1.1, letterSpacing:'-0.02em', color:'var(--text)', marginBottom:'24px',
               }}>
                 Strategy-led learning, delivering results in tech and beyond.
@@ -364,13 +365,13 @@ export default function HomePage() {
             </div>
 
             <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-              <div className="tv-clip" style={{ borderRadius:'var(--radius)', overflow:'hidden', aspectRatio:'438/280', border:'1px solid var(--border)' }}>
+              <div style={{ borderRadius:'var(--radius)', overflow:'hidden', aspectRatio:'438/280', border:'1px solid var(--border)' }}>
                 <img
                   src="https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260516_090123_74be96d4-9c1b-40cf-932a-96f4f4babed3.png&w=1280&q=85"
                   alt="Tivra learning" loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block', filter:'grayscale(0.15)' }}
                 />
               </div>
-              <div className="tv-clip" style={{ borderRadius:'var(--radius)', overflow:'hidden', aspectRatio:'900/420', border:'1px solid var(--border)' }}>
+              <div style={{ borderRadius:'var(--radius)', overflow:'hidden', aspectRatio:'900/420', border:'1px solid var(--border)' }}>
                 <img
                   src="https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260516_090133_c157d30b-a99a-4477-bec1-a446149ec3f2.png&w=1280&q=85"
                   alt="Tech education" loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block', filter:'grayscale(0.15)' }}
@@ -386,7 +387,7 @@ export default function HomePage() {
       ══════════════════════════════════════════════════ */}
       <section style={{
         borderTop:'1px solid var(--border)',
-        padding:'clamp(64px,8vw,120px) clamp(20px,4vw,48px) clamp(24px,4vw,40px)',
+        padding:'clamp(64px,8vw,120px) var(--space-container-x) clamp(24px,4vw,40px)',
         overflow:'hidden',
       }}>
         <div style={{ maxWidth:'1200px', margin:'0 auto' }}>
@@ -430,7 +431,7 @@ export default function HomePage() {
                       width:'34px', height:'34px', borderRadius:'var(--radius-sm)', flexShrink:0,
                       background:'var(--card2)', border:'1px solid var(--border)',
                       display:'flex', alignItems:'center', justifyContent:'center', color:'var(--accent)',
-                    }} className="tv-clip-sm"><f.icon size={16}/></span>
+                    }}><f.icon size={16}/></span>
                     <span style={{
                       fontFamily:'var(--font-mono), monospace', fontSize:'11px', color:'var(--muted2)',
                       letterSpacing:'0.08em',
@@ -455,12 +456,12 @@ export default function HomePage() {
           so "here's what's free even before you pay" lands as a
           natural bridge into the pricing/programmes pitch, not a
           random insert straight after the hero. Built on the actual
-          Facet system (tv-clip cards, mono eyebrow, serif titles,
+          design system (rounded cards, mono eyebrow, display titles,
           the two brand accents used exactly once each — cyan and
           indigo, the only two dual-tone moments this system allows)
           instead of a flat tinted alert bar.
       ══════════════════════════════════════════════════ */}
-      <section ref={openAccessRef} className="reveal" style={{ borderTop:'1px solid var(--border)', padding:'clamp(56px,7vw,80px) clamp(20px,4vw,48px)' }}>
+      <section ref={openAccessRef} className="reveal" style={{ borderTop:'1px solid var(--border)', padding:'clamp(56px,7vw,80px) var(--space-container-x)' }}>
         <div style={{ maxWidth:'1200px', margin:'0 auto' }}>
           <div style={{
             display:'flex', justifyContent:'space-between', alignItems:'flex-end',
@@ -470,7 +471,7 @@ export default function HomePage() {
               <Eyebrow label="Open Access"/>
               <h2 style={{
                 fontFamily:'var(--font-serif), serif', fontWeight:600,
-                fontSize:'clamp(1.6rem,3.2vw,2.3rem)', letterSpacing:'-0.02em',
+                fontSize:'var(--text-h2)', letterSpacing:'-0.02em',
                 lineHeight:1.12, color:'var(--text)',
               }}>
                 Free the moment you register.
@@ -514,16 +515,16 @@ export default function HomePage() {
 
             <Link href="/courses" className="oa-card" style={{ textDecoration:'none', display:'block', position:'relative' }}>
               <div className="card oa-card-inner" style={{ padding:'26px', height:'100%', position:'relative', overflow:'hidden' }}>
-                <span className="oa-card-bar" style={{ background:'var(--accent)' }}/>
+                <span className="oa-card-bar" style={{ background:'var(--cyan)' }}/>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'22px' }}>
                   <span style={{
                     width:'40px', height:'40px', borderRadius:'var(--radius-sm)', flexShrink:0,
-                    background:'var(--card2)', border:'1px solid var(--border)', color:'var(--accent)',
+                    background:'var(--card2)', border:'1px solid var(--border)', color:'var(--cyan)',
                     display:'flex', alignItems:'center', justifyContent:'center',
                   }}><GraduationCap size={18}/></span>
                   <span style={{
                     fontFamily:'var(--font-mono), monospace', fontSize:'10px', letterSpacing:'0.14em',
-                    textTransform:'uppercase', color:'var(--accent)',
+                    textTransform:'uppercase', color:'var(--cyan)',
                   }}>Self-Paced Learning</span>
                 </div>
                 <h3 style={{
@@ -535,7 +536,7 @@ export default function HomePage() {
                   text, diagrams, and code, with a certificate at the end.
                 </p>
                 <div className="tick-rule" style={{ marginBottom:'18px' }}/>
-                <span className="oa-card-cta" style={{ color:'var(--accent)' }}>
+                <span className="oa-card-cta" style={{ color:'var(--cyan)' }}>
                   Browse Courses <ArrowRight size={13}/>
                 </span>
               </div>
@@ -548,7 +549,7 @@ export default function HomePage() {
           SECTION 3 — PROGRAMMES (pinned stack, GSAP ScrollTrigger)
       ══════════════════════════════════════════════════ */}
       <section id="programs" style={{ borderTop:'1px solid var(--border)' }}>
-        <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'clamp(64px,8vw,120px) clamp(20px,4vw,48px) clamp(32px,5vw,56px)' }}>
+        <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'clamp(64px,8vw,120px) var(--space-container-x) clamp(32px,5vw,56px)' }}>
           <SH eyebrow="Our Programmes" title="Learning paths for every domain"
             sub="Structured, career-focused programmes across cloud, full-stack, DevOps, data, and more. Each built around live instruction and real outcomes."
           />
@@ -561,7 +562,7 @@ export default function HomePage() {
       ══════════════════════════════════════════════════ */}
       <section id="pricing" style={{
         borderTop:'1px solid var(--border)',
-        padding:'clamp(88px,11vw,160px) clamp(20px,4vw,48px)',
+        padding:'clamp(88px,11vw,160px) var(--space-container-x)',
       }}>
         <div ref={pricingRef} className="reveal" style={{ maxWidth:'640px', margin:'0 auto', textAlign:'center' }}>
           <div style={{ display:'flex', justifyContent:'center' }}>
@@ -569,7 +570,7 @@ export default function HomePage() {
           </div>
           <h2 style={{
             fontFamily:'var(--font-serif), serif', fontWeight:600,
-            fontSize:'clamp(1.9rem,4.4vw,3rem)', color:'var(--text)',
+            fontSize:'var(--text-h2)', color:'var(--text)',
             letterSpacing:'-0.02em', lineHeight:1.1, marginBottom:'26px',
           }}>
             Simple, fair pricing.
@@ -596,7 +597,7 @@ export default function HomePage() {
               ['03', 'Nothing else to pay', 'Live classes, notes, tests, and your certificate are included from day one.'],
             ].map(([n, t, d]) => (
               <div key={n}>
-                <div style={{ fontFamily:'var(--font-mono), monospace', fontSize:'11px', color:'var(--accent)', letterSpacing:'0.1em', marginBottom:'10px' }}>{n}</div>
+                <div style={{ fontFamily:'var(--font-mono), monospace', fontSize:'11px', color:'var(--accent-2)', letterSpacing:'0.1em', marginBottom:'10px' }}>{n}</div>
                 <div style={{ fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'15px', color:'var(--text)', marginBottom:'6px' }}>{t}</div>
                 <div style={{ fontSize:'13px', color:'var(--muted)', lineHeight:1.6 }}>{d}</div>
               </div>
@@ -624,7 +625,7 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════
           SECTION 5 — FAQ
       ══════════════════════════════════════════════════ */}
-      <section id="faq" style={{ borderTop:'1px solid var(--border)', padding:'clamp(64px,8vw,120px) clamp(20px,4vw,48px)' }}>
+      <section id="faq" style={{ borderTop:'1px solid var(--border)', padding:'clamp(64px,8vw,120px) var(--space-container-x)' }}>
         <div style={{ maxWidth:'780px', margin:'0 auto' }}>
           <SH eyebrow="FAQ" title="Common questions"/>
           <div style={{ display:'flex', flexDirection:'column' }}>
@@ -643,7 +644,7 @@ export default function HomePage() {
                 }}>
                   <span>{q}</span>
                   <Plus size={18} style={{
-                    color:'var(--accent)', flexShrink:0,
+                    color:'var(--accent-2)', flexShrink:0,
                     transform: openFaq === i ? 'rotate(45deg)' : 'rotate(0deg)',
                     transition:'transform 0.25s ease',
                   }}/>
@@ -662,25 +663,25 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════
           CTA BANNER
       ══════════════════════════════════════════════════ */}
-      <section ref={ctaRef} className="reveal" style={{ padding:'0 clamp(20px,4vw,48px) clamp(64px,8vw,120px)' }}>
+      <section ref={ctaRef} className="reveal" style={{ padding:'0 var(--space-container-x) clamp(64px,8vw,120px)' }}>
         <div style={{
           maxWidth:'1200px', margin:'0 auto', background:'var(--card)', border:'1px solid var(--border)',
           borderRadius:'var(--radius)', padding:'clamp(40px,5vw,72px) clamp(24px,4vw,60px)',
           display:'grid', gridTemplateColumns:'1fr auto', alignItems:'center', gap:'32px',
           position:'relative', overflow:'hidden',
-        }} className="cta-banner tv-clip">
+        }} className="cta-banner">
           <div className="tick-rule" style={{ position:'absolute', top:0, left:0, right:0 }}/>
           <div>
             <div style={{
-              fontFamily:'var(--font-mono), monospace', fontSize:'11px',
-              letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--muted2)', marginBottom:'14px',
+              fontFamily:'var(--font-mono), monospace', fontSize:'var(--text-eyebrow-size)',
+              letterSpacing:'var(--text-eyebrow-tracking)', textTransform:'uppercase', color:'var(--muted2)', marginBottom:'14px',
             }}>Start Today</div>
             <h2 style={{
               fontFamily:'var(--font-serif), serif', fontWeight:600,
-              fontSize:'clamp(1.8rem,4vw,2.8rem)', color:'var(--text)',
+              fontSize:'var(--text-h2)', color:'var(--text)',
               letterSpacing:'-0.02em', lineHeight:1.08, marginBottom:'12px',
             }}>
-              Ready to <span style={{ color:'var(--accent)' }}>rise beyond</span>?
+              Ready to <span style={{ color:'var(--accent-2)' }}>rise beyond</span>?
             </h2>
             <p style={{ fontSize:'clamp(14px,1.5vw,16px)', color:'var(--muted)', maxWidth:'480px', lineHeight:1.7 }}>
               Enrol in a Tivra programme today and start building the skills that
@@ -700,19 +701,19 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════
           FOOTER
       ══════════════════════════════════════════════════ */}
-      <footer style={{ borderTop:'1px solid var(--border)', padding:'40px clamp(20px,4vw,48px)' }}>
+      <footer style={{ background:'var(--surface-dark)', padding:'64px var(--space-container-x) 40px' }}>
         <div style={{
           maxWidth:'1200px', margin:'0 auto', display:'grid',
           gridTemplateColumns:'1fr 1fr 1fr', gap:'32px', alignItems:'start',
         }} className="footer-grid">
           <div>
-            <Link href="/" style={{ display:'flex', alignItems:'center', gap:'9px', textDecoration:'none', marginBottom:'12px' }}>
-              <span style={{ fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'17px', color:'var(--text)' }}>Tivra</span>
+            <Link href="/" style={{ display:'flex', alignItems:'center', textDecoration:'none', marginBottom:'16px' }}>
+              <Image src="/brand/tivra-wordmark-full-white.png" alt="Tivra Learning" width={135} height={56} style={{ height:'52px', width:'auto' }}/>
             </Link>
-            <div style={{ fontSize:'12px', color:'var(--muted2)', lineHeight:1.7 }}>
+            <div style={{ fontSize:'12px', color:'var(--on-dark-soft)', lineHeight:1.7 }}>
               Career-focused tech training for the next generation of engineers.
             </div>
-            <div style={{ marginTop:'14px', fontSize:'12px', color:'var(--muted2)', display:'flex', alignItems:'center', gap:'6px' }}>
+            <div style={{ marginTop:'14px', fontSize:'12px', color:'var(--on-dark-soft)', display:'flex', alignItems:'center', gap:'6px' }}>
               <Clock size={11}/><LiveClock/>
             </div>
           </div>
@@ -720,28 +721,28 @@ export default function HomePage() {
           <div>
             <div style={{
               fontSize:'11px', fontFamily:'var(--font-mono), monospace', letterSpacing:'0.12em',
-              textTransform:'uppercase', color:'var(--muted2)', marginBottom:'14px',
+              textTransform:'uppercase', color:'var(--on-dark-soft)', marginBottom:'14px',
             }}>Programmes</div>
             {[['Cloud LaunchPad','/programs'],['Cloud Architect','/programs'],['Full Stack Dev','/programs'],['DevOps & CI/CD','/programs']].map(([l,h]) => (
-              <Link key={l} href={h} style={{ display:'block', fontSize:'13px', color:'var(--muted)', textDecoration:'none', marginBottom:'8px' }}>{l}</Link>
+              <Link key={l} href={h} className="footer-link" style={{ display:'block', fontSize:'13px', textDecoration:'none', marginBottom:'8px' }}>{l}</Link>
             ))}
           </div>
 
           <div>
             <div style={{
               fontSize:'11px', fontFamily:'var(--font-mono), monospace', letterSpacing:'0.12em',
-              textTransform:'uppercase', color:'var(--muted2)', marginBottom:'14px',
+              textTransform:'uppercase', color:'var(--on-dark-soft)', marginBottom:'14px',
             }}>Company</div>
             {[['About','/about'],['Programs','/programs'],['Contact','/contact'],['Terms','/terms'],['Privacy','/privacy']].map(([l,h]) => (
-              <Link key={l} href={h} style={{ display:'block', fontSize:'13px', color:'var(--muted)', textDecoration:'none', marginBottom:'8px' }}>{l}</Link>
+              <Link key={l} href={h} className="footer-link" style={{ display:'block', fontSize:'13px', textDecoration:'none', marginBottom:'8px' }}>{l}</Link>
             ))}
           </div>
         </div>
 
         <div style={{
-          maxWidth:'1200px', margin:'24px auto 0', paddingTop:'20px', borderTop:'1px solid var(--border)',
+          maxWidth:'1200px', margin:'24px auto 0', paddingTop:'20px', borderTop:'1px solid rgba(255,255,255,0.1)',
           display:'flex', justifyContent:'space-between', alignItems:'center',
-          fontSize:'11px', color:'var(--muted2)', flexWrap:'wrap', gap:'8px',
+          fontSize:'11px', color:'var(--on-dark-soft)', flexWrap:'wrap', gap:'8px',
         }}>
           <span>© 2026 Tivra EdTech · All rights reserved</span>
           <span>Made in India</span>
@@ -749,8 +750,6 @@ export default function HomePage() {
       </footer>
 
       <style>{`
-        .prog-card:hover { transform: translateY(-3px); border-color: var(--border2) !important; }
-
         /* Open Access cards — restrained top accent bar (2px, exactly
            the .card-accent-top proportions, just per-card colored),
            a lift + border-brighten on hover, and the arrow nudging
@@ -783,7 +782,7 @@ export default function HomePage() {
         .feature-item.from-left  { transform: translateX(-32px); }
         .feature-item.from-right { transform: translateX(32px); }
         .feature-item.visible { opacity: 1; transform: translateX(0); }
-        .feature-item:hover .feature-title { color: var(--accent); }
+        .feature-item:hover .feature-title { color: var(--accent-2); }
 
         .faq-item {
           opacity: 0; transform: translateY(20px);

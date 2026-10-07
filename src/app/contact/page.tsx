@@ -20,15 +20,15 @@ export default function ContactPage() {
   return (
     <div style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
       <PublicNav/>
-      <div style={{ maxWidth: '720px', margin: '0 auto', padding: 'clamp(56px,8vw,80px) clamp(20px,4vw,40px) 80px' }}>
+      <div style={{ maxWidth: '720px', margin: '0 auto', padding: 'clamp(56px,8vw,80px) var(--space-container-x) 80px' }}>
 
         <div style={{ marginBottom: '48px' }}>
-          <div style={{ fontSize: '11px', color: 'var(--muted)', letterSpacing: '0.2em',
+          <div style={{ fontSize: 'var(--text-eyebrow-size)', color: 'var(--muted)', letterSpacing: 'var(--text-eyebrow-tracking)',
             textTransform: 'uppercase', fontFamily: 'var(--font-mono), monospace', marginBottom: '16px' }}>
             Contact Us
           </div>
           <h1 style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600,
-            fontSize: 'clamp(1.9rem,5vw,3rem)', color: 'var(--text)',
+            fontSize: 'var(--text-h1)', color: 'var(--text)',
             letterSpacing: '-0.02em', marginBottom: '14px' }}>
             We read every message
           </h1>
@@ -38,7 +38,7 @@ export default function ContactPage() {
           </p>
         </div>
 
-        <div className="tv-clip" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: '40px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: '40px' }}>
           {CONTACTS.map(item => (
             <div key={item.title} style={{ padding: '22px', background: 'var(--card)' }}>
               <span style={{
@@ -59,7 +59,7 @@ export default function ContactPage() {
           ))}
         </div>
 
-        <div className="tv-clip" style={{
+        <div style={{
           padding: '24px', borderRadius: 'var(--radius)',
           background: 'var(--card)', border: '1px solid var(--border)',
         }}>

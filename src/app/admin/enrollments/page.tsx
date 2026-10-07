@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import type { Profile } from '@/types/database'
 
 export default async function AdminEnrollmentsPage() {
@@ -31,14 +30,7 @@ export default async function AdminEnrollmentsPage() {
   const totalRevenue = enrollments.reduce((sum, e) => sum + (e.amount_paid ?? 0), 0)
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar
-          title="Enrollments"
-          subtitle={`${enrollments.length} enrollments · ₹${totalRevenue.toLocaleString('en-IN')} total`}
-        />
-        <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
+    <AuthShell profile={profile} title="Enrollments" subtitle={`${enrollments.length} enrollments · ₹${totalRevenue.toLocaleString('en-IN')} total`}>
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
@@ -77,8 +69,6 @@ export default async function AdminEnrollmentsPage() {
               </table>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import type { Profile } from '@/types/database'
 import { Download, ExternalLink, GraduationCap, Users, CheckCircle2 } from 'lucide-react'
 
@@ -89,11 +88,7 @@ export default async function CourseLearnersPage({
   const completionRate = enrollments.length === 0 ? 0 : Math.round((completedCount / enrollments.length) * 100)
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className="sidebar-layout-main" style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar title={course.title} subtitle="Learners, progress & certificates"/>
-        <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
+    <AuthShell profile={profile} title={course.title} subtitle="Learners, progress & certificates">
 
           <div style={{ marginBottom: '16px' }}>
             <Link href={`/admin/courses/${course.id}`} style={{ fontSize: '13px', color: 'var(--muted)', textDecoration: 'none' }}>
@@ -188,8 +183,6 @@ export default async function CourseLearnersPage({
               </table>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

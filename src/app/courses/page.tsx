@@ -18,9 +18,9 @@ interface CourseRow {
 }
 
 const DIFFICULTY_META: Record<string, { label: string; color: string; bg: string }> = {
-  beginner:     { label: 'Beginner',     color: 'var(--green)',    bg: 'var(--green-dim)' },
-  intermediate: { label: 'Intermediate', color: '#f59e0b',         bg: 'rgba(245,158,11,0.1)' },
-  advanced:     { label: 'Advanced',     color: 'var(--red)',      bg: 'var(--red-dim)' },
+  beginner:     { label: 'Beginner',     color: 'var(--green-text)', bg: 'var(--green-dim)' },
+  intermediate: { label: 'Intermediate', color: 'var(--amber-text)', bg: 'var(--amber-dim)' },
+  advanced:     { label: 'Advanced',     color: 'var(--red-text)',   bg: 'var(--red-dim)' },
 }
 
 export default async function CoursesPage() {
@@ -78,7 +78,7 @@ export default async function CoursesPage() {
             const enrolled = enrolledCourseIds.has(c.id)
             return (
               <Link key={c.id} href={`/courses/${c.slug}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
-                <div className="card" style={{ padding: '22px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div className="card card-hover" style={{ padding: '22px', height: '100%', display: 'flex', flexDirection: 'column' }}>
                   {c.cover_image_path && (
                     <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: '14px' }}>
                       <Image src={courseAssetUrl(c.cover_image_path)} alt={c.title} fill style={{ objectFit: 'cover', objectPosition: 'top' }}/>

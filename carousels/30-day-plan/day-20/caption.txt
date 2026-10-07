@@ -1,0 +1,11 @@
+Truth: what senior devs still Google (that juniors are embarrassed to).
+
+How to center a div. Every single time.
+
+The regex for email validation. Also every single time.
+
+Whether it's .map() or .forEach(). Depends on the day.
+
+Seniority isn't memorizing everything. It's knowing exactly what to search for.
+
+#WebDevelopment #CSS #LearnToCode #DeveloperLife #CodingHumor #TivraRiseBeyond

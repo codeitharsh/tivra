@@ -91,8 +91,8 @@ export default async function LivePage() {
   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
     live:     { label:'Live now',       color:'var(--green)', bg:'var(--green-dim)'      },
     starting: { label:'Starting soon',  color:'var(--amber)', bg:'var(--amber-dim)'      },
-    upcoming: { label:'Upcoming',       color:'var(--muted)', bg:'rgba(255,255,255,0.06)'},
-    ended:    { label:'Ended',          color:'var(--muted)', bg:'rgba(255,255,255,0.04)'},
+    upcoming: { label:'Upcoming',       color:'var(--muted)', bg:'rgba(0,0,0,0.06)'},
+    ended:    { label:'Ended',          color:'var(--muted)', bg:'rgba(0,0,0,0.04)'},
   }
 
   return (

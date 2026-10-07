@@ -18,14 +18,14 @@ const STATUS_CFG: Record<BatchStatus, { label: string; color: string; bg: string
   upcoming: { label: 'Upcoming', color: 'var(--amber)', bg: 'var(--amber-dim)', Icon: Clock },
   active:   { label: 'Active',   color: 'var(--green)', bg: 'var(--green-dim)', Icon: CircleDot },
   closed:   { label: 'Closed',   color: 'var(--red)',   bg: 'var(--red-dim)',   Icon: Square },
-  archived: { label: 'Archived', color: 'var(--muted)', bg: 'rgba(255,255,255,0.06)', Icon: Package },
+  archived: { label: 'Archived', color: 'var(--muted)', bg: 'rgba(0,0,0,0.06)', Icon: Package },
 }
 
 const TYPE_CFG: Record<BatchType, { label: string; color: string; bg: string; note: string }> = {
-  open:      { label: 'Open',      color: 'var(--accent-2)', bg: 'rgba(23,174,224,0.12)', note: 'Publicly visible — anyone can register' },
-  college:   { label: 'College',   color: '#c3b1ea',         bg: 'rgba(167,139,218,0.14)', note: 'Hidden — admin assigns students manually' },
+  open:      { label: 'Open',      color: 'var(--accent-2)', bg: 'rgba(74,63,224,0.12)', note: 'Publicly visible — anyone can register' },
+  college:   { label: 'College',   color: '#7c3aed',         bg: 'rgba(167,139,218,0.14)', note: 'Hidden — admin assigns students manually' },
   corporate: { label: 'Corporate', color: 'var(--amber)',    bg: 'var(--amber-dim)',       note: 'Hidden — admin assigns students manually' },
-  custom:    { label: 'Custom',    color: '#a9c0e8',         bg: 'rgba(107,143,209,0.14)', note: 'Hidden — admin assigns students manually' },
+  custom:    { label: 'Custom',    color: '#2563eb',         bg: 'rgba(107,143,209,0.14)', note: 'Hidden — admin assigns students manually' },
 }
 
 function sb() {
@@ -258,7 +258,7 @@ export default function BatchManagerClient({
                         {tyCfg.label}
                       </span>
                       {!b.is_visible && (
-                        <span className="pill" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--muted)' }}>
+                        <span className="pill" style={{ background: 'rgba(0,0,0,0.06)', color: 'var(--muted)' }}>
                           <Lock size={10}/> Hidden
                         </span>
                       )}

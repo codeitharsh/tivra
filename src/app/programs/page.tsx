@@ -24,14 +24,14 @@ export default async function ProgramsPage() {
     <div style={{ background:'var(--bg)', color:'var(--text)', minHeight:'100vh' }}>
       <PublicNav/>
 
-      <div style={{ maxWidth:'880px', margin:'0 auto', padding:'clamp(56px,8vw,88px) clamp(20px,4vw,40px) 80px' }}>
+      <div style={{ maxWidth:'880px', margin:'0 auto', padding:'clamp(56px,8vw,88px) var(--space-container-x) 80px' }}>
         <div style={{ marginBottom:'56px' }}>
           <div style={{
-            fontFamily:'var(--font-mono), monospace', fontSize:'11px', letterSpacing:'0.16em',
+            fontFamily:'var(--font-mono), monospace', fontSize:'var(--text-eyebrow-size)', letterSpacing:'var(--text-eyebrow-tracking)',
             textTransform:'uppercase', color:'var(--muted)', marginBottom:'16px',
           }}>Programmes</div>
           <h1 style={{
-            fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'clamp(2.2rem,5.5vw,3.4rem)',
+            fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'var(--text-h1)',
             color:'var(--text)', letterSpacing:'-0.02em', lineHeight:1.06, marginBottom:'16px',
           }}>
             Learning paths for every domain.
@@ -111,7 +111,7 @@ export default async function ProgramsPage() {
       </div>
 
       <style>{`
-        .program-row:hover { background: rgba(255,255,255,0.02); }
+        .program-row:hover { background: rgba(0,0,0,0.02); }
       `}</style>
     </div>
   )

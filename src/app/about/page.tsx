@@ -20,16 +20,16 @@ export default function AboutPage() {
     <div style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
       <PublicNav/>
 
-      <div style={{ maxWidth: '760px', margin: '0 auto', padding: 'clamp(56px,8vw,80px) clamp(20px,4vw,40px) 80px' }}>
+      <div style={{ maxWidth: '760px', margin: '0 auto', padding: 'clamp(56px,8vw,80px) var(--space-container-x) 80px' }}>
 
         {/* Hero */}
         <div style={{ marginBottom: '56px' }}>
-          <div style={{ fontSize: '11px', color: 'var(--muted)', letterSpacing: '0.2em',
+          <div style={{ fontSize: 'var(--text-eyebrow-size)', color: 'var(--muted)', letterSpacing: 'var(--text-eyebrow-tracking)',
             textTransform: 'uppercase', fontFamily: 'var(--font-mono), monospace', marginBottom: '16px' }}>
             Our Story
           </div>
           <h1 style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600,
-            fontSize: 'clamp(2rem,5vw,3.4rem)', color: 'var(--text)',
+            fontSize: 'var(--text-h1)', color: 'var(--text)',
             letterSpacing: '-0.02em', lineHeight: 1.06, marginBottom: '20px' }}>
             Learn skills.<br/>
             <span style={{ color: 'var(--accent)' }}>Earn certificates.</span>
@@ -41,10 +41,10 @@ export default function AboutPage() {
         </div>
 
         {/* Mission */}
-        <div className="tv-clip" style={{ marginBottom: '48px', padding: '28px', borderRadius: 'var(--radius)',
+        <div style={{ marginBottom: '48px', padding: '28px', borderRadius: 'var(--radius)',
           background: 'var(--card)', border: '1px solid var(--border)',
           borderLeft: '2px solid var(--accent)' }}>
-          <div style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '18px',
+          <div style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'var(--text-h3)',
             color: 'var(--text)', marginBottom: '10px' }}>Our Mission</div>
           <p style={{ fontSize: '15px', color: 'var(--muted)', lineHeight: 1.7 }}>
             To give every engineering student in India a clear, structured, and affordable path
@@ -94,9 +94,9 @@ export default function AboutPage() {
         </div>
 
         {/* Contact CTA */}
-        <div className="tv-clip" style={{ padding: '28px', borderRadius: 'var(--radius)',
+        <div style={{ padding: '28px', borderRadius: 'var(--radius)',
           background: 'var(--card)', border: '1px solid var(--border)', textAlign: 'center' }}>
-          <div style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '18px',
+          <div style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'var(--text-h3)',
             color: 'var(--text)', marginBottom: '8px' }}>
             Have questions?
           </div>

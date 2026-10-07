@@ -133,7 +133,7 @@ export default async function AttendancePage() {
                         </td>
                         <td>
                           <span className="pill" style={{
-                            background: 'rgba(255,255,255,0.06)',
+                            background: 'rgba(0,0,0,0.06)',
                             color: statusColor[row.status as string] ?? 'var(--muted)',
                           }}>
                             {String(row.status ?? 'absent')}

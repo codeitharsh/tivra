@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import Link from 'next/link'
 import type { Profile } from '@/types/database'
 import {
@@ -59,22 +58,18 @@ export default async function TeacherHomePage() {
   const doubts = (doubtsRaw ?? []) as Record<string, unknown>[]
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar
-          title={`Welcome, ${profile.full_name?.split(' ')[0] ?? 'Teacher'}`}
-          subtitle="Your teaching dashboard"
-        />
-        <div style={{ padding:'28px', maxWidth:'1100px', margin:'0 auto', width:'100%' }}>
-
+    <AuthShell
+      profile={profile}
+      title={`Welcome, ${profile.full_name?.split(' ')[0] ?? 'Teacher'}`}
+      subtitle="Your teaching dashboard"
+    >
           {/* Stats — teacher-relevant only */}
           <div className="r-grid-4" style={{ marginBottom:'28px' }}>
             {[
               { Icon:Users,    label:'Active students', value: totalStudents ?? 0, color:'var(--accent-2)' },
               { Icon:FileText, label:'Total modules',   value: allModules.length,  color:'var(--accent)'  },
-              { Icon:Upload,   label:'Notes uploaded',  value: `${notesUploaded}/${allModules.length}`, color:'var(--green)' },
-              { Icon:MessageCircle, label:'Open doubts', value: openDoubts ?? 0,    color:'var(--amber)' },
+              { Icon:Upload,   label:'Notes uploaded',  value: `${notesUploaded}/${allModules.length}`, color:'var(--green-text)' },
+              { Icon:MessageCircle, label:'Open doubts', value: openDoubts ?? 0,    color:'var(--amber-text)' },
             ].map(s => (
               <div key={s.label} className="stat-card">
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'8px' }}>
@@ -107,7 +102,7 @@ export default async function TeacherHomePage() {
                   {allModules.map(m => {
                     const ph = m.phases as Record<string,unknown>|null
                     return (
-                      <div key={m.id as string} style={{
+                      <div key={m.id as string} className="card-hover" style={{
                         display:'flex', alignItems:'center', gap:'10px',
                         padding:'10px 12px', borderRadius:'var(--radius-sm)',
                         background:'var(--card2)',
@@ -115,8 +110,8 @@ export default async function TeacherHomePage() {
                       }}>
                         <div style={{
                           width:'26px', height:'26px', borderRadius:'6px', flexShrink:0,
-                          background: m.notes_url ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
-                          color: m.notes_url ? 'var(--green)' : 'var(--muted)',
+                          background: m.notes_url ? 'var(--green-dim)' : 'rgba(0,0,0,0.06)',
+                          color: m.notes_url ? 'var(--green-text)' : 'var(--muted)',
                           display:'flex', alignItems:'center', justifyContent:'center',
                           fontSize:'12px', fontFamily:'var(--font-mono)',
                         }}>
@@ -129,8 +124,8 @@ export default async function TeacherHomePage() {
                           <div style={{ fontSize:'11px', color:'var(--muted)' }}>
                             Phase {String(ph?.phase_number ?? '')}
                             {m.notes_url
-                              ? <span style={{ color:'var(--green)', marginLeft:'8px' }}>Notes uploaded</span>
-                              : <span style={{ color:'var(--amber)', marginLeft:'8px' }}>No notes</span>}
+                              ? <span style={{ color:'var(--green-text)', marginLeft:'8px' }}>Notes uploaded</span>
+                              : <span style={{ color:'var(--amber-text)', marginLeft:'8px' }}>No notes</span>}
                           </div>
                         </div>
                       </div>
@@ -154,7 +149,7 @@ export default async function TeacherHomePage() {
                 { href:'/teacher/attendance', Icon:CheckSquare,   label:'Attendance',      desc:'View session records' },
               ].map(a => (
                 <Link key={a.href} href={a.href} style={{ textDecoration:'none' }}>
-                  <div className="card" style={{ display:'flex', alignItems:'center', gap:'12px',
+                  <div className="card card-hover" style={{ display:'flex', alignItems:'center', gap:'12px',
                     padding:'12px 16px', cursor:'pointer' }}>
                     <div style={{
                       width:'32px', height:'32px', borderRadius:'6px', flexShrink:0,
@@ -189,7 +184,7 @@ export default async function TeacherHomePage() {
                   const mod = d.modules as Record<string,unknown>|null
                   return (
                     <Link key={d.id as string} href="/teacher/doubts" style={{ textDecoration:'none' }}>
-                      <div style={{ padding:'12px 16px', cursor:'pointer', borderRadius:'var(--radius-sm)',
+                      <div className="card-hover" style={{ padding:'12px 16px', cursor:'pointer', borderRadius:'var(--radius-sm)',
                         background:'var(--card2)', borderLeft:'2px solid var(--amber)' }}>
                         <div style={{ fontSize:'13px', marginBottom:'4px', lineHeight:1.4 }}>
                           {String(d.question_text ?? '').slice(0,90)}{String(d.question_text ?? '').length > 90 ? '…' : ''}
@@ -227,13 +222,13 @@ export default async function TeacherHomePage() {
                   const isLive = s.is_live as boolean
                   return (
                     <Link key={s.id as string} href="/teacher/live" style={{ textDecoration:'none' }}>
-                      <div style={{ padding:'12px 16px', cursor:'pointer', borderRadius:'var(--radius-sm)',
+                      <div className="card-hover" style={{ padding:'12px 16px', cursor:'pointer', borderRadius:'var(--radius-sm)',
                         background:'var(--card2)', borderLeft: `2px solid ${isLive ? 'var(--green)' : 'var(--amber)'}` }}>
                         <div style={{ fontSize:'13px', marginBottom:'4px', fontWeight:500,
                           display:'flex', alignItems:'center', gap:'8px' }}>
                           {String(s.title ?? '')}
                           {isLive && (
-                            <span style={{ color:'var(--green)', fontWeight:600, fontSize:'11px', display:'inline-flex', alignItems:'center', gap:'4px', fontFamily:'var(--font-mono)' }}>
+                            <span style={{ color:'var(--green-text)', fontWeight:600, fontSize:'11px', display:'inline-flex', alignItems:'center', gap:'4px', fontFamily:'var(--font-mono)' }}>
                               <Radio size={11}/> LIVE NOW
                             </span>
                           )}

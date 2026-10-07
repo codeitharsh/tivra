@@ -87,8 +87,7 @@ export default function ForgotPasswordPage() {
     <div style={{ minHeight:'100vh', background:'var(--bg)', display:'flex', alignItems:'center', justifyContent:'center', padding:'24px' }}>
       <div style={{ width:'100%', maxWidth:'400px' }}>
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:'10px', textDecoration:'none', marginBottom:'32px', justifyContent:'center' }}>
-          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={30} height={30}/>
-          <span style={{ fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'19px', color:'var(--text)' }}>Tivra</span>
+          <Image src="/brand/tivra-wordmark-full-dark.png" alt="Tivra Learning" width={92} height={38} style={{ height:'42px', width:'auto' }}/>
         </Link>
 
         <div className="card card-accent-top" style={{ padding:'32px' }}>

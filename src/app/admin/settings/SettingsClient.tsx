@@ -47,7 +47,7 @@ export default function SettingsClient({ colleges }: { colleges: Record<string,u
 
       {/* Batch management link */}
       <div className="card" style={{ marginBottom:'24px', padding:'20px',
-        background:'var(--accent-2-dim)', border:'1px solid rgba(23,174,224,0.2)' }}>
+        background:'var(--accent-2-dim)', border:'1px solid rgba(74,63,224,0.2)' }}>
         <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px', marginBottom:'6px' }}>
           Batch management
         </div>

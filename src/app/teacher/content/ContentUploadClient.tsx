@@ -143,7 +143,7 @@ export default function ContentUploadClient({ phases }: { phases: Phase[] }) {
                   border: `2px dashed ${file ? 'var(--accent-ring)' : 'var(--border)'}`,
                   borderRadius: 'var(--radius)', padding: '24px', textAlign: 'center',
                   cursor: 'pointer', transition: 'all 0.15s',
-                  background: file ? 'var(--accent-dim)' : 'rgba(255,255,255,0.02)',
+                  background: file ? 'var(--accent-dim)' : 'rgba(0,0,0,0.02)',
                 }}
               >
                 <Upload size={24} style={{ color: file ? 'var(--accent-2)' : 'var(--muted)', marginBottom: '8px' }}/>

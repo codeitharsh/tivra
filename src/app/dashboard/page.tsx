@@ -293,7 +293,7 @@ export default async function DashboardPage({
                 const meta = PROGRAM_META[prog.slug] ?? DEFAULT_PROGRAM_META
                 const Icon = meta.icon
                 return (
-                  <div key={prog.id} className="card" style={{ borderTop:`2px solid ${meta.color}` }}>
+                  <div key={prog.id} className="card card-hover" style={{ borderTop:`2px solid ${meta.color}` }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'14px' }}>
                       <div style={{
                         width:'28px', height:'28px', flexShrink:0, display:'flex',
@@ -462,7 +462,7 @@ export default async function DashboardPage({
                       }}>
                         <div style={{
                           width:'34px', height:'34px', borderRadius:'6px', flexShrink:0,
-                          background: hasCert ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+                          background: hasCert ? 'var(--green-dim)' : 'rgba(0,0,0,0.06)',
                           color: hasCert ? 'var(--green)' : 'var(--muted)',
                           display:'flex', alignItems:'center', justifyContent:'center',
                         }}>
@@ -539,7 +539,7 @@ export default async function DashboardPage({
                   {streakDots.map((done, i) => (
                     <div key={i} style={{
                       flex:1, height:'4px', borderRadius:'2px',
-                      background: done ? 'var(--amber)' : 'rgba(255,255,255,0.08)',
+                      background: done ? 'var(--amber)' : 'rgba(0,0,0,0.08)',
                     }}/>
                   ))}
                 </div>

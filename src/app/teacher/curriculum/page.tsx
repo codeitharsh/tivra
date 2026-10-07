@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import CurriculumEditorClient from './CurriculumEditorClient'
 import type { Profile } from '@/types/database'
 
@@ -61,15 +60,11 @@ export default async function TeacherCurriculumPage({
   const withNotes    = phases.reduce((acc, p) => acc + p.modules.filter(m => m.notes_url).length, 0)
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar
-          title="Curriculum Editor"
-          subtitle={selectedProgram ? `${totalModules} modules · ${withNotes} with notes · ${selectedProgram.name}` : 'No programmes found'}
-        />
-        <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
-
+    <AuthShell
+      profile={profile}
+      title="Curriculum Editor"
+      subtitle={selectedProgram ? `${totalModules} modules · ${withNotes} with notes · ${selectedProgram.name}` : 'No programmes found'}
+    >
           {allPrograms.length > 1 && (
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
               {allPrograms.map(p => (
@@ -92,8 +87,6 @@ export default async function TeacherCurriculumPage({
               No active programmes found. Create one in the admin panel first.
             </div>
           )}
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

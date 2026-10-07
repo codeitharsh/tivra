@@ -222,7 +222,7 @@ export default function ReferralClient({ referrals, stats, enrollments }: Props)
                   <td style={{ fontFamily:'var(--font-serif)', fontWeight:600, color:'var(--accent)' }}>₹{s.revenue.toLocaleString('en-IN')}</td>
                   <td>
                     <span className="pill" style={{
-                      background: r.is_active ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+                      background: r.is_active ? 'var(--green-dim)' : 'rgba(0,0,0,0.06)',
                       color: r.is_active ? 'var(--green)' : 'var(--muted)',
                     }}>
                       {r.is_active ? 'Active' : 'Inactive'}

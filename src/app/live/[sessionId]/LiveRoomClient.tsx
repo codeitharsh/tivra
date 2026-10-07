@@ -280,7 +280,7 @@ export default function LiveRoomClient({
             ].map(([label, value]) => (
               <div key={label} style={{
                 display: 'flex', justifyContent: 'space-between', padding: '7px 0',
-                borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '12px',
+                borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '12px',
               }}>
                 <span style={{ color: 'var(--muted)' }}>{label}</span>
                 <span style={{ fontWeight: 500, textAlign: 'right', maxWidth: '130px' }}>{value}</span>

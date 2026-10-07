@@ -1,0 +1,9 @@
+Open source isn't only for experts.
+
+Fix a typo in a README. Update a broken link. Add one missing line to a doc. That's a real pull request, and it counts.
+
+Your first contribution doesn't need to be clever. It needs to exist.
+
+What's stopping you from opening your first PR this week?
+
+#OpenSource #FirstPR #LearnToCode #GitHub #TechCommunity #BeginnerDeveloper #TivraRiseBeyond

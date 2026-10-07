@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import AssessmentManagerClient from './AssessmentManagerClient'
 import type { Profile } from '@/types/database'
 
@@ -42,18 +41,12 @@ export default async function AdminAssessmentsPage() {
   const questions = (questionsRaw ?? []) as Record<string, unknown>[]
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Assessment Management" subtitle="Create, schedule, and manage phase assessments"/>
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="Assessment Management" subtitle="Create, schedule, and manage phase assessments">
           <AssessmentManagerClient
             phases={phases}
             assessments={assessments}
             questions={questions}
           />
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

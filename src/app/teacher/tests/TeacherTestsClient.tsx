@@ -28,10 +28,10 @@ interface Batch { id: string; name: string; batch_type: string; status: string }
 // duplicated locally rather than shared, matching how this codebase
 // already colocates small per-component style lookups.
 const BATCH_META: Record<string, { color: string; bg: string }> = {
-  open:      { color: 'var(--accent-2)', bg: 'rgba(23,174,224,0.14)'  },
-  college:   { color: '#c3b1ea',         bg: 'rgba(167,139,218,0.16)' },
+  open:      { color: 'var(--accent-2)', bg: 'rgba(74,63,224,0.14)'  },
+  college:   { color: '#7c3aed',         bg: 'rgba(167,139,218,0.16)' },
   corporate: { color: 'var(--amber)',    bg: 'var(--amber-dim)'       },
-  custom:    { color: '#a9c0e8',         bg: 'rgba(107,143,209,0.16)' },
+  custom:    { color: '#2563eb',         bg: 'rgba(107,143,209,0.16)' },
 }
 const batchMeta = (type: string) => BATCH_META[type] ?? BATCH_META.open
 
@@ -286,7 +286,7 @@ export default function TeacherTestsClient({ phases, tests, programId, batches }
   const statusCfg: Record<string, { label: string; color: string; bg: string; Icon: typeof CircleDot }> = {
     open:      { label: 'Open',      color: 'var(--green)', bg: 'var(--green-dim)', Icon: CircleDot },
     scheduled: { label: 'Scheduled', color: 'var(--amber)', bg: 'var(--amber-dim)', Icon: Clock3 },
-    draft:     { label: 'Draft',     color: 'var(--muted)', bg: 'rgba(255,255,255,0.06)', Icon: Pencil },
+    draft:     { label: 'Draft',     color: 'var(--muted)', bg: 'rgba(0,0,0,0.06)', Icon: Pencil },
   }
 
   const phase1Tests = tests.filter(t => (t.phases as Record<string,unknown>|null)?.phase_number === 1)
@@ -505,7 +505,7 @@ export default function TeacherTestsClient({ phases, tests, programId, batches }
                               <span key={oi} style={{
                                 fontSize: '11px', padding: '2px 8px', borderRadius: '6px',
                                 display: 'inline-flex', alignItems: 'center', gap: '3px',
-                                background: isCorrect ? 'var(--green-dim)' : 'rgba(255,255,255,0.05)',
+                                background: isCorrect ? 'var(--green-dim)' : 'rgba(0,0,0,0.05)',
                                 color: isCorrect ? 'var(--green)' : 'var(--muted)',
                                 border: `1px solid ${isCorrect ? 'rgba(74,222,128,0.2)' : 'transparent'}`,
                               }}>
@@ -534,7 +534,7 @@ export default function TeacherTestsClient({ phases, tests, programId, batches }
 
             {/* Add question to existing test */}
             <div style={{ padding: '16px', borderRadius: 'var(--radius)',
-              background: 'var(--accent-2-dim)', border: '1px solid rgba(23,174,224,0.2)' }}>
+              background: 'var(--accent-2-dim)', border: '1px solid rgba(74,63,224,0.2)' }}>
               <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '12px',
                 color: 'var(--accent-2)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Plus size={12}/> Add question
@@ -609,7 +609,7 @@ export default function TeacherTestsClient({ phases, tests, programId, batches }
             padding: '9px 20px', borderRadius: 'var(--radius-pill)', border: 'none',
             cursor: 'pointer', fontSize: '13px', fontWeight: 600,
             fontFamily: 'var(--font-sans)', transition: 'all 0.15s',
-            background: tab === t ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
+            background: tab === t ? 'var(--accent)' : 'rgba(0,0,0,0.06)',
             color: tab === t ? 'var(--on-accent)' : 'var(--muted)',
           }}>
             {t === 'create' && <Plus size={13} style={{ marginRight: '5px', verticalAlign: 'middle' }}/>}
@@ -679,7 +679,7 @@ export default function TeacherTestsClient({ phases, tests, programId, batches }
                   padding:'8px 16px', borderRadius:'var(--radius-pill)', cursor:'pointer',
                   fontSize:'12px', fontWeight:600, fontFamily:'var(--font-sans)',
                   border: form.batch_id === '' ? '1px solid var(--accent-ring)' : '1px solid var(--border)',
-                  background: form.batch_id === '' ? 'var(--accent-2-dim)' : 'rgba(255,255,255,0.04)',
+                  background: form.batch_id === '' ? 'var(--accent-2-dim)' : 'rgba(0,0,0,0.04)',
                   color: form.batch_id === '' ? 'var(--accent-2)' : 'var(--muted)',
                   display:'flex', alignItems:'center', gap:'6px',
                 }}><Globe size={12}/> All batches</button>
@@ -690,7 +690,7 @@ export default function TeacherTestsClient({ phases, tests, programId, batches }
                       padding:'8px 16px', borderRadius:'var(--radius-pill)', cursor:'pointer',
                       fontSize:'12px', fontWeight:600, fontFamily:'var(--font-sans)',
                       border: form.batch_id === b.id ? `1px solid ${meta.color}` : '1px solid var(--border)',
-                      background: form.batch_id === b.id ? meta.bg : 'rgba(255,255,255,0.04)',
+                      background: form.batch_id === b.id ? meta.bg : 'rgba(0,0,0,0.04)',
                       color: form.batch_id === b.id ? meta.color : 'var(--muted)',
                       display:'flex', alignItems:'center', gap:'6px',
                     }}>
@@ -774,7 +774,7 @@ export default function TeacherTestsClient({ phases, tests, programId, batches }
                           <span style={{
                             width: '22px', height: '22px', borderRadius: '6px', flexShrink: 0,
                             background: q.correct_answer === letter
-                              ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+                              ? 'var(--green-dim)' : 'rgba(0,0,0,0.06)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '10px',
                             color: q.correct_answer === letter ? 'var(--green)' : 'var(--muted)',

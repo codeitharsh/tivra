@@ -22,9 +22,9 @@ const STATUS_META: Record<string, { color:string; bg:string; Icon:typeof CheckCi
 }
 
 const ROLE_META: Record<string, { color:string; bg:string }> = {
-  student: { color:'var(--accent-2)', bg:'rgba(23,174,224,0.12)' },
-  teacher: { color:'#c3b1ea',         bg:'rgba(167,139,218,0.14)' },
-  parent:  { color:'#a9c0e8',         bg:'rgba(107,143,209,0.14)' },
+  student: { color:'var(--accent-2)', bg:'rgba(74,63,224,0.12)' },
+  teacher: { color:'#7c3aed',         bg:'rgba(167,139,218,0.14)' },
+  parent:  { color:'#2563eb',         bg:'rgba(107,143,209,0.14)' },
   admin:   { color:'var(--accent)',   bg:'var(--accent-dim)' },
 }
 
@@ -129,7 +129,7 @@ export default function AccessTable({ rows, programmes, batches }: { rows: Recor
             <button key={f} onClick={()=>setSf(f)} style={{
               padding:'6px 12px',borderRadius:'var(--radius-pill)',border:'none',cursor:'pointer',
               fontSize:'11px',fontWeight:600,fontFamily:'var(--font-sans)',transition:'all 0.15s',
-              background:sf===f?'var(--accent)':'rgba(255,255,255,0.06)',
+              background:sf===f?'var(--accent)':'rgba(0,0,0,0.06)',
               color:sf===f?'var(--on-accent)':'var(--muted)',
             }}>
               {f==='all'?`All (${rows.length})`:
@@ -148,7 +148,7 @@ export default function AccessTable({ rows, programmes, batches }: { rows: Recor
               border:`1px solid ${rf===r?'var(--border2)':'var(--border)'}`,
               cursor:'pointer',fontSize:'11px',fontWeight:600,
               fontFamily:'var(--font-sans)',transition:'all 0.15s',
-              background:rf===r?'rgba(255,255,255,0.08)':'transparent',
+              background:rf===r?'rgba(0,0,0,0.08)':'transparent',
               color:rf===r?'var(--text)':'var(--muted)',
             }}>
               {r==='all'?'All roles':`${r.charAt(0).toUpperCase()+r.slice(1)} (${cntR(r)})`}

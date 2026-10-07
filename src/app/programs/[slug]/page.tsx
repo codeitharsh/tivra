@@ -48,7 +48,7 @@ export default async function ProgramLandingPage({ params }: { params: Promise<{
       <PublicNav/>
 
       {/* Hero */}
-      <section style={{ padding: 'clamp(56px,8vw,88px) clamp(20px,4vw,40px) 64px', textAlign: 'center' }}>
+      <section style={{ padding: 'clamp(56px,8vw,88px) var(--space-container-x) 64px', textAlign: 'center' }}>
         <div style={{ maxWidth: '760px', margin: '0 auto' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -62,7 +62,7 @@ export default async function ProgramLandingPage({ params }: { params: Promise<{
           </div>
 
           <h1 style={{
-            fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'clamp(2.4rem,6vw,4.4rem)',
+            fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'var(--text-display)',
             color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1.02, marginBottom: '18px',
           }}>
             {program.name}
@@ -91,7 +91,7 @@ export default async function ProgramLandingPage({ params }: { params: Promise<{
           </div>
 
           {/* Quick stats */}
-          <div className="tv-clip" style={{
+          <div style={{
             display: 'inline-flex', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden',
           }}>
             {[
@@ -116,15 +116,15 @@ export default async function ProgramLandingPage({ params }: { params: Promise<{
       </section>
 
       {/* What you get */}
-      <section style={{ borderTop: '1px solid var(--border)', padding: 'clamp(56px,7vw,80px) clamp(20px,4vw,40px)' }}>
+      <section style={{ borderTop: '1px solid var(--border)', padding: 'clamp(56px,7vw,80px) var(--space-container-x)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <h2 style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'clamp(1.6rem,3.5vw,2.2rem)', color: 'var(--text)', textAlign: 'center', marginBottom: '12px', letterSpacing: '-0.02em' }}>
+          <h2 style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'var(--text-h2)', color: 'var(--text)', textAlign: 'center', marginBottom: '12px', letterSpacing: '-0.02em' }}>
             What you get
           </h2>
           <p style={{ textAlign: 'center', fontSize: '14px', color: 'var(--muted2)', marginBottom: '40px' }}>
             Want the detailed module breakdown? <ViewCurriculumButton programSlug={program.slug} programName={program.name} inline/>
           </p>
-          <div className="tv-clip" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
             {features.map(f => (
               <div key={f.label} style={{ padding: '20px', background: 'var(--card)' }}>
                 <div style={{ fontSize: '10px', color: 'var(--muted2)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', fontFamily: 'var(--font-mono), monospace' }}>
@@ -140,9 +140,9 @@ export default async function ProgramLandingPage({ params }: { params: Promise<{
       </section>
 
       {/* FAQ */}
-      <section style={{ borderTop: '1px solid var(--border)', padding: 'clamp(56px,7vw,80px) clamp(20px,4vw,40px)' }}>
+      <section style={{ borderTop: '1px solid var(--border)', padding: 'clamp(56px,7vw,80px) var(--space-container-x)' }}>
         <div style={{ maxWidth: '680px', margin: '0 auto' }}>
-          <h2 style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'clamp(1.6rem,3.5vw,2.2rem)', color: 'var(--text)', textAlign: 'center', marginBottom: '36px', letterSpacing: '-0.02em' }}>
+          <h2 style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'var(--text-h2)', color: 'var(--text)', textAlign: 'center', marginBottom: '36px', letterSpacing: '-0.02em' }}>
             FAQ
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -164,9 +164,9 @@ export default async function ProgramLandingPage({ params }: { params: Promise<{
       </section>
 
       {/* CTA */}
-      <section style={{ borderTop: '1px solid var(--border)', padding: 'clamp(56px,7vw,80px) clamp(20px,4vw,40px)', textAlign: 'center' }}>
+      <section style={{ borderTop: '1px solid var(--border)', padding: 'clamp(56px,7vw,80px) var(--space-container-x)', textAlign: 'center' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <h2 style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'clamp(1.8rem,4.5vw,2.6rem)', color: 'var(--text)', letterSpacing: '-0.02em', marginBottom: '14px' }}>
+          <h2 style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'var(--text-h2)', color: 'var(--text)', letterSpacing: '-0.02em', marginBottom: '14px' }}>
             Ready to get started?
           </h2>
           <p style={{ fontSize: '15px', color: 'var(--muted)', marginBottom: '32px' }}>

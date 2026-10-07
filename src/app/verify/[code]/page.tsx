@@ -66,11 +66,8 @@ export default async function VerifyPage({ params }: { params: Promise<{ code: s
       display:'flex', alignItems:'center', justifyContent:'center', padding:'24px',
     }}>
       <div style={{ maxWidth:'480px', width:'100%', textAlign:'center' }}>
-        <Link href="/" style={{ display:'inline-flex', alignItems:'center', gap:'10px', textDecoration:'none', marginBottom:'36px', justifyContent:'center' }}>
-          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={40} height={40} />
-          <span style={{ fontFamily:'var(--font-sans)', fontWeight:700, fontSize:'18px', color:'var(--text)', letterSpacing:'0.04em' }}>
-            TIVRA
-          </span>
+        <Link href="/" style={{ display:'inline-flex', alignItems:'center', textDecoration:'none', marginBottom:'36px', justifyContent:'center' }}>
+          <Image src="/brand/tivra-wordmark-full-dark.png" alt="Tivra Learning" width={92} height={38} style={{ height:'46px', width:'auto' }}/>
         </Link>
 
         <div className="card" style={{

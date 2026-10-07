@@ -253,7 +253,7 @@ export default async function AssessmentsPage({
                   }}>
                     <div style={{
                       width: '34px', height: '34px', borderRadius: '6px',
-                      background: cert ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+                      background: cert ? 'var(--green-dim)' : 'rgba(0,0,0,0.06)',
                       color: cert ? 'var(--green)' : 'var(--muted)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       flexShrink: 0,

@@ -4,7 +4,7 @@ const WA_LINK = 'https://chat.whatsapp.com/FrYS4BBduCmDFXKFohTijq?mode=gi_t'
 
 export default function WhatsAppBanner() {
   return (
-    <div className="tv-clip" style={{
+    <div style={{
       display:'flex', alignItems:'center', justifyContent:'space-between',
       gap:'16px', flexWrap:'wrap',
       background:'rgba(37,211,102,0.06)',
@@ -31,7 +31,7 @@ export default function WhatsAppBanner() {
           </div>
         </div>
       </div>
-      <Link href={WA_LINK} target="_blank" rel="noopener noreferrer" className="tv-clip-sm" style={{
+      <Link href={WA_LINK} target="_blank" rel="noopener noreferrer" style={{
         flexShrink:0, display:'inline-flex', alignItems:'center', gap:'8px',
         padding:'10px 20px', borderRadius:'var(--radius)',
         background:'#25d366', color:'#fff',

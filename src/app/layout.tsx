@@ -1,22 +1,25 @@
 import type { Metadata, Viewport } from 'next'
-import { Fraunces, Geist, Geist_Mono } from 'next/font/google'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import RouteProgress from '@/components/RouteProgress'
 import './globals.css'
 
-const fraunces = Fraunces({
+// Cal Sans (Cal.com's display face) is proprietary — Inter 600 with
+// negative tracking is the substitute Cal.com's own DESIGN.md documents.
+// Kept on the `--font-serif` variable name so every existing `font-serif`
+// className across the app (72 files) picks it up without edits.
+const interDisplay = Inter({
   subsets: ['latin'],
   variable: '--font-serif',
   display: 'swap',
-  axes: ['SOFT', 'WONK', 'opsz'],
 })
 
-const geist = Geist({
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
   display: 'swap',
 })
 
-const geistMono = Geist_Mono({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
   display: 'swap',
@@ -77,7 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${geist.variable} ${geistMono.variable}`}
+      className={`${interDisplay.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body>
         <RouteProgress/>

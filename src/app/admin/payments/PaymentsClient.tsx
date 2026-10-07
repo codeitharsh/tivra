@@ -94,7 +94,7 @@ export default function PaymentsClient({ rows }: { rows: Record<string,unknown>[
           <button key={f} onClick={()=>setFilter(f)} style={{
             padding:'6px 14px',borderRadius:'var(--radius-pill)',border:'none',cursor:'pointer',
             fontSize:'11px',fontWeight:600,fontFamily:'var(--font-sans)',transition:'all 0.15s',
-            background:filter===f?'var(--accent)':'rgba(255,255,255,0.06)',
+            background:filter===f?'var(--accent)':'rgba(0,0,0,0.06)',
             color:filter===f?'var(--on-accent)':'var(--muted)',
           }}>
             {f==='all'?`All (${rows.length})`:

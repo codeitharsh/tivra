@@ -184,7 +184,7 @@ function PaymentForm() {
         currency:    orderData.currency ?? 'INR',
         name:        'Tivra',
         description: `${plan.name} — ${plan.subtitle}`,
-        image:       '/tivra-logo-no-bg.png',
+        image:       '/brand/tivra-icon-dark.png',
         order_id:    orderData.order_id,
 
         handler: async (response) => {
@@ -353,8 +353,7 @@ function PaymentForm() {
         borderBottom: '1px solid var(--border)',
       }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={28} height={28}/>
-          <span style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '17px', color: 'var(--text)' }}>Tivra</span>
+          <Image src="/brand/tivra-wordmark-full-dark.png" alt="Tivra Learning" width={92} height={38} style={{ height:'32px', width:'auto' }}/>
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px',
           fontSize: '12px', color: 'var(--muted)' }}>
@@ -367,7 +366,7 @@ function PaymentForm() {
 
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h1 style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600,
-            fontSize: 'clamp(1.7rem,4vw,2.6rem)', color: 'var(--text)',
+            fontSize: 'var(--text-h1)', color: 'var(--text)',
             marginBottom: '10px', letterSpacing: '-0.02em' }}>
             Choose Your Programme
           </h1>
@@ -382,7 +381,6 @@ function PaymentForm() {
         }}>
           {plans.map(p => (
             <div key={p.id} onClick={() => setSelectedPlan(p.id)}
-              className="tv-clip-sm"
               style={{
                 borderRadius: 'var(--radius)', padding: '22px 18px', cursor: 'pointer',
                 border: selectedPlan === p.id ? `1px solid ${p.color}` : '1px solid var(--border)',

@@ -1,0 +1,12 @@
+The 4-step framework to finally finish side projects:
+
+1. Scope it down until it's almost embarrassing.
+2. Ship an ugly version in week one.
+3. Set a hard deadline, not a vague one.
+4. Tell one person who'll check.
+
+Most side projects don't die from lack of skill. They die from lack of scope.
+
+What's the project you keep almost starting?
+
+#SideProjects #BuildInPublic #LearnToCode #IndieHackers #WebDevelopment #TivraRiseBeyond

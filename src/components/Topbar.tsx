@@ -114,7 +114,7 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
         <button onClick={() => { setShowNotifs(v => !v); if (!showNotifs) { setLoading(true); fetchNotifs() } }}
           style={{
             width:'34px', height:'34px', borderRadius:'var(--radius-sm)',
-            background:'rgba(255,255,255,0.04)', border:'1px solid var(--border)',
+            background:'rgba(0,0,0,0.03)', border:'1px solid var(--border)',
             display:'flex', alignItems:'center', justifyContent:'center',
             cursor:'pointer', color:'var(--muted)', position:'relative',
           }}>
@@ -139,7 +139,7 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
             <div style={{
               position:'absolute', top:'42px', right:0, width:'min(320px, calc(100vw - 32px))',
               background:'var(--surface)', border:'1px solid var(--border)',
-              borderRadius:'var(--radius)', zIndex:50, boxShadow:'0 12px 32px rgba(0,0,0,0.45)',
+              borderRadius:'var(--radius)', zIndex:50, boxShadow:'0 12px 32px rgba(0,0,0,0.12)',
               overflow:'hidden',
             }}>
               <div style={{
@@ -178,7 +178,7 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
                     style={{
                       padding:'12px 16px', cursor:n.link ? 'pointer' : 'default',
                       background: n.is_read ? 'transparent' : 'rgba(74,63,224,0.07)',
-                      borderBottom:'1px solid rgba(255,255,255,0.04)',
+                      borderBottom:'1px solid var(--border)',
                       display:'flex', gap:'10px', alignItems:'flex-start',
                       transition:'background 0.15s',
                     }}>
@@ -191,7 +191,7 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
                         {n.title}
                       </div>
                       {n.body && <div style={{ fontSize:'12px', color:'var(--muted)', lineHeight:1.4 }}>{n.body}</div>}
-                      <div style={{ fontSize:'10px', color:'rgba(255,255,255,0.25)', marginTop:'4px' }}>
+                      <div style={{ fontSize:'10px', color:'var(--muted2)', marginTop:'4px' }}>
                         {new Date(n.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}
                       </div>
                     </div>
@@ -205,7 +205,7 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
         {/* Settings */}
         <Link href="/profile" style={{
           width:'34px', height:'34px', borderRadius:'var(--radius-sm)',
-          background:'rgba(255,255,255,0.04)', border:'1px solid var(--border)',
+          background:'rgba(0,0,0,0.03)', border:'1px solid var(--border)',
           display:'flex', alignItems:'center', justifyContent:'center',
           cursor:'pointer', color:'var(--muted)', textDecoration:'none',
         }}>

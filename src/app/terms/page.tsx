@@ -19,19 +19,15 @@ export default function TermsPage() {
     <div style={{ background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)' }}>
       <nav style={{
         padding: '20px 40px', display: 'flex', alignItems: 'center', gap: '12px',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid var(--border)',
       }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32} />
-          <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '16px',
-            background: 'linear-gradient(135deg,#00c8f8,#7030d0)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            letterSpacing: '0.08em' }}>TIVRA</span>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <Image src="/brand/tivra-wordmark-full-dark.png" alt="Tivra Learning" width={92} height={38} style={{ height:'36px', width:'auto' }}/>
         </Link>
       </nav>
       <div style={{ maxWidth: '720px', margin: '0 auto', padding: '60px 40px' }}>
-        <h1 style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '36px',
-          marginBottom: '8px', color: '#fff', letterSpacing: '-0.02em' }}>
+        <h1 style={{ fontFamily: 'var(--font-serif), sans-serif', fontWeight: 600, fontSize: '36px',
+          marginBottom: '8px', color: 'var(--text)', letterSpacing: '-0.02em' }}>
           Terms of Service
         </h1>
         <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '40px' }}>
@@ -40,9 +36,9 @@ export default function TermsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
           {sections.map(([title, content]) => (
             <div key={title}>
-              <h2 style={{ fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: '16px',
-                color: '#fff', marginBottom: '8px' }}>{title}</h2>
-              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.75 }}>{content}</p>
+              <h2 style={{ fontFamily: 'var(--font-serif), sans-serif', fontWeight: 600, fontSize: '16px',
+                color: 'var(--text)', marginBottom: '8px' }}>{title}</h2>
+              <p style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: 1.75 }}>{content}</p>
             </div>
           ))}
         </div>

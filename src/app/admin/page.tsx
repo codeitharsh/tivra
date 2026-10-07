@@ -2,8 +2,7 @@ export const runtime = 'edge'
 
 import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import Link from 'next/link'
 import type { Profile } from '@/types/database'
 import {
@@ -39,11 +38,7 @@ export default async function AdminPage() {
   ])
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Admin Overview" subtitle="Tivra platform control centre"/>
-        <div style={{ padding:'28px', maxWidth:'1100px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="Admin Overview" subtitle="Tivra platform control centre">
 
           {/* Stats — admin-relevant only */}
           <div className="r-grid-3" style={{ marginBottom:'28px' }}>
@@ -56,7 +51,7 @@ export default async function AdminPage() {
               { Icon:Award,        label:'Certificates',     value:certs??0,         color:'var(--accent-2)',href:'/admin/students'   },
             ].map(s => (
               <Link key={s.label} href={s.href} style={{ textDecoration:'none' }}>
-                <div className="stat-card" style={{ cursor:'pointer' }}>
+                <div className="stat-card card-hover" style={{ cursor:'pointer' }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'8px' }}>
                     <div className="stat-label" style={{ marginBottom:0 }}>{s.label}</div>
                     <s.Icon size={14} color="var(--muted2)"/>
@@ -84,7 +79,7 @@ export default async function AdminPage() {
               { title:'Settings',           desc:'Programme settings, domain records',            href:'/admin/settings',    Icon:Settings },
             ].map(card => (
               <Link key={card.title} href={card.href} style={{ textDecoration:'none' }}>
-                <div className="card" style={{ cursor:'pointer', height:'100%' }}>
+                <div className="card card-hover" style={{ cursor:'pointer', height:'100%' }}>
                   <div style={{
                     width:'30px', height:'30px', borderRadius:'6px', flexShrink:0,
                     background:'var(--accent-dim)', color:'var(--accent-2)',
@@ -100,8 +95,6 @@ export default async function AdminPage() {
               </Link>
             ))}
           </div>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

@@ -116,9 +116,9 @@ const NAV_ADMIN = [
 function getRoleMeta(role: UserRole | undefined): { label: string; color: string; bg: string; ring?: string } {
   switch (role) {
     case 'admin':   return { label: 'Admin',   color: 'var(--accent)', bg: 'var(--card2)', ring: '1px solid var(--accent-ring)' }
-    case 'teacher': return { label: 'Teacher', color: '#c3b1ea', bg: 'rgba(167,139,218,0.14)' }
-    case 'parent':  return { label: 'Parent',  color: '#a9c0e8', bg: 'rgba(107,143,209,0.14)' }
-    default:        return { label: 'Student', color: 'var(--cyan)', bg: 'rgba(111,196,214,0.1)' }
+    case 'teacher': return { label: 'Teacher', color: '#7c3aed', bg: 'rgba(139,92,246,0.12)' }
+    case 'parent':  return { label: 'Parent',  color: '#2563eb', bg: 'rgba(59,130,246,0.12)' }
+    default:        return { label: 'Student', color: 'var(--cyan)', bg: 'rgba(59,130,246,0.1)' }
   }
 }
 
@@ -137,7 +137,7 @@ function NavSection({
   return (
     <div style={{ marginBottom: '6px' }}>
       {label && (
-        <div style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.25)',
+        <div style={{ fontSize: '9px', fontWeight: 700, color: 'var(--muted2)',
           letterSpacing: '0.12em', textTransform: 'uppercase', padding: '10px 16px 4px' }}>
           {label}
         </div>
@@ -175,7 +175,7 @@ function LockedNavSection({ label, items }: {
   return (
     <div style={{ marginBottom: '6px' }}>
       {label && (
-        <div style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.15)',
+        <div style={{ fontSize: '9px', fontWeight: 700, color: 'var(--border2)',
           letterSpacing: '0.12em', textTransform: 'uppercase', padding: '10px 16px 4px' }}>
           {label}
         </div>
@@ -294,19 +294,8 @@ export default function Sidebar({ profile }: SidebarProps) {
     <>
       {/* Brand */}
       <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32}
-            style={{ borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}/>
-          <div>
-            <div style={{
-              fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '17px',
-              letterSpacing: '-0.01em', color: 'var(--text)',
-            }}>Tivra</div>
-            <div style={{ fontSize: '8px', color: 'var(--muted2)', fontFamily: 'var(--font-mono), monospace',
-              letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: '1px' }}>
-              Rise Beyond
-            </div>
-          </div>
+        <Link href="/" style={{ display: 'inline-flex', textDecoration: 'none' }}>
+          <Image src="/brand/tivra-wordmark-full-dark.png" alt="Tivra Learning" width={92} height={38} style={{ height: '34px', width: 'auto' }}/>
         </Link>
       </div>
 
@@ -314,7 +303,7 @@ export default function Sidebar({ profile }: SidebarProps) {
       <Link href="/profile" style={{ textDecoration: 'none', display: 'block', margin: '10px 8px 6px' }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 10px',
-          borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.03)',
+          borderRadius: 'var(--radius)', background: 'var(--bg)',
           border: '1px solid var(--border)', transition: 'background 0.15s',
         }}>
           <div style={{

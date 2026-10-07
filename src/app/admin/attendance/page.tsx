@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import AttendanceClient from './AttendanceClient'
 import type { Profile } from '@/types/database'
 import { Bot } from 'lucide-react'
@@ -55,20 +54,15 @@ export default async function AdminAttendancePage() {
     .eq('access_status', 'active')
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Attendance Management" subtitle="Auto-recorded on join/leave · Export to CSV"/>
-
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="Attendance Management" subtitle="Auto-recorded on join/leave · Export to CSV">
 
           {/* Info banner */}
           <div className="banner banner-info">
             <Bot size={18} style={{ flexShrink:0 }}/>
             <div style={{ fontSize:'13px' }}>
               <strong style={{ color:'var(--text)' }}>Automatic attendance:</strong> When a student joins a live class, their
-              <strong style={{ color:'#a9c0e8' }}> join time</strong> is recorded. When they leave,
-              the <strong style={{ color:'#a9c0e8' }}>leave time and total duration</strong> are saved.
+              <strong style={{ color:'#2563eb' }}> join time</strong> is recorded. When they leave,
+              the <strong style={{ color:'#2563eb' }}>leave time and total duration</strong> are saved.
               Students attending &lt;50% of duration are marked <strong>Partial</strong>.
               Admin and teachers can manually override any record.
             </div>
@@ -80,8 +74,6 @@ export default async function AdminAttendancePage() {
             attendanceMap={attendanceMap}
             totalStudents={totalStudents ?? 0}
           />
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

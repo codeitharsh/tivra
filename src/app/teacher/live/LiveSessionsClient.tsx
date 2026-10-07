@@ -16,10 +16,10 @@ interface Props {
 }
 
 const BATCH_META: Record<string, { color: string; bg: string }> = {
-  open:      { color: 'var(--accent-2)', bg: 'rgba(23,174,224,0.14)'  },
-  college:   { color: '#c3b1ea',         bg: 'rgba(167,139,218,0.16)' },
+  open:      { color: 'var(--accent-2)', bg: 'rgba(74,63,224,0.14)'  },
+  college:   { color: '#7c3aed',         bg: 'rgba(167,139,218,0.16)' },
   corporate: { color: 'var(--amber)',    bg: 'var(--amber-dim)'       },
-  custom:    { color: '#a9c0e8',         bg: 'rgba(107,143,209,0.16)' },
+  custom:    { color: '#2563eb',         bg: 'rgba(107,143,209,0.16)' },
 }
 const batchMeta = (type: string) => BATCH_META[type] ?? BATCH_META.open
 
@@ -151,8 +151,8 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
   const STATUS: Record<string,{label:string;color:string;bg:string}> = {
     live:     {label:'Live now',      color:'var(--green)',bg:'var(--green-dim)'},
     starting: {label:'Starting soon', color:'var(--amber)',bg:'var(--amber-dim)'},
-    upcoming: {label:'Scheduled',     color:'var(--muted)',bg:'rgba(255,255,255,0.06)'},
-    ended:    {label:'Ended',         color:'var(--muted)',bg:'rgba(255,255,255,0.04)'},
+    upcoming: {label:'Scheduled',     color:'var(--muted)',bg:'rgba(0,0,0,0.06)'},
+    ended:    {label:'Ended',         color:'var(--muted)',bg:'rgba(0,0,0,0.04)'},
     missed:   {label:'Missed',        color:'var(--red)',  bg:'var(--red-dim)'},
   }
 
@@ -199,7 +199,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
                   padding:'8px 16px',borderRadius:'var(--radius-pill)',cursor:'pointer',
                   fontSize:'12px',fontWeight:600,fontFamily:'var(--font-sans)',
                   border:form.batch_id===''?'1px solid var(--accent-ring)':'1px solid var(--border)',
-                  background:form.batch_id===''?'var(--accent-2-dim)':'rgba(255,255,255,0.04)',
+                  background:form.batch_id===''?'var(--accent-2-dim)':'rgba(0,0,0,0.04)',
                   color:form.batch_id===''?'var(--accent-2)':'var(--muted)',
                   display:'flex',alignItems:'center',gap:'6px',
                 }}><Globe size={12}/> All batches</button>
@@ -210,7 +210,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
                     padding:'8px 16px',borderRadius:'var(--radius-pill)',cursor:'pointer',
                     fontSize:'12px',fontWeight:600,fontFamily:'var(--font-sans)',
                     border:form.batch_id===b.id?`1px solid ${meta.color}`:'1px solid var(--border)',
-                    background:form.batch_id===b.id?meta.bg:'rgba(255,255,255,0.04)',
+                    background:form.batch_id===b.id?meta.bg:'rgba(0,0,0,0.04)',
                     color:form.batch_id===b.id?meta.color:'var(--muted)',
                     display:'flex',alignItems:'center',gap:'6px',
                   }}>
@@ -318,7 +318,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
                   ) : (
                     <div style={{
                       width:'8px',height:'8px',borderRadius:'50%',flexShrink:0,marginTop:'6px',
-                      background:st==='starting'?'var(--amber)':st==='missed'?'var(--red)':'rgba(255,255,255,0.2)',
+                      background:st==='starting'?'var(--amber)':st==='missed'?'var(--red)':'rgba(0,0,0,0.2)',
                     }}/>
                   )}
 
@@ -334,7 +334,7 @@ export default function LiveSessionsClient({ sessions, phases, batches }: Props)
                           {batch.name}
                         </span>
                       ):(
-                        <span className="pill" style={{background:'rgba(255,255,255,0.06)',color:'var(--muted)'}}>All batches</span>
+                        <span className="pill" style={{background:'rgba(0,0,0,0.06)',color:'var(--muted)'}}>All batches</span>
                       )}
                       {phase&&<span>Phase {String(phase.phase_number)} · </span>}
                       <span>{new Date(s.scheduled_at as string).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span>

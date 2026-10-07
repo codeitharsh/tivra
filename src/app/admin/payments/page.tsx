@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import PaymentsClient from './PaymentsClient'
 import type { Profile } from '@/types/database'
 
@@ -34,18 +33,14 @@ export default async function AdminPaymentsPage() {
   const rejected = rows.filter(r => r.status === 'rejected').length
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Payment Requests" subtitle="Review and approve student payment submissions"/>
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="Payment Requests" subtitle="Review and approve student payment submissions">
 
           {/* Stats */}
           <div className='r-grid-3' style={{ marginBottom:'24px' }}>
             {[
-              { label:'Pending review', value:pending,  color:'var(--amber)' },
-              { label:'Approved',       value:approved, color:'var(--green)' },
-              { label:'Rejected',       value:rejected, color:'var(--red)'   },
+              { label:'Pending review', value:pending,  color:'var(--amber-text)' },
+              { label:'Approved',       value:approved, color:'var(--green-text)' },
+              { label:'Rejected',       value:rejected, color:'var(--red-text)'   },
             ].map(s => (
               <div key={s.label} className="stat-card">
                 <div className="stat-label">{s.label}</div>
@@ -55,8 +50,6 @@ export default async function AdminPaymentsPage() {
           </div>
 
           <PaymentsClient rows={rows}/>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

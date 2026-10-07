@@ -298,7 +298,7 @@ export default function CurriculumEditorClient({
                   {/* Module number */}
                   <div style={{
                     width: '24px', height: '24px', borderRadius: '6px', flexShrink: 0,
-                    background: mod.is_unlocked ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+                    background: mod.is_unlocked ? 'var(--green-dim)' : 'rgba(0,0,0,0.06)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '10px',
                     color: mod.is_unlocked ? 'var(--green)' : 'var(--muted)',
@@ -387,7 +387,7 @@ export default function CurriculumEditorClient({
               <div style={{
                 display: 'flex', gap: '8px', alignItems: 'center', marginTop: '10px',
                 padding: '12px 14px', borderRadius: 'var(--radius-sm)',
-                background: 'var(--accent-2-dim)', border: '1px dashed rgba(23,174,224,0.3)',
+                background: 'var(--accent-2-dim)', border: '1px dashed rgba(74,63,224,0.3)',
               }}>
                 <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '11px',
                   color: 'var(--muted)', flexShrink: 0 }}>
@@ -424,7 +424,7 @@ export default function CurriculumEditorClient({
       {/* Add new phase */}
       {addingPhase ? (
         <div className="card" style={{
-          padding: '20px', border: '1px dashed rgba(23,174,224,0.3)',
+          padding: '20px', border: '1px dashed rgba(74,63,224,0.3)',
           background: 'var(--accent-2-dim)',
         }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px', marginBottom: '12px' }}>

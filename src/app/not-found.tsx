@@ -11,8 +11,7 @@ export default function NotFound() {
       <div style={{ textAlign: 'center', maxWidth: '440px' }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px',
           textDecoration: 'none', marginBottom: '40px', justifyContent: 'center' }}>
-          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32}/>
-          <span style={{ fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '19px', color: 'var(--text)' }}>Tivra</span>
+          <Image src="/brand/tivra-wordmark-full-dark.png" alt="Tivra Learning" width={92} height={38} style={{ height:'42px', width:'auto' }}/>
         </Link>
 
         <div className="tick-rule tick-rule-accent" style={{ marginBottom: '20px' }}/>

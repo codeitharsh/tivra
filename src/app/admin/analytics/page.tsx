@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import type { Profile } from '@/types/database'
 import { Medal } from 'lucide-react'
 
@@ -121,11 +120,7 @@ export default async function AdminAnalyticsPage() {
   const topStudents = topIds.map(t => ({ ...t, name: topNameMap.get(t.id) ?? 'Unknown' }))
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Analytics" subtitle="Platform-wide statistics and performance metrics"/>
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="Analytics" subtitle="Platform-wide statistics and performance metrics">
 
           {/* ── Top stats ── */}
           <div className="r-grid-4" style={{ marginBottom:'24px' }}>
@@ -283,7 +278,7 @@ export default async function AdminAnalyticsPage() {
                   <div key={s.label} style={{
                     display:'flex', justifyContent:'space-between', alignItems:'center',
                     padding:'12px 0',
-                    borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    borderBottom: i < arr.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none',
                   }}>
                     <span style={{ fontSize:'13px', color:'var(--muted)' }}>{s.label}</span>
                     <span style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'16px' }}>{s.value}</span>
@@ -292,8 +287,6 @@ export default async function AdminAnalyticsPage() {
               </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import AccessTable from './AccessTable'
 import type { Profile } from '@/types/database'
 import { Info } from 'lucide-react'
@@ -108,15 +107,7 @@ export default async function AdminAccessPage() {
   const restricted = rows.filter(r => r.access_status === 'restricted').length
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar
-          title="Access Management"
-          subtitle="Grant, revoke, and manage roles for all users"
-        />
-
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="Access Management" subtitle="Grant, revoke, and manage roles for all users">
 
           {/* Stats */}
           <div className='r-grid-4' style={{ marginBottom:'24px' }}>
@@ -143,8 +134,6 @@ export default async function AdminAccessPage() {
           </div>
 
           <AccessTable rows={rows} programmes={programmes} batches={batches}/>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

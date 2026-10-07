@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
 const LINKS = [
@@ -39,38 +40,34 @@ export default function PublicNav() {
 
   return (
     <>
-    <nav ref={navRef} style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '18px 40px',
-      borderBottom: '1px solid var(--border)',
-      background: 'rgba(11,11,13,0.88)', backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)',
-      position: 'sticky', top: 0, zIndex: 100,
-    }}>
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-        <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={30} height={30} style={{ flexShrink: 0 }}/>
-        <span style={{
-          fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: '19px',
-          color: 'var(--text)', letterSpacing: '-0.01em',
-        }}>Tivra</span>
+    <motion.nav
+      ref={navRef}
+      initial={{ y: -12, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '16px 40px', height: '64px',
+        borderBottom: '1px solid var(--border)',
+        background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        position: 'sticky', top: 0, zIndex: 100,
+      }}>
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+        <Image src="/brand/tivra-wordmark-full-dark.png" alt="Tivra Learning" width={92} height={38} style={{ flexShrink: 0, height: '36px', width: 'auto' }}/>
       </Link>
 
       {/* Desktop links */}
-      <div className="nav-links" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+      <div className="nav-links" style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
         {LINKS.map(l => (
-          <Link key={l.href} href={l.href} style={{
-            fontSize: '13px', color: 'var(--muted)', fontFamily: 'var(--font-sans), sans-serif',
-            textDecoration: 'none', padding: '8px 14px', borderRadius: 'var(--radius-sm)',
-            transition: 'color 0.15s',
-          }}>{l.label}</Link>
+          <Link key={l.href} href={l.href} className="nav-top-link">{l.label}</Link>
         ))}
-        <Link href="/login" className="btn btn-ghost" style={{ marginLeft: '8px' }}>Login</Link>
+        <Link href="/login" className="btn btn-ghost" style={{ marginLeft: '12px' }}>Login</Link>
         {ENROLLMENT_OPEN ? (
           <Link href="/register" className="btn btn-primary">Enrol Now</Link>
         ) : (
           <span className="btn" style={{
             background: 'var(--card2)', color: 'var(--muted2)', cursor: 'not-allowed',
-            textTransform: 'uppercase', letterSpacing: '0.06em',
           }}>Revealing Soon</span>
         )}
       </div>
@@ -96,7 +93,7 @@ export default function PublicNav() {
           .nav-mobile-btn { display: flex !important; }
         }
       `}</style>
-    </nav>
+    </motion.nav>
 
     {/* Mobile panel — deliberately rendered OUTSIDE <nav>, not nested
         inside it. Nav has backdropFilter set for its frosted-glass look,
@@ -107,8 +104,14 @@ export default function PublicNav() {
         collapsing it to zero visible height while its children still
         measured "correctly" in isolation. Keeping it as a sibling avoids
         that containing-block entirely. */}
+    <AnimatePresence>
     {open && (
-      <div style={{
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        style={{
         position: 'fixed', top: `${navHeight}px`, left: 0, right: 0, bottom: 0, zIndex: 99,
         background: 'var(--bg)', borderTop: '1px solid var(--border)',
         padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '4px',
@@ -130,8 +133,9 @@ export default function PublicNav() {
             }}>Soon</span>
           )}
         </div>
-      </div>
+      </motion.div>
     )}
+    </AnimatePresence>
     </>
   )
 }

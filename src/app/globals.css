@@ -2,93 +2,124 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Tivra Brand Design Tokens — "Facet" ─────────────────────
-   Derived from the actual Tivra mark: two solid, straight-edged
-   polygons (a winged crossbar + a detached stem) sharing one
-   ~45° diagonal, asymmetric, zero curves anywhere, a cyan → indigo
-   gradient running along that diagonal. This system extracts that
-   diagonal as a corner-clip motif used on every primary surface,
-   and that gradient's two endpoints as a single restrained accent
-   (indigo, for UI) plus a rare secondary (cyan, used sparingly).
-   No rounded corners on structural surfaces. No decorative gradients
-   in UI chrome — the gradient stays reserved for the mark itself.  */
+/* ─── Tivra Design Tokens — Cal.com reskin ────────────────────
+   White canvas, black primary CTAs, light-gray cards holding real
+   product UI, a single restrained brand accent reserved for inline
+   links and rare highlights, and a near-black footer that closes
+   every long-scroll page. Cal Sans is proprietary to Cal.com, so
+   display type is approximated with Inter 600 + negative tracking
+   (Inter/Manrope are the documented substitutes). Border radius is
+   hierarchical (8/12/16px) instead of the old diagonal corner-clip. */
 :root {
-  /* Tivra is dark-only (no light theme) — without this, browsers assume
-     light-mode defaults for native UI chrome that isn't styled via CSS
-     (a <select>'s dropdown popup, date/time pickers, scrollbars), which
-     is why dropdown options could render as light text on a
-     browser-default white background regardless of our own dark
-     palette. */
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Backgrounds — near-black, matches the app-icon's mark backdrop */
-  --bg:         #0b0b0d;
-  --surface:    #111113;
-  --card:       #16161a;
-  --card2:      #1c1c21;
-  --border:     rgba(255,255,255,0.08);
-  --border2:    rgba(255,255,255,0.14);
+  /* Surfaces */
+  --bg:            #ffffff;
+  --surface:       #f8f9fa;
+  --card:          #f5f5f5;
+  --card2:         #e5e7eb;
+  --surface-dark:  #101010;
+  --surface-dark-elevated: #1a1a1a;
+  --on-dark:       #ffffff;
+  --on-dark-soft:  #a1a1aa;
+  --border:        #e5e7eb;
+  --border2:       #d1d5db;
 
-  /* Signature accent — the mark's darker (indigo) gradient stop.
-     Used sparingly: CTAs, focus, key numerals. */
-  --accent:        #4a3fe0;
-  --accent-hover:  #5b4fea;
-  --accent-dim:    rgba(74,63,224,0.14);
-  --accent-ring:   rgba(74,63,224,0.32);
+  /* Primary action — near-black, the Cal.com signature */
+  --accent:        #111111;
+  --accent-hover:  #242424;
+  --accent-dim:    #e5e7eb;
+  --accent-ring:   rgba(17,17,17,0.16);
   --on-accent:     #ffffff;
 
-  /* Secondary accent — the mark's lighter (cyan) gradient stop.
-     Reserved for rare dual-tone moments; never a general UI color. */
-  --accent-2:      #17aee0;
-  --accent-2-dim:  rgba(23,174,224,0.14);
+  /* Brand accent — reserved for inline links / rare highlights only,
+     never on primary CTAs. Kept as Tivra's own indigo so the brand
+     still reads through an otherwise monochrome action layer. */
+  --accent-2:      #4a3fe0;
+  --accent-2-dim:  rgba(74,63,224,0.10);
 
-  /* Legacy accent aliases — retuned (muted, no neon), kept so
-     screens outside this redesign pass keep working unmodified. */
-  --cyan:       #6fc4d6;
-  --blue:       #6b8fd1;
-  --purple:     #a78bda;
-  --teal:       #6fc4d6;
-
-  /* Flattened "gradient" aliases — solid accent now, no rainbow. */
+  /* Legacy aliases — kept so any screen outside this pass keeps working */
+  --cyan:       #3b82f6;
+  --blue:       #3b82f6;
+  --purple:     #8b5cf6;
+  --teal:       #34d399;
   --grad-brand:   var(--accent);
   --grad-brand-r: var(--accent);
-  --grad-glow:    rgba(74,63,224,0.18);
+  --grad-glow:    rgba(17,17,17,0.06);
 
-  /* Semantic colors — desaturated, functional, distinct from accent */
-  --green:      #4ade80;
-  --green-dim:  rgba(74,222,128,0.12);
-  --amber:      #f5a623;
-  --amber-dim:  rgba(245,166,35,0.12);
-  --red:        #f0453a;
-  --red-dim:    rgba(240,69,58,0.12);
+  /* Badge pastels — category tags, avatar fills. Never on CTAs. */
+  --badge-orange: #fb923c;
+  --badge-pink:   #ec4899;
+  --badge-violet: #8b5cf6;
+  --badge-emerald:#34d399;
 
-  /* Text — warm bone, not stark white */
-  --text:       #f3f1ec;
-  --muted:      rgba(243,241,236,0.55);
-  --muted2:     rgba(243,241,236,0.32);
+  /* Third-party brand colors — fixed by the platform they represent,
+     not part of Tivra's own palette, but tokenized so they're not
+     scattered as magic hex strings. */
+  --whatsapp:     #25d366;
 
-  /* Radius — the mark has zero curves, so structural surfaces stay
-     sharp; the diagonal corner-clip (.tv-clip) is the real signature
-     shape, not rounding. Small functional chips keep a tiny radius. */
-  --radius:     4px;
-  --radius-sm:  3px;
-  --radius-pill:4px;
+  /* Semantic colors — the base shade is for icons/dots/fills only (not
+     text: on either white or its own *-dim tint, it falls to ~2.1-3.8:1,
+     below WCAG AA's 4.5:1 for normal text). Each has a darker *-text
+     companion, verified >=4.5:1 on both white and its own *-dim tint,
+     for every place the color is actually used as text (pills, banners,
+     toasts, buttons). */
+  --green:       #10b981;
+  --green-dim:   rgba(16,185,129,0.10);
+  --green-text:  #047857;
+  --amber:       #f59e0b;
+  --amber-dim:   rgba(245,158,11,0.10);
+  --amber-text:  #b45309;
+  --red:         #ef4444;
+  --red-dim:     rgba(239,68,68,0.10);
+  --red-text:    #b91c1c;
+
+  /* Text */
+  --text:       #111111;
+  --body-text:  #374151;
+  --muted:      #6b7280;
+  /* #898989 measured ~3.5:1 on white — fails WCAG AA's 4.5:1 for normal
+     text, yet was used for real running copy (stat labels, footer text,
+     meta text), not just decoration. Darkened to the closest shade that
+     clears AA while staying visually distinct from --muted. */
+  --muted2:     #767676;
+
+  /* Radius — hierarchical, matching Cal.com's scale */
+  --radius:     8px;
+  --radius-sm:  6px;
+  --radius-lg:  12px;
+  --radius-xl:  16px;
+  --radius-pill:9999px;
+
+  /* Spacing rhythm */
+  --space-xxs: 4px;
+  --space-xs:  8px;
+  --space-sm:  12px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-xxl: 48px;
+  --space-section: 96px;
+  --space-section-sm:  64px;
+  --space-container-x: clamp(20px, 4vw, 48px);
+
+  /* Type scale — consolidated from the clamp() values already shipping
+     across page.tsx, about, contact, programs, courses, payment (every
+     page previously hand-wrote its own near-but-not-quite-identical
+     clamp() triple). Min/max picked as the median of what was already
+     on screen, so adopting these shifts no page's rendered size by more
+     than a few px at any viewport width. */
+  --text-display: clamp(2.75rem, 6.5vw, 5.5rem);   /* landing hero only */
+  --text-h1:       clamp(2.1rem, 5vw, 3.4rem);      /* page/section H1 */
+  --text-h2:       clamp(1.75rem, 4vw, 2.75rem);    /* section H2 */
+  --text-h3:       18px;                            /* card/sub-section title */
+  --text-eyebrow-size:     11px;
+  --text-eyebrow-tracking: 0.16em;
+  --leading-body:  1.7;
 
   /* Type families — the actual font stacks are injected by next/font
      as CSS variables on <html> in layout.tsx; the fallbacks below
      only apply before that class attaches (e.g. static export edge). */
-}
-
-/* ─── Facet clip — the Tivra signature shape ─────────────────
-   A single corner cut at the mark's diagonal, echoing the crossbar's
-   angled tip. Applied to every primary surface (buttons, cards) so
-   the geometry — not a color or a logo mark — is what reads as
-   "Tivra" even in a cropped screenshot.                          */
-.tv-clip {
-  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-}
-.tv-clip-sm {
-  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
 }
 
 /* ─── Reset ─────────────────────────────────────────────────── */
@@ -98,12 +129,17 @@ body {
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
-h1,h2,h3,h4,h5,h6 { font-family: var(--font-serif), ui-serif, Georgia, serif; letter-spacing:-0.01em; font-weight: 600; }
+h1,h2,h3,h4,h5,h6 {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -115,29 +151,27 @@ h1,h2,h3,h4,h5,h6 { font-family: var(--font-serif), ui-serif, Georgia, serif; le
 }
 
 /* ─── Scrollbar ───────────────────────────────────────────── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
-/* ─── Flat surface (formerly "glass") ────────────────────────
-   Kept as a class for pages not yet in this redesign pass —
-   simplified from blur/glassmorphism to a flat elevated card. */
+/* ─── Flat surface ───────────────────────────────────────────
+   Kept as a class for pages not yet in this redesign pass. */
 .glass {
-  background: var(--card);
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   position: relative;
 }
 
 /* ─── Cards ──────────────────────────────────────────────── */
 .card {
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
-  padding: 20px;
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 24px;
 }
 .card-accent-top {
   position: relative; overflow: hidden;
@@ -147,86 +181,74 @@ h1,h2,h3,h4,h5,h6 { font-family: var(--font-serif), ui-serif, Georgia, serif; le
   background: var(--accent);
 }
 
-/* ─── Tick rule — the Tivra signature motif ──────────────────
-   A thin calibration rule, like a gauge or ruler edge. Used
-   under headings, as dividers, and as hero decoration instead
-   of gradients / particle fields / glow orbs.                 */
+/* ─── Tick rule — retired with the old corner-clip identity.
+   Kept as an inert no-op class so any page still applying it
+   doesn't lose its border-bottom entirely. ────────────────── */
 .tick-rule {
-  --tick-color: var(--border2);
-  height: 9px;
-  background-image: repeating-linear-gradient(
-    to right,
-    var(--tick-color) 0px, var(--tick-color) 1px,
-    transparent 1px, transparent 8px
-  );
-  background-position: bottom left;
-  background-size: 100% 9px;
-  background-repeat: repeat-x;
-  border-bottom: 1px solid var(--border);
+  height: 1px;
+  background: var(--border);
+  border-bottom: none;
 }
-.tick-rule-accent { --tick-color: var(--accent); opacity: 0.6; }
+.tick-rule-accent { background: var(--accent-2); opacity: 0.4; }
 
-/* ─── Brand text/bg (flat now — no gradient clip) ────────────── */
-.grad-text { color: var(--accent); }
+/* ─── Brand text/bg ───────────────────────────────────────── */
+.grad-text { color: var(--accent-2); }
 .grad-bg   { background: var(--accent); }
 
 /* ─── Status Pills ────────────────────────────────────────── */
 .pill {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 10px; border-radius: var(--radius-pill);
-  font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
-  font-family: var(--font-mono), ui-monospace, monospace; text-transform: uppercase;
+  padding: 4px 12px; border-radius: var(--radius-pill);
+  font-size: 12px; font-weight: 600; letter-spacing: 0.01em;
+  font-family: var(--font-sans), ui-sans-serif, sans-serif;
 }
-.pill-active     { background: rgba(74,222,128,0.12);  color: var(--green);  }
-.pill-pending    { background: rgba(240,69,58,0.12);   color: var(--red);    }
-.pill-locked     { background: rgba(255,255,255,0.06); color: var(--muted);  }
-.pill-open       { background: rgba(74,222,128,0.12);  color: var(--green);  }
-.pill-upcoming   { background: rgba(245,166,35,0.12);  color: var(--amber);  }
-.pill-in-progress    { background: var(--accent-dim);  color: var(--accent);  }
-.pill-teacher    { background: rgba(167,139,218,0.14); color: #c3b1ea;       }
-.pill-parent     { background: rgba(107,143,209,0.14); color: #a9c0e8;       }
-.pill-admin      { background: var(--card2); color: var(--accent); border: 1px solid var(--accent-ring); }
-.pill-restricted { background: rgba(240,69,58,0.12);   color: var(--red);    }
-.pill-manual     { background: rgba(245,166,35,0.12);  color: var(--amber);  }
+.pill-active     { background: var(--green-dim);  color: var(--green-text); }
+.pill-pending    { background: var(--red-dim);    color: var(--red-text);   }
+.pill-locked     { background: var(--card2);      color: var(--muted);      }
+.pill-open       { background: var(--green-dim);  color: var(--green-text); }
+.pill-upcoming   { background: var(--amber-dim);  color: var(--amber-text); }
+.pill-in-progress{ background: var(--accent-2-dim); color: var(--accent-2); }
+.pill-teacher    { background: rgba(139,92,246,0.12); color: #7c3aed;   }
+.pill-parent     { background: rgba(59,130,246,0.12); color: #2563eb;   }
+.pill-admin      { background: var(--card2); color: var(--text); border: 1px solid var(--border2); }
+.pill-restricted { background: var(--red-dim);    color: var(--red-text);   }
+.pill-manual     { background: var(--amber-dim);  color: var(--amber-text); }
 
 /* ─── Buttons ─────────────────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; gap: 7px;
-  font-family: var(--font-sans), ui-sans-serif, sans-serif; font-size: 13px; font-weight: 600;
-  padding: 10px 22px; border-radius: var(--radius);
-  clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%);
-  border: 1px solid transparent; cursor: pointer; transition: all 0.2s ease;
-  text-decoration: none; white-space: nowrap; letter-spacing: 0.02em;
+  font-family: var(--font-sans), ui-sans-serif, sans-serif; font-size: 14px; font-weight: 600;
+  padding: 12px 20px; height: 40px; border-radius: var(--radius);
+  border: 1px solid transparent; cursor: pointer; transition: all 0.15s ease;
+  text-decoration: none; white-space: nowrap; letter-spacing: 0;
 }
 .btn-primary {
   background: var(--accent); color: var(--on-accent);
-  text-transform: uppercase; letter-spacing: 0.06em;
   border-color: var(--accent);
 }
 .btn-primary:hover {
-  transform: translateY(-1px);
   background: var(--accent-hover);
-  box-shadow: 0 6px 18px var(--accent-ring);
+  border-color: var(--accent-hover);
 }
-.btn-primary:active { transform: translateY(0); }
+.btn-primary:active { background: var(--accent); }
 .btn-ghost {
-  background: transparent; color: var(--muted);
+  background: var(--bg); color: var(--text);
   border: 1px solid var(--border);
 }
 .btn-ghost:hover {
-  color: var(--text); border-color: var(--border2);
-  background: rgba(255,255,255,0.04);
+  border-color: var(--border2);
+  background: var(--surface);
 }
 .btn-danger {
-  background: rgba(240,69,58,0.1); color: var(--red);
-  border: 1px solid rgba(240,69,58,0.2);
+  background: var(--red-dim); color: var(--red-text);
+  border: 1px solid rgba(239,68,68,0.25);
 }
-.btn-danger:hover { background: rgba(240,69,58,0.2); }
+.btn-danger:hover { background: rgba(239,68,68,0.16); }
 .btn-success {
-  background: rgba(74,222,128,0.1); color: var(--green);
-  border: 1px solid rgba(74,222,128,0.25);
+  background: var(--green-dim); color: var(--green-text);
+  border: 1px solid rgba(16,185,129,0.25);
 }
-.btn-success:hover { background: rgba(74,222,128,0.2); }
+.btn-success:hover { background: rgba(16,185,129,0.16); }
 
 .btn:focus-visible, a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--accent);
@@ -235,45 +257,39 @@ h1,h2,h3,h4,h5,h6 { font-family: var(--font-serif), ui-serif, Georgia, serif; le
 
 /* ─── Form elements ───────────────────────────────────────── */
 .form-label {
-  font-size: 10px; color: var(--muted); font-weight: 600;
+  font-size: 13px; color: var(--muted); font-weight: 500;
   margin-bottom: 6px; display: block;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  font-family: var(--font-mono), ui-monospace, monospace;
+  letter-spacing: 0; text-transform: none;
+  font-family: var(--font-sans), ui-sans-serif, sans-serif;
 }
 .form-input {
-  width: 100%; background: rgba(255,255,255,0.04);
+  width: 100%; background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 11px 14px; color: var(--text);
-  font-family: var(--font-sans), ui-sans-serif, sans-serif; font-size: 14px;
-  outline: none; transition: border-color 0.2s ease;
+  border-radius: var(--radius);
+  padding: 10px 14px; height: 40px; color: var(--text);
+  font-family: var(--font-sans), ui-sans-serif, sans-serif; font-size: 15px;
+  outline: none; transition: border-color 0.15s ease;
 }
-.form-input::placeholder { color: rgba(243,241,236,0.28); }
+.form-input::placeholder { color: var(--muted2); }
 .form-input:focus {
-  border-color: var(--accent);
+  border-color: var(--text);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 .form-select {
-  width: 100%; background: rgba(255,255,255,0.04);
+  width: 100%; background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 11px 14px; color: var(--text);
-  font-family: var(--font-sans), ui-sans-serif, sans-serif; font-size: 14px;
+  border-radius: var(--radius);
+  padding: 10px 14px; height: 40px; color: var(--text);
+  font-family: var(--font-sans), ui-sans-serif, sans-serif; font-size: 15px;
   outline: none; cursor: pointer;
 }
-.form-select:focus { border-color: var(--accent); }
+.form-select:focus { border-color: var(--text); }
 
-/* Every <select>'s option popup, regardless of which class or inline
-   style dresses up the closed select box (.form-select, .form-input, or
-   ad-hoc pill selects like the role picker in AccessTable) — option
-   text color already inherits correctly from whatever the select itself
-   sets, but background never inherits, so without this every dropdown
-   falls back to the browser's own default popup background. */
-select option { background: var(--card); }
+select option { background: var(--bg); color: var(--text); }
 
 /* ─── Progress bar ────────────────────────────────────────── */
 .progress-track {
-  height: 5px; background: rgba(255,255,255,0.07);
+  height: 6px; background: var(--card2);
   border-radius: 3px; overflow: hidden;
 }
 .progress-fill {
@@ -290,86 +306,127 @@ select option { background: var(--card); }
   width:6px; height:6px; border-radius:50%;
   animation: pulseDot 2s ease-in-out infinite; flex-shrink:0;
 }
-.pulse-green  { background:var(--green); box-shadow: 0 0 7px var(--green); }
-.pulse-red    { background:var(--red);   box-shadow: 0 0 7px var(--red); }
-.pulse-blue   { background:var(--blue);  box-shadow: 0 0 7px var(--blue); }
-.pulse-cyan   { background:var(--cyan);  box-shadow: 0 0 7px var(--cyan); }
+.pulse-green  { background:var(--green); }
+.pulse-red    { background:var(--red);   }
+.pulse-blue   { background:var(--blue);  }
+.pulse-cyan   { background:var(--cyan);  }
 
 /* ─── Scroll reveal ───────────────────────────────────────── */
 .reveal { opacity:0; transform:translateY(16px); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
 .reveal.visible { opacity:1; transform:translateY(0); }
 
-/* ─── Grid overlay lines ──────────────────────────────────── */
-.grid-lines { position:absolute; inset:0; pointer-events:none; z-index:0; display:none; }
-@media (min-width:1024px) { .grid-lines { display:block; } }
-.grid-line { position:absolute; top:0; bottom:0; width:1px; background:rgba(255,255,255,0.04); }
+/* ─── Grid overlay lines — retired for the flat Cal.com look ── */
+.grid-lines { display:none; }
+.grid-line { display:none; }
 
 /* ─── Banners ─────────────────────────────────────────────── */
 .banner {
   display:flex; align-items:center; gap:12px;
   padding:14px 18px; border-radius:var(--radius);
-  font-size:13px; margin-bottom:20px;
+  font-size:14px; margin-bottom:20px;
 }
-.banner-warning { background:rgba(240,69,58,0.07); border:1px solid rgba(240,69,58,0.2); color:var(--muted); }
+.banner-warning { background:var(--red-dim); border:1px solid rgba(239,68,68,0.18); color:var(--body-text); }
 .banner-warning strong { color:var(--text); }
-.banner-info    { background:rgba(107,143,209,0.08); border:1px solid rgba(107,143,209,0.2);  color:#a9c0e8; }
-.banner-success { background:rgba(74,222,128,0.07); border:1px solid rgba(74,222,128,0.2);  color:var(--green); }
-.banner-brand   { background:var(--accent-dim); border:1px solid var(--accent-ring);  color:var(--accent); }
+.banner-info    { background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.18);  color:#2563eb; }
+.banner-success { background:var(--green-dim); border:1px solid rgba(16,185,129,0.18);  color:var(--green-text); }
+.banner-brand   { background:var(--accent-2-dim); border:1px solid rgba(74,63,224,0.18);  color:var(--accent-2); }
 
 /* ─── Tables ──────────────────────────────────────────────── */
-.data-table { width:100%; border-collapse:collapse; font-size:13px; }
+.data-table { width:100%; border-collapse:collapse; font-size:14px; }
 .data-table th {
-  text-align:left; padding:10px 14px; font-size:10px;
-  color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;
+  text-align:left; padding:10px 14px; font-size:12px;
+  color:var(--muted); text-transform:none; letter-spacing:0;
   border-bottom:1px solid var(--border); font-weight:600;
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), ui-sans-serif, sans-serif;
 }
-.data-table td { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:middle; font-variant-numeric: tabular-nums; }
+.data-table td { padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:middle; font-variant-numeric: tabular-nums; }
 .data-table tr:last-child td { border-bottom:none; }
-.data-table tbody tr:hover td { background:rgba(255,255,255,0.02); }
+/* Hover feedback is opt-in via .is-clickable — applying it unconditionally
+   gave every table a false "this row does something" affordance even when
+   rows have no row-level navigation (most of them don't). */
+.data-table.is-clickable tbody tr:hover td { background: var(--surface); }
+.data-table.is-clickable tbody tr { cursor: pointer; }
 
 /* ─── Module items ────────────────────────────────────────── */
 .module-item {
   display:flex; align-items:center; gap:10px;
   padding:9px 10px; border-radius:var(--radius-sm);
-  cursor:pointer; transition:background 0.15s ease; font-size:13px;
+  cursor:pointer; transition:background 0.15s ease; font-size:14px;
 }
-.module-item:hover { background:rgba(255,255,255,0.04); }
+.module-item:hover { background:var(--surface); }
 .mod-icon {
   width:24px; height:24px; border-radius:6px;
   display:flex; align-items:center; justify-content:center;
   font-size:12px; flex-shrink:0;
 }
-.mod-done   { background:rgba(74,222,128,0.15); color:var(--green); }
-.mod-active { background:var(--accent-dim); color:var(--accent); }
-.mod-locked { background:rgba(255,255,255,0.06); color:var(--muted); }
+.mod-done   { background:var(--green-dim); color:var(--green-text); }
+.mod-active { background:var(--accent-dim); color:var(--text); }
+.mod-locked { background:var(--card2); color:var(--muted); }
 
 /* ─── Toast ───────────────────────────────────────────────── */
 @keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
 .toast {
-  background:var(--card); border:1px solid var(--border);
-  border-radius:10px; padding:12px 18px; font-size:13px;
-  max-width:320px; animation:toastIn 0.3s ease forwards;
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:12px 18px; font-size:14px;
+  max-width:320px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  animation:toastIn 0.3s ease forwards;
 }
-.toast-success { border-color:rgba(74,222,128,0.4);  color:var(--green); }
-.toast-error   { border-color:rgba(240,69,58,0.4);  color:var(--red);   }
-.toast-info    { border-color:rgba(107,143,209,0.4);  color:#a9c0e8; }
+.toast-success { border-color:rgba(16,185,129,0.35);  color:var(--green-text); }
+.toast-error   { border-color:rgba(239,68,68,0.35);  color:var(--red-text);   }
+.toast-info    { border-color:rgba(59,130,246,0.35);  color:#2563eb; }
 
 /* ─── Stat cards ──────────────────────────────────────────── */
 .stat-card {
-  background:var(--card); border:1px solid var(--border);
-  border-radius:var(--radius); padding:18px 20px;
-  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+  background:var(--card); border:none;
+  border-radius:var(--radius-lg); padding:24px;
 }
 .stat-label {
-  font-size:10px; color:var(--muted); text-transform:uppercase;
-  letter-spacing:0.08em; margin-bottom:8px; font-family: var(--font-mono), ui-monospace, monospace;
+  font-size:12px; color:var(--muted); text-transform:none;
+  letter-spacing:0; margin-bottom:8px; font-family: var(--font-sans), ui-sans-serif, sans-serif;
 }
 .stat-value {
-  font-family: var(--font-serif), ui-serif, Georgia, serif; font-weight:600;
-  font-size:28px; line-height:1; font-variant-numeric: tabular-nums;
+  font-family: var(--font-sans), ui-sans-serif, sans-serif; font-weight:600;
+  font-size:28px; line-height:1; letter-spacing:-0.02em; font-variant-numeric: tabular-nums;
 }
 
+/* ─── Card hover lift — used by course/catalog cards ─────────── */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+/* ─── Dark footer links ───────────────────────────────────── */
+.footer-link { color: var(--on-dark-soft); transition: color 0.15s ease; }
+.footer-link:hover { color: var(--on-dark); }
+
+/* ─── Top nav links ───────────────────────────────────────── */
+.nav-top-link {
+  font-size: 14px; color: var(--muted); font-family: var(--font-sans), sans-serif; font-weight: 500;
+  text-decoration: none; padding: 8px 14px; border-radius: var(--radius);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.nav-top-link:hover { color: var(--text); background: var(--surface); }
+
+/* ─── Nav pill group — Cal.com's signature pill-in-pill switcher ── */
+.nav-pill-group {
+  display:inline-flex; align-items:center; gap:2px;
+  background:var(--surface); border-radius:var(--radius-pill);
+  padding:6px;
+}
+.nav-pill-group .category-tab {
+  background:transparent; color:var(--muted);
+  font-family: var(--font-sans), ui-sans-serif, sans-serif; font-size:14px; font-weight:500;
+  padding:8px 16px; border-radius:var(--radius);
+  border:none; cursor:pointer; transition:all 0.15s ease; text-decoration:none;
+}
+.nav-pill-group .category-tab-active,
+.nav-pill-group .category-tab:hover {
+  background:var(--bg); color:var(--text);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
 
 /* ═══════════════════════════════════════════════════════════
    TIVRA — RESPONSIVE SYSTEM
@@ -411,7 +468,7 @@ select option { background: var(--card); }
   .r-split  { grid-template-columns: 1fr !important; }
 
   /* Cards */
-  .card { padding: 14px !important; }
+  .card { padding: 16px !important; }
 
   /* Prevent horizontal scroll */
   body, main { overflow-x: hidden !important; }

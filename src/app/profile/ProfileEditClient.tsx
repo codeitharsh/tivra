@@ -43,8 +43,8 @@ export default function ProfileEditClient({ profile }: { profile: Profile }) {
   }
 
   const roleColors: Record<string, string> = {
-    student: 'var(--accent-2)', teacher: '#a78bda',
-    parent:  '#a9c0e8',    admin:   'var(--accent)',
+    student: 'var(--accent-2)', teacher: '#7c3aed',
+    parent:  '#2563eb',    admin:   'var(--accent)',
   }
   const statusColors: Record<string, string> = {
     active: 'var(--green)', pending_payment: 'var(--amber)', restricted: 'var(--red)',
@@ -78,13 +78,13 @@ export default function ProfileEditClient({ profile }: { profile: Profile }) {
 
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <span className="pill" style={{
-            background: 'rgba(255,255,255,0.06)',
+            background: 'rgba(0,0,0,0.06)',
             color: roleColors[profile.role ?? 'student'],
           }}>
             {profile.role ?? 'student'}
           </span>
           <span className="pill" style={{
-            background: 'rgba(255,255,255,0.06)',
+            background: 'rgba(0,0,0,0.06)',
             color: statusColors[profile.access_status ?? 'pending_payment'],
           }}>
             {profile.access_status === 'pending_payment' ? 'Pending activation'

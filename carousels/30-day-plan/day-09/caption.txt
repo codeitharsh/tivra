@@ -1,0 +1,7 @@
+Nobody hires a transcript. They hire a portfolio.
+
+5 things to build instead: a CRUD app with real auth, a CLI tool for your own annoyance, a clone of a tool you use daily, a scraper feeding a dashboard, and one real open-source PR.
+
+Which one are you building first? 👇
+
+#Portfolio #BuildInPublic #LearnToCode #SideProjects #WebDevelopment #OpenSource #TivraRiseBeyond

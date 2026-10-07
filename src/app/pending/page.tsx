@@ -74,14 +74,8 @@ export default async function PendingPage() {
         background: 'var(--surface)',
         position: 'sticky', top: 0, zIndex: 10,
       }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <Image src="/tivra-logo-no-bg.png" alt="Tivra" width={32} height={32} />
-          <div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '15px',
-              letterSpacing: '0.08em', color: 'var(--text)' }}>TIVRA</div>
-            <div style={{ fontSize: '8px', color: 'var(--muted2)',
-              letterSpacing: '0.14em', textTransform: 'uppercase' }}>Rise Beyond</div>
-          </div>
+        <Link href="/" style={{ display: 'inline-flex', textDecoration: 'none' }}>
+          <Image src="/brand/tivra-wordmark-full-dark.png" alt="Tivra Learning" width={92} height={38} style={{ height:'32px', width:'auto' }}/>
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '13px', color: 'var(--muted)' }}>

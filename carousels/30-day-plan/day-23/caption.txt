@@ -1,0 +1,13 @@
+5 habits that level you up:
+
+01. Read the docs first — every single time.
+02. Write the README before the code.
+03. Ask why it broke before how to fix it.
+04. Leave every file better than you found it.
+05. Say "I don't know" without flinching. Then go find out.
+
+None of these need permission. Start today.
+
+Which one are you missing? 👇
+
+#SoftwareEngineering #DeveloperLife #CodingTips #TechCareers #LearnToCode #WebDevelopment #TivraRiseBeyond

@@ -238,7 +238,7 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
             fontFamily:'var(--font-mono)', fontWeight:600, fontSize:'11px',
             background: currentQ === i
               ? 'var(--accent)'
-              : answers[qq.id] ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+              : answers[qq.id] ? 'var(--green-dim)' : 'rgba(0,0,0,0.06)',
             color: currentQ === i ? 'var(--on-accent)' : answers[qq.id] ? 'var(--green)' : 'var(--muted)',
           }}>{i+1}</button>
         ))}
@@ -272,7 +272,7 @@ export default function TestTaker({ test, questions, isUnlocked, existingAttempt
                   }}>
                   <span style={{
                     width:'26px', height:'26px', borderRadius:'50%', flexShrink:0,
-                    border:`2px solid ${selected ? 'var(--accent-2)' : 'rgba(255,255,255,0.15)'}`,
+                    border:`2px solid ${selected ? 'var(--accent-2)' : 'rgba(0,0,0,0.15)'}`,
                     background: selected ? 'var(--accent-2-dim)' : 'transparent',
                     display:'flex', alignItems:'center', justifyContent:'center',
                     fontFamily:'var(--font-mono)', fontWeight:600, fontSize:'11px',

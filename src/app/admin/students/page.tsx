@@ -3,10 +3,9 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import type { Profile } from '@/types/database'
-import { Flame } from 'lucide-react'
+import { Flame, Users } from 'lucide-react'
 
 export default async function AdminStudentsPage() {
   const supabase = await createClient()
@@ -112,19 +111,15 @@ export default async function AdminStudentsPage() {
     }
   })
 
-  const roleColors: Record<string, string> = {
-    student:'var(--accent-2)', teacher:'#c3b1ea', parent:'#a9c0e8', admin:'var(--accent)',
+  const rolePillClass: Record<string, string> = {
+    teacher:'pill-teacher', parent:'pill-parent', admin:'pill-admin',
   }
-  const statusColors: Record<string, string> = {
-    active:'var(--green)', pending_payment:'var(--amber)', restricted:'var(--red)',
+  const statusPillClass: Record<string, string> = {
+    active:'pill-active', pending_payment:'pill-pending', restricted:'pill-restricted',
   }
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="All Users" subtitle={`${students.length} accounts registered`}/>
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="All Users" subtitle={`${students.length} accounts registered`}>
           <div className="card" style={{ padding:0, overflow:'hidden' }}>
             <div style={{ overflowX:'auto' }}>
               <table className="data-table">
@@ -141,6 +136,14 @@ export default async function AdminStudentsPage() {
                   </tr>
                 </thead>
                 <tbody>
+                  {enriched.length === 0 && (
+                    <tr>
+                      <td colSpan={8} style={{ textAlign:'center', padding:'40px', color:'var(--muted)' }}>
+                        <Users size={20} style={{ marginBottom:'8px', opacity:0.5 }}/>
+                        <div>No students yet</div>
+                      </td>
+                    </tr>
+                  )}
                   {enriched.map((s) => (
                     <tr key={s.id as string}>
                       <td>
@@ -160,18 +163,16 @@ export default async function AdminStudentsPage() {
                         </div>
                       </td>
                       <td>
-                        <span className="pill" style={{
-                          background:'rgba(255,255,255,0.06)',
-                          color: roleColors[s.role as string]??'var(--accent-2)',
-                        }}>
+                        <span className={`pill ${rolePillClass[s.role as string]??''}`} style={
+                          rolePillClass[s.role as string] ? undefined : { background:'rgba(0,0,0,0.06)', color:'var(--accent-2)' }
+                        }>
                           {String(s.role??'student')}
                         </span>
                       </td>
                       <td>
-                        <span className="pill" style={{
-                          background:'rgba(255,255,255,0.06)',
-                          color: statusColors[s.access_status as string]??'var(--muted)',
-                        }}>
+                        <span className={`pill ${statusPillClass[s.access_status as string]??''}`} style={
+                          statusPillClass[s.access_status as string] ? undefined : { background:'rgba(0,0,0,0.06)', color:'var(--muted)' }
+                        }>
                           {s.access_status==='pending_payment'?'pending':String(s.access_status??'')}
                         </span>
                       </td>
@@ -192,7 +193,7 @@ export default async function AdminStudentsPage() {
                       </td>
                       <td>
                         <span style={{fontSize:'13px',display:'inline-flex',alignItems:'center',gap:'4px'}}>
-                          <Flame size={12} color="var(--amber)"/> {s.streak_count as number ?? 0}
+                          <Flame size={12} color="var(--amber-text)"/> {s.streak_count as number ?? 0}
                         </span>
                       </td>
                       <td style={{fontSize:'11px',color:'var(--muted)',whiteSpace:'nowrap'}}>
@@ -207,8 +208,6 @@ export default async function AdminStudentsPage() {
               </table>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

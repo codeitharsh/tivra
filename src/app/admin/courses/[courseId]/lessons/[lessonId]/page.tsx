@@ -2,8 +2,7 @@ export const runtime = 'edge'
 
 import { redirect, notFound } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import LessonBlockEditorClient from './LessonBlockEditorClient'
 import type { Profile } from '@/types/database'
 import type { CourseBlock } from '@/types/course'
@@ -40,14 +39,8 @@ export default async function AdminLessonEditorPage({
   const lesson = lessonRow as { id: string; module_id: string; title: string; content: CourseBlock[] }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className="sidebar-layout-main" style={{ flex: 1, overflow: 'auto' }}>
-        <Topbar title={lesson.title} subtitle={`${course.title} — lesson content`}/>
-        <div style={{ padding: '28px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+    <AuthShell profile={profile} title={lesson.title} subtitle={`${course.title} — lesson content`} maxWidth={1200}>
           <LessonBlockEditorClient courseId={courseId} lessonId={lesson.id} initialContent={lesson.content ?? []}/>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

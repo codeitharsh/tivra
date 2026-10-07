@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import TestSchedulerClient from './TestSchedulerClient'
 import type { Profile } from '@/types/database'
 
@@ -51,15 +50,11 @@ export default async function AdminTestsPage({
   const tests = (testsRaw ?? []) as Record<string, unknown>[]
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar
-          title="Test Scheduling"
-          subtitle={selectedProgram ? `Set unlock dates and manually override tests · ${selectedProgram.name}` : 'No programmes found'}
-        />
-        <div style={{ padding:'28px', maxWidth:'1080px', margin:'0 auto', width:'100%' }}>
-
+    <AuthShell
+      profile={profile}
+      title="Test Scheduling"
+      subtitle={selectedProgram ? `Set unlock dates and manually override tests · ${selectedProgram.name}` : 'No programmes found'}
+    >
           {allPrograms.length > 1 && (
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
               {allPrograms.map(p => (
@@ -82,8 +77,6 @@ export default async function AdminTestsPage({
               No active programmes found. Create one in the admin panel first.
             </div>
           )}
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

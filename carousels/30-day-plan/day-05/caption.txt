@@ -1,0 +1,9 @@
+Your CS degree didn't teach you Git. Or Docker. Or CI/CD.
+
+College teaches you how computers work. Jobs need you to know how work gets shipped -- and nobody's pausing the sprint to teach you the basics.
+
+Learn the boring tools before you need them for a paycheck.
+
+What tool are you still missing?
+
+#Git #DevOps #ComputerScience #LearnToCode #TechCareers #SoftwareEngineering #TivraRiseBeyond

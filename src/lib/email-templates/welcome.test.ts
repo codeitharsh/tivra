@@ -11,7 +11,7 @@ describe('renderWelcomeEmail', () => {
     const { html } = renderWelcomeEmail({ fullName: 'Rahul Kumar', email: 'rahul@example.com' })
     expect(html).toContain('<!DOCTYPE html>')
     expect(html).toContain('Hi Rahul')
-    expect(html).toContain('TIVRA')
+    expect(html).toContain('alt="Tivra Learning"')
   })
 
   it('uses only the first name, not the full name, in the greeting', () => {
@@ -43,18 +43,18 @@ describe('renderWelcomeEmail', () => {
     expect(html).toContain('https://staging.tivra.in/programs')
   })
 
-  it('uses the real Tivra logo image at a public URL, not just a text wordmark', () => {
+  it('uses the real Tivra wordmark image at a public URL, not just text', () => {
     const { html } = renderWelcomeEmail({ fullName: 'Test', email: 'test@example.com' })
-    expect(html).toContain('<img src="https://tivra.in/tivra-logo-no-bg.png"')
-    expect(html).toContain('alt="Tivra"')
+    expect(html).toContain('<img src="https://tivra.in/brand/tivra-wordmark-full-dark.png"')
+    expect(html).toContain('alt="Tivra Learning"')
     // width/height must be set as HTML attributes (not just CSS) since
     // Outlook ignores CSS sizing on images
-    expect(html).toMatch(/<img[^>]+width="44"[^>]+height="44"/)
+    expect(html).toMatch(/<img[^>]+width="130"[^>]+height="54"/)
   })
 
   it('derives the logo URL from a custom websiteUrl for staging environments', () => {
     const { html } = renderWelcomeEmail({ fullName: 'Test', email: 'test@example.com', websiteUrl: 'https://staging.tivra.in' })
-    expect(html).toContain('https://staging.tivra.in/tivra-logo-no-bg.png')
+    expect(html).toContain('https://staging.tivra.in/brand/tivra-wordmark-full-dark.png')
   })
 
   it('includes the WhatsApp community link exactly as specified', () => {

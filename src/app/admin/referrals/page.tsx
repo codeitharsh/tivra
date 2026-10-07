@@ -3,8 +3,7 @@ export const runtime = 'edge'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/Sidebar'
-import Topbar from '@/components/Topbar'
+import AuthShell from '@/components/AuthShell'
 import ReferralClient from './ReferralClient'
 import type { Profile } from '@/types/database'
 
@@ -68,14 +67,8 @@ export default async function AdminReferralsPage() {
   const enrollments = ((enrollmentsRaw ?? []) as unknown as EnrollmentRow[])
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)' }}>
-      <Sidebar profile={profile}/>
-      <main className='sidebar-layout-main' style={{ flex:1, overflow:'auto' }}>
-        <Topbar title="Faculty Referrals" subtitle="Create referral codes, track enrollments and revenue per faculty"/>
-        <div style={{ padding:'28px', maxWidth:'1100px', margin:'0 auto', width:'100%' }}>
+    <AuthShell profile={profile} title="Faculty Referrals" subtitle="Create referral codes, track enrollments and revenue per faculty">
           <ReferralClient referrals={referrals} stats={stats} adminId={user.id} enrollments={enrollments}/>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

@@ -349,7 +349,7 @@ export default function AssessmentTaker({
             </div>
             {allAttempts.map((att, i) => (
               <div key={att.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                padding:'8px 0', borderBottom: i < allAttempts.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                padding:'8px 0', borderBottom: i < allAttempts.length-1 ? '1px solid rgba(0,0,0,0.04)' : 'none',
                 fontSize:'13px' }}>
                 <span style={{ color:'var(--muted)' }}>Attempt #{allAttempts.length - i}</span>
                 <span style={{ color:'var(--muted)', fontSize:'11px' }}>
@@ -405,7 +405,7 @@ export default function AssessmentTaker({
             fontFamily:'var(--font-mono)', fontWeight:600, fontSize:'11px',
             background: currentQ === i
               ? 'var(--accent)'
-              : answers[q.id] ? 'var(--green-dim)' : 'rgba(255,255,255,0.06)',
+              : answers[q.id] ? 'var(--green-dim)' : 'rgba(0,0,0,0.06)',
             color: currentQ === i ? 'var(--on-accent)' : answers[q.id] ? 'var(--green)' : 'var(--muted)',
           }}>{i+1}</button>
         ))}
@@ -439,7 +439,7 @@ export default function AssessmentTaker({
                   }}>
                   <span style={{
                     width:'26px', height:'26px', borderRadius:'50%', flexShrink:0,
-                    border:`2px solid ${selected ? 'var(--accent-2)' : 'rgba(255,255,255,0.15)'}`,
+                    border:`2px solid ${selected ? 'var(--accent-2)' : 'rgba(0,0,0,0.15)'}`,
                     background: selected ? 'var(--accent-2-dim)' : 'transparent',
                     display:'flex', alignItems:'center', justifyContent:'center',
                     fontFamily:'var(--font-mono)', fontWeight:600, fontSize:'11px',

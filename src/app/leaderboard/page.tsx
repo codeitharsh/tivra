@@ -99,7 +99,7 @@ export default async function LeaderboardPage() {
                   <div key={entry.id} style={{
                     display:'flex', alignItems:'center', gap:'14px',
                     padding:'14px 20px',
-                    borderBottom: i < ranked.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                    borderBottom: i < ranked.length - 1 ? '1px solid rgba(0,0,0,0.04)' : 'none',
                     background: isMe ? 'var(--accent-dim)' : 'transparent',
                   }}>
                     <div style={{

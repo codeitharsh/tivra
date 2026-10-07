@@ -272,7 +272,7 @@ export default function AssessmentManagerClient({
                                       <span key={oi} style={{
                                         fontSize:'11px', padding:'2px 8px', borderRadius:'6px',
                                         display:'inline-flex', alignItems:'center', gap:'4px',
-                                        background: isCorrect ? 'var(--green-dim)' : 'rgba(255,255,255,0.05)',
+                                        background: isCorrect ? 'var(--green-dim)' : 'rgba(0,0,0,0.05)',
                                         color: isCorrect ? 'var(--green)' : 'var(--muted)',
                                         border: `1px solid ${isCorrect ? 'rgba(74,222,128,0.2)' : 'transparent'}`,
                                       }}>
@@ -297,7 +297,7 @@ export default function AssessmentManagerClient({
                     {/* Add question form */}
                     <div style={{
                       padding:'18px', borderRadius:'var(--radius)',
-                      background:'var(--accent-2-dim)', border:'1px solid rgba(23,174,224,0.2)',
+                      background:'var(--accent-2-dim)', border:'1px solid rgba(74,63,224,0.2)',
                     }}>
                       <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'13px',
                         marginBottom:'14px', color:'var(--accent-2)', display:'flex', alignItems:'center', gap:'6px' }}>
