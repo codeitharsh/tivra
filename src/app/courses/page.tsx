@@ -1,26 +1,12 @@
 export const runtime = 'edge'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import AuthShell from '@/components/AuthShell'
 import PublicNav from '@/components/PublicNav'
-import { courseAssetUrl } from '@/lib/course-assets'
+import CourseCard, { type CourseCardData } from '@/components/course/CourseCard'
 import type { Profile } from '@/types/database'
-import { GraduationCap, Clock, ArrowRight, BarChart3 } from 'lucide-react'
-
-interface CourseRow {
-  id: string; slug: string; title: string; description: string | null
-  difficulty: string; estimated_duration_minutes: number | null; skills: string[]
-  cover_image_path: string | null
-  price_inr: number | null; original_price_inr: number | null
-}
-
-const DIFFICULTY_META: Record<string, { label: string; color: string; bg: string }> = {
-  beginner:     { label: 'Beginner',     color: 'var(--green-text)', bg: 'var(--green-dim)' },
-  intermediate: { label: 'Intermediate', color: 'var(--amber-text)', bg: 'var(--amber-dim)' },
-  advanced:     { label: 'Advanced',     color: 'var(--red-text)',   bg: 'var(--red-dim)' },
-}
+import { GraduationCap, Compass } from 'lucide-react'
 
 export default async function CoursesPage() {
   // Browsing is public — anyone can explore what's on offer (see
@@ -43,7 +29,7 @@ export default async function CoursesPage() {
     .eq('status', 'published')
     .order('display_order')
 
-  const courses = (coursesRaw ?? []) as CourseRow[]
+  const courses = (coursesRaw ?? []) as CourseCardData[]
 
   const courseIds = courses.map(c => c.id)
   const { data: enrolledRaw } = (user && courseIds.length > 0) ? await admin
@@ -55,14 +41,24 @@ export default async function CoursesPage() {
   const enrolledCourseIds = new Set(((enrolledRaw ?? []) as { course_id: string }[]).map(e => e.course_id))
 
   const body = (
-    <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
+    <div style={{ padding: '28px', maxWidth: '1240px', margin: '0 auto', width: '100%' }}>
 
-      <div className="banner banner-brand" style={{ marginBottom: '24px' }}>
-        <GraduationCap size={16} style={{ flexShrink: 0 }}/>
-        <div style={{ fontSize: '13px' }}>
-          <strong style={{ color: 'var(--text)' }}>Learn at your own pace</strong> — work through
-          lessons whenever you like, track your progress, and earn a certificate when you finish.
-        </div>
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{
+          fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: 'clamp(26px,3vw,36px)',
+          color: 'var(--text)', letterSpacing: '-0.02em', marginBottom: '10px',
+        }}>
+          Self-paced courses
+        </h1>
+        <p style={{ fontSize: '15px', color: 'var(--muted)', maxWidth: '560px', lineHeight: 1.6, marginBottom: '16px' }}>
+          Work through lessons whenever you like, track your progress, and earn a certificate when you finish.
+        </p>
+        <Link href="/explore" style={{
+          display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600,
+          color: 'var(--accent-2)', textDecoration: 'none',
+        }}>
+          <Compass size={14}/> Browse by skill, technology, or role →
+        </Link>
       </div>
 
       {courses.length === 0 ? (
@@ -71,72 +67,10 @@ export default async function CoursesPage() {
           <div style={{ fontSize: '14px' }}>No courses available yet. Check back soon.</div>
         </div>
       ) : (
-        <div className="r-grid-2">
-          {courses.map(c => {
-            const diff = DIFFICULTY_META[c.difficulty] ?? DIFFICULTY_META.beginner
-            const enrolled = enrolledCourseIds.has(c.id)
-            return (
-              <Link key={c.id} href={`/courses/${c.slug}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
-                <div className="card card-hover" style={{ padding: '22px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  {c.cover_image_path && (
-                    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: '14px' }}>
-                      <Image src={courseAssetUrl(c.cover_image_path)} alt={c.title} fill style={{ objectFit: 'cover', objectPosition: 'top' }}/>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <div style={{
-                      width: '32px', height: '32px', borderRadius: 'var(--radius-sm)', flexShrink: 0,
-                      background: 'var(--accent-2-dim)', color: 'var(--accent-2)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <GraduationCap size={16}/>
-                    </div>
-                    <span className="pill" style={{ background: diff.bg, color: diff.color }}>{diff.label}</span>
-                  </div>
-                  {c.price_inr && c.price_inr > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '10px' }}>
-                      {c.original_price_inr && c.original_price_inr > c.price_inr && (
-                        <span style={{ fontSize: '12px', color: 'var(--muted2)', textDecoration: 'line-through' }}>
-                          ₹{c.original_price_inr.toLocaleString('en-IN')}
-                        </span>
-                      )}
-                      <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', color: 'var(--text)' }}>
-                        ₹{c.price_inr.toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                  )}
-                  <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '17px', color: 'var(--text)', marginBottom: '8px' }}>
-                    {c.title}
-                  </div>
-                  {c.description && (
-                    <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.6, marginBottom: '14px', flex: 1 }}>
-                      {c.description}
-                    </p>
-                  )}
-                  {c.skills.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
-                      {c.skills.slice(0, 3).map(s => (
-                        <span key={s} style={{
-                          fontSize: '11px', padding: '3px 9px', borderRadius: '20px',
-                          background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--muted)',
-                        }}>{s}</span>
-                      ))}
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-                    {c.estimated_duration_minutes ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--muted2)' }}>
-                        <Clock size={12}/> {Math.round(c.estimated_duration_minutes / 60)}h
-                      </span>
-                    ) : <span/>}
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--accent-2)' }}>
-                      {enrolled ? <><BarChart3 size={13}/> Continue</> : <>View course <ArrowRight size={13}/></>}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            )
-          })}
+        <div className="r-grid-3">
+          {courses.map(c => (
+            <CourseCard key={c.id} course={c} enrolled={enrolledCourseIds.has(c.id)}/>
+          ))}
         </div>
       )}
     </div>

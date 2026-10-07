@@ -11,12 +11,11 @@ import WhatsAppBanner from '@/components/WhatsAppBanner'
 import type { Profile } from '@/types/database'
 import { PROGRAM_META, DEFAULT_PROGRAM_META } from '@/lib/program-meta'
 import { getCourseProgress } from '@/lib/course-progress'
-import { courseAssetUrl } from '@/lib/course-assets'
-import Image from 'next/image'
+import CourseCard, { type CourseCardData } from '@/components/course/CourseCard'
 import {
   BookOpen, ClipboardList, Target, Award, Flame, Video, Radio,
   TrendingUp, CreditCard, Trophy, Lock, CheckCircle2, ArrowRight,
-  GraduationCap, Compass, PlayCircle,
+  GraduationCap, Compass,
 } from 'lucide-react'
 
 export default async function DashboardPage({
@@ -256,14 +255,13 @@ export default async function DashboardPage({
   // is the Coursera/Udemy-style replacement for everyone else, naturally
   // taking over on its own as cohorts complete with no further code
   // change needed later.
-  type MyCourse = {
-    id: string; slug: string; title: string; coverImagePath: string | null
-    percent: number; lastLessonId: string | null; started: boolean
-  }
+  type MyCourse = { course: CourseCardData; percent: number; started: boolean }
   let myCourses: MyCourse[] = []
   let overallPercent = 0
   let certificatesList: { id: string; courseTitle: string; issuedAt: string }[] = []
-  let recommendedCourses: { id: string; slug: string; title: string; coverImagePath: string | null; difficulty: string }[] = []
+  let recommendedCourses: CourseCardData[] = []
+
+  const COURSE_CARD_FIELDS = 'id, slug, title, description, difficulty, estimated_duration_minutes, skills, cover_image_path, price_inr, original_price_inr, status'
 
   if (enrolledProgramIds.length === 0) {
     const [{ data: courseEnrollRaw }, { data: coursePurchasesRaw }, { data: pathPurchasesRaw }] = await Promise.all([
@@ -293,18 +291,15 @@ export default async function DashboardPage({
     ]))
 
     const { data: accessibleCoursesRaw } = accessibleCourseIds.length > 0 ? await admin
-      .from('courses').select('id, slug, title, cover_image_path, status').in('id', accessibleCourseIds) : { data: [] }
-    const accessibleCourses = ((accessibleCoursesRaw ?? []) as { id: string; slug: string; title: string; cover_image_path: string | null; status: string }[])
+      .from('courses').select(COURSE_CARD_FIELDS).in('id', accessibleCourseIds) : { data: [] }
+    const accessibleCourses = ((accessibleCoursesRaw ?? []) as (CourseCardData & { status: string })[])
       .filter(c => c.status === 'published')
 
     const progressList = await Promise.all(accessibleCourses.map(c => getCourseProgress(admin, user.id, c.id)))
 
     myCourses = accessibleCourses
       .map((c, i) => ({
-        id: c.id, slug: c.slug, title: c.title, coverImagePath: c.cover_image_path,
-        percent: progressList[i].percent,
-        lastLessonId: enrollMap.get(c.id) ?? null,
-        started: enrollMap.has(c.id),
+        course: c, percent: progressList[i].percent, started: enrollMap.has(c.id),
       }))
       .sort((a, b) => {
         // In-progress courses first (most actionable), then not-started,
@@ -331,10 +326,10 @@ export default async function DashboardPage({
     })
 
     const { data: recommendedRaw } = await admin
-      .from('courses').select('id, slug, title, cover_image_path, difficulty')
+      .from('courses').select(COURSE_CARD_FIELDS)
       .eq('status', 'published').order('display_order').limit(20)
     const accessibleSet = new Set(accessibleCourseIds)
-    recommendedCourses = ((recommendedRaw ?? []) as { id: string; slug: string; title: string; cover_image_path: string | null; difficulty: string }[])
+    recommendedCourses = ((recommendedRaw ?? []) as (CourseCardData & { status: string })[])
       .filter(c => !accessibleSet.has(c.id))
       .slice(0, 3)
   }
@@ -408,40 +403,10 @@ export default async function DashboardPage({
               </Link>
             </div>
           ) : (
-            <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
-              {myCourses.map(c => {
-                const href = c.lastLessonId ? `/courses/${c.slug}/learn/${c.lastLessonId}` : `/courses/${c.slug}`
-                const isComplete = c.percent === 100
-                return (
-                  <Link key={c.id} href={href} style={{ textDecoration:'none', display:'block' }}>
-                    <div className="module-item" style={{ background:'var(--card2)', border:'1px solid var(--border)' }}>
-                      {c.coverImagePath ? (
-                        <div style={{ position:'relative', width:'36px', height:'36px', borderRadius:'6px', overflow:'hidden', flexShrink:0 }}>
-                          <Image src={courseAssetUrl(c.coverImagePath)} alt="" fill style={{ objectFit:'cover' }}/>
-                        </div>
-                      ) : (
-                        <div className={`mod-icon ${isComplete ? 'mod-done' : 'mod-active'}`}>
-                          {isComplete ? <CheckCircle2 size={12}/> : <PlayCircle size={12}/>}
-                        </div>
-                      )}
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:'13px', fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                          {c.title}
-                        </div>
-                        <div style={{ display:'flex', alignItems:'center', gap:'8px', marginTop:'3px' }}>
-                          <div className="progress-track" style={{ flex:1, maxWidth:'120px' }}>
-                            <div className="progress-fill" style={{ width:`${c.percent}%` }}/>
-                          </div>
-                          <span style={{ fontSize:'10px', color:'var(--muted)', fontFamily:'var(--font-mono)' }}>{c.percent}%</span>
-                        </div>
-                      </div>
-                      <span style={{ fontSize:'11px', fontWeight:600, color:'var(--accent-2)', fontFamily:'var(--font-mono)', flexShrink:0 }}>
-                        {isComplete ? 'REVIEW →' : c.started ? 'CONTINUE →' : 'START →'}
-                      </span>
-                    </div>
-                  </Link>
-                )
-              })}
+            <div className="r-grid-3">
+              {myCourses.map(c => (
+                <CourseCard key={c.course.id} course={c.course} progressPercent={c.percent} enrolled={c.started}/>
+              ))}
             </div>
           )}
         </div>
@@ -519,24 +484,12 @@ export default async function DashboardPage({
             </div>
 
             {recommendedCourses.length > 0 && (
-              <div className="card">
+              <div>
                 <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px', marginBottom:'12px' }}>
                   Recommended for you
                 </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
-                  {recommendedCourses.map(c => (
-                    <Link key={c.id} href={`/courses/${c.slug}`} style={{ textDecoration:'none', display:'block' }}>
-                      <div className="module-item" style={{ background:'var(--card2)', border:'1px solid var(--border)' }}>
-                        <div className="mod-icon" style={{ background:'var(--accent-2-dim)', color:'var(--accent-2)' }}>
-                          <BookOpen size={12}/>
-                        </div>
-                        <div style={{ flex:1, fontSize:'13px', fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                          {c.title}
-                        </div>
-                        <ArrowRight size={13} style={{ color:'var(--muted)', flexShrink:0 }}/>
-                      </div>
-                    </Link>
-                  ))}
+                <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
+                  {recommendedCourses.map(c => <CourseCard key={c.id} course={c}/>)}
                 </div>
               </div>
             )}

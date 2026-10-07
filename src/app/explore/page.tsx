@@ -1,31 +1,14 @@
 export const runtime = 'edge'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import AuthShell from '@/components/AuthShell'
 import PublicNav from '@/components/PublicNav'
 import ExploreSearchBar from '@/components/explore/ExploreSearchBar'
-import { courseAssetUrl } from '@/lib/course-assets'
+import CourseCard, { type CourseCardData } from '@/components/course/CourseCard'
+import RoleBundleCard, { type RoleBundleCardData } from '@/components/career-paths/RoleBundleCard'
 import type { Profile } from '@/types/database'
-import { Compass, GraduationCap, Briefcase, Clock, ArrowRight, BarChart3, X } from 'lucide-react'
-
-interface CourseRow {
-  id: string; slug: string; title: string; description: string | null
-  difficulty: string; estimated_duration_minutes: number | null; skills: string[]
-  cover_image_path: string | null
-  price_inr: number | null; original_price_inr: number | null
-}
-interface PathRow {
-  id: string; slug: string; title: string; description: string | null
-  skills: string[]; price_inr: number | null; original_price_inr: number | null
-}
-
-const DIFFICULTY_META: Record<string, { label: string; color: string; bg: string }> = {
-  beginner:     { label: 'Beginner',     color: 'var(--green-text)', bg: 'var(--green-dim)' },
-  intermediate: { label: 'Intermediate', color: 'var(--amber-text)', bg: 'var(--amber-dim)' },
-  advanced:     { label: 'Advanced',     color: 'var(--red-text)',   bg: 'var(--red-dim)' },
-}
+import { GraduationCap, Briefcase, X } from 'lucide-react'
 
 function matchesQuery(q: string, ...fields: (string | null)[]): boolean {
   const needle = q.trim().toLowerCase()
@@ -58,8 +41,8 @@ export default async function ExplorePage({
       .eq('status', 'published').order('display_order'),
   ])
 
-  const allCourses = (coursesRaw ?? []) as CourseRow[]
-  const allPaths   = (pathsRaw ?? []) as PathRow[]
+  const allCourses = (coursesRaw ?? []) as CourseCardData[]
+  const allPaths   = (pathsRaw ?? []) as RoleBundleCardData[]
 
   const courseIds = allCourses.map(c => c.id)
   const { data: enrolledRaw } = (user && courseIds.length > 0) ? await admin
@@ -91,22 +74,24 @@ export default async function ExplorePage({
   }
 
   const body = (
-    <div style={{ padding: '28px', maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
+    <div style={{ padding: '28px', maxWidth: '1240px', margin: '0 auto', width: '100%' }}>
 
-      <div className="banner banner-brand" style={{ marginBottom: '20px' }}>
-        <Compass size={16} style={{ flexShrink: 0 }}/>
-        <div style={{ fontSize: '13px' }}>
-          <strong style={{ color: 'var(--text)' }}>Explore by skill, technology, or role</strong> — find a
-          single course, or a bundled career path with everything mandatory for the job.
-        </div>
-      </div>
-
-      <div style={{ marginBottom: '18px' }}>
+      <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 32px' }}>
+        <h1 style={{
+          fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: 'clamp(28px,3.5vw,40px)',
+          color: 'var(--text)', letterSpacing: '-0.02em', marginBottom: '12px',
+        }}>
+          What do you want to learn?
+        </h1>
+        <p style={{ fontSize: '15px', color: 'var(--muted)', lineHeight: 1.6, marginBottom: '24px' }}>
+          Explore by skill, technology, or role — find a single course, or a bundled
+          career path with everything mandatory for the job.
+        </p>
         <ExploreSearchBar initialQuery={q}/>
       </div>
 
       {allSkills.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '28px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '6px', marginBottom: '40px' }}>
           {skill && (
             <Link href={skillHref(skill)} className="pill" style={{
               background: 'var(--accent)', color: '#fff', textDecoration: 'none',
@@ -127,62 +112,20 @@ export default async function ExplorePage({
 
       {/* ── Browse by role ── */}
       {filteredPaths.length > 0 && (
-        <div style={{ marginBottom: '32px' }}>
-          <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '17px', color: 'var(--text)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Briefcase size={16} color="var(--accent-2)"/> Browse by role
+        <div style={{ marginBottom: '48px' }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '19px', color: 'var(--text)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Briefcase size={17} color="var(--accent-2)"/> Browse by role
           </div>
-          <div className="r-grid-2">
-            {filteredPaths.map(p => (
-              <Link key={p.id} href={`/explore/roles/${p.slug}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
-                <div className="card card-hover" style={{ padding: '22px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <div style={{
-                      width: '32px', height: '32px', borderRadius: 'var(--radius-sm)', flexShrink: 0,
-                      background: 'var(--accent-dim)', color: 'var(--accent)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <Briefcase size={16}/>
-                    </div>
-                    {p.price_inr ? (
-                      <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '14px', color: 'var(--text)' }}>
-                        ₹{p.price_inr.toLocaleString('en-IN')}
-                      </span>
-                    ) : (
-                      <span className="pill" style={{ background: 'var(--green-dim)', color: 'var(--green-text)' }}>Free</span>
-                    )}
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '17px', color: 'var(--text)', marginBottom: '8px' }}>
-                    {p.title}
-                  </div>
-                  {p.description && (
-                    <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.6, marginBottom: '14px', flex: 1 }}>
-                      {p.description}
-                    </p>
-                  )}
-                  {p.skills.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '14px' }}>
-                      {p.skills.slice(0, 4).map(s => (
-                        <span key={s} style={{
-                          fontSize: '11px', padding: '3px 9px', borderRadius: '20px',
-                          background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--muted)',
-                        }}>{s}</span>
-                      ))}
-                    </div>
-                  )}
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--accent-2)', marginTop: 'auto' }}>
-                    View career path <ArrowRight size={13}/>
-                  </span>
-                </div>
-              </Link>
-            ))}
+          <div className="r-grid-3">
+            {filteredPaths.map(p => <RoleBundleCard key={p.id} path={p}/>)}
           </div>
         </div>
       )}
 
       {/* ── Courses ── */}
       <div>
-        <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '17px', color: 'var(--text)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <GraduationCap size={16} color="var(--accent-2)"/> Courses
+        <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '19px', color: 'var(--text)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <GraduationCap size={17} color="var(--accent-2)"/> Courses
         </div>
 
         {filteredCourses.length === 0 && filteredPaths.length === 0 ? (
@@ -193,72 +136,10 @@ export default async function ExplorePage({
         ) : filteredCourses.length === 0 ? (
           <div style={{ fontSize: '13px', color: 'var(--muted)', padding: '12px 0' }}>No individual courses match — see the role bundle above.</div>
         ) : (
-          <div className="r-grid-2">
-            {filteredCourses.map(c => {
-              const diff = DIFFICULTY_META[c.difficulty] ?? DIFFICULTY_META.beginner
-              const enrolled = enrolledCourseIds.has(c.id)
-              return (
-                <Link key={c.id} href={`/courses/${c.slug}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
-                  <div className="card card-hover" style={{ padding: '22px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    {c.cover_image_path && (
-                      <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: '14px' }}>
-                        <Image src={courseAssetUrl(c.cover_image_path)} alt={c.title} fill style={{ objectFit: 'cover', objectPosition: 'top' }}/>
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-                      <div style={{
-                        width: '32px', height: '32px', borderRadius: 'var(--radius-sm)', flexShrink: 0,
-                        background: 'var(--accent-2-dim)', color: 'var(--accent-2)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <GraduationCap size={16}/>
-                      </div>
-                      <span className="pill" style={{ background: diff.bg, color: diff.color }}>{diff.label}</span>
-                    </div>
-                    {c.price_inr && c.price_inr > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '10px' }}>
-                        {c.original_price_inr && c.original_price_inr > c.price_inr && (
-                          <span style={{ fontSize: '12px', color: 'var(--muted2)', textDecoration: 'line-through' }}>
-                            ₹{c.original_price_inr.toLocaleString('en-IN')}
-                          </span>
-                        )}
-                        <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', color: 'var(--text)' }}>
-                          ₹{c.price_inr.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                    )}
-                    <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '17px', color: 'var(--text)', marginBottom: '8px' }}>
-                      {c.title}
-                    </div>
-                    {c.description && (
-                      <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.6, marginBottom: '14px', flex: 1 }}>
-                        {c.description}
-                      </p>
-                    )}
-                    {c.skills.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
-                        {c.skills.slice(0, 3).map(s => (
-                          <span key={s} style={{
-                            fontSize: '11px', padding: '3px 9px', borderRadius: '20px',
-                            background: 'var(--card2)', border: '1px solid var(--border)', color: 'var(--muted)',
-                          }}>{s}</span>
-                        ))}
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-                      {c.estimated_duration_minutes ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--muted2)' }}>
-                          <Clock size={12}/> {Math.round(c.estimated_duration_minutes / 60)}h
-                        </span>
-                      ) : <span/>}
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--accent-2)' }}>
-                        {enrolled ? <><BarChart3 size={13}/> Continue</> : <>View course <ArrowRight size={13}/></>}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
+          <div className="r-grid-3">
+            {filteredCourses.map(c => (
+              <CourseCard key={c.id} course={c} enrolled={enrolledCourseIds.has(c.id)}/>
+            ))}
           </div>
         )}
       </div>

@@ -398,6 +398,12 @@ select option { background: var(--bg); color: var(--text); }
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 
+/* ─── Rich course card (CourseCard.tsx) — bigger lift + image zoom ── */
+.course-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.course-card-link:hover .course-card { transform: translateY(-4px); box-shadow: 0 14px 32px rgba(0,0,0,0.12); }
+.course-card-link:hover .course-card-img { transform: scale(1.06); }
+.course-card-img { transition: transform 0.4s ease; }
+
 /* ─── Dark footer links ───────────────────────────────────── */
 .footer-link { color: var(--on-dark-soft); transition: color 0.15s ease; }
 .footer-link:hover { color: var(--on-dark); }

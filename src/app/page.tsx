@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import PublicNav from '@/components/PublicNav'
 import ProgrammeStack from '@/components/ProgrammeStack'
+import CourseCard, { type CourseCardData } from '@/components/course/CourseCard'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
 // ─────────────────────────────────────────────────────────────
@@ -165,7 +166,9 @@ function useStaggerReveal(refs: React.RefObject<(HTMLElement | null)[]>) {
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [programmes, setProgrammes] = useState<ProgramCard[]>([])
+  const [featuredCourses, setFeaturedCourses] = useState<CourseCardData[]>([])
   const heroRef = useRef<HTMLDivElement>(null)
+  const coursesRef = useRef<HTMLDivElement>(null)
   const introRef = useRef<HTMLDivElement>(null)
   const ctaRef = useRef<HTMLDivElement>(null)
   const pricingRef = useRef<HTMLDivElement>(null)
@@ -177,10 +180,15 @@ export default function HomePage() {
     fetch('/api/programs').then(r => r.json()).then(d => setProgrammes(d.programs ?? [])).catch(() => {})
   }, [])
 
+  useEffect(() => {
+    fetch('/api/featured-courses').then(r => r.json()).then(d => setFeaturedCourses(d.courses ?? [])).catch(() => {})
+  }, [])
+
   // The hero is already in view at load, so this fires (almost)
   // immediately rather than waiting for a scroll — a soft entrance
   // instead of the page just snapping fully in.
   useRevealOnScroll(heroRef, 0.05)
+  useRevealOnScroll(coursesRef)
   // "Introducing Tivra" and the CTA banner are each a single editorial
   // block, not a grid of cards — one reveal on the whole block reads
   // as premium restraint; animating each line individually would feel
@@ -312,6 +320,37 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ══════════════════════════════════════════════════
+          FEATURED COURSES — leads with the self-paced catalog,
+          right after the hero, so it's the first thing a visitor
+          sees after the fold rather than the live-cohort stack
+          further down the page.
+      ══════════════════════════════════════════════════ */}
+      {featuredCourses.length > 0 && (
+        <section ref={coursesRef} className="reveal" style={{
+          borderTop: '1px solid var(--border)',
+          padding: 'clamp(56px,7vw,96px) var(--space-container-x)',
+        }}>
+          <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '12px', marginBottom: '32px' }}>
+              <div>
+                <Eyebrow label="Self-Paced Courses"/>
+                <h2 style={{
+                  fontFamily: 'var(--font-serif), serif', fontWeight: 600, fontSize: 'var(--text-h2)',
+                  color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1.1,
+                }}>
+                  Learn at your own pace.
+                </h2>
+              </div>
+              <Link href="/explore" className="btn btn-ghost">Explore all courses <ArrowRight size={14}/></Link>
+            </div>
+            <div className="r-grid-3">
+              {featuredCourses.map(c => <CourseCard key={c.id} course={c}/>)}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ══════════════════════════════════════════════════
           SECTION 1 — INTRODUCING TIVRA
@@ -548,8 +587,8 @@ export default function HomePage() {
       ══════════════════════════════════════════════════ */}
       <section id="programs" style={{ borderTop:'1px solid var(--border)' }}>
         <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'clamp(64px,8vw,120px) var(--space-container-x) clamp(32px,5vw,56px)' }}>
-          <SH eyebrow="Our Programmes" title="Learning paths for every domain"
-            sub="Structured, career-focused programmes across cloud, full-stack, DevOps, data, and more. Each built around live instruction and real outcomes."
+          <SH eyebrow="Live Cohort Programmes" title="Our original live-instruction tracks"
+            sub="Cloud, full-stack, DevOps, data, and more — built around live instruction for students already enrolled. New enrollment now happens through self-paced courses and career paths above."
           />
         </div>
         <ProgrammeStack programmes={programmes}/>
