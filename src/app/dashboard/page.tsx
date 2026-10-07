@@ -10,9 +10,13 @@ import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 import WhatsAppBanner from '@/components/WhatsAppBanner'
 import type { Profile } from '@/types/database'
 import { PROGRAM_META, DEFAULT_PROGRAM_META } from '@/lib/program-meta'
+import { getCourseProgress } from '@/lib/course-progress'
+import { courseAssetUrl } from '@/lib/course-assets'
+import Image from 'next/image'
 import {
   BookOpen, ClipboardList, Target, Award, Flame, Video, Radio,
   TrendingUp, CreditCard, Trophy, Lock, CheckCircle2, ArrowRight,
+  GraduationCap, Compass, PlayCircle,
 } from 'lucide-react'
 
 export default async function DashboardPage({
@@ -244,6 +248,300 @@ export default async function DashboardPage({
   // destination once 2+ programmes are involved — individual cards
   // below still link correctly to their own programme).
   const primarySlug = enrolledProgramsList.length === 1 ? enrolledProgramsList[0].slug : null
+
+  // ── Self-paced dashboard data — only fetched when this student has no
+  // active cohort enrollment. Per the confirmed "finish out their cohort"
+  // decision, a currently-enrolled cohort student keeps seeing exactly
+  // today's dashboard (the branch above, byte-for-byte unchanged); this
+  // is the Coursera/Udemy-style replacement for everyone else, naturally
+  // taking over on its own as cohorts complete with no further code
+  // change needed later.
+  type MyCourse = {
+    id: string; slug: string; title: string; coverImagePath: string | null
+    percent: number; lastLessonId: string | null; started: boolean
+  }
+  let myCourses: MyCourse[] = []
+  let overallPercent = 0
+  let certificatesList: { id: string; courseTitle: string; issuedAt: string }[] = []
+  let recommendedCourses: { id: string; slug: string; title: string; coverImagePath: string | null; difficulty: string }[] = []
+
+  if (enrolledProgramIds.length === 0) {
+    const [{ data: courseEnrollRaw }, { data: coursePurchasesRaw }, { data: pathPurchasesRaw }] = await Promise.all([
+      admin.from('course_enrollments').select('course_id, last_lesson_id').eq('student_id', user.id),
+      admin.from('course_purchases').select('course_id').eq('student_id', user.id),
+      admin.from('career_path_purchases').select('career_path_id').eq('student_id', user.id),
+    ])
+
+    const enrollMap = new Map(
+      ((courseEnrollRaw ?? []) as { course_id: string; last_lesson_id: string | null }[]).map(e => [e.course_id, e.last_lesson_id])
+    )
+    const purchasedCourseIds = ((coursePurchasesRaw ?? []) as { course_id: string }[]).map(p => p.course_id)
+    const pathIds = ((pathPurchasesRaw ?? []) as { career_path_id: string }[]).map(p => p.career_path_id)
+
+    let bundleCourseIds: string[] = []
+    if (pathIds.length > 0) {
+      const { data: bundleLinksRaw } = await admin
+        .from('career_path_courses').select('course_id').in('career_path_id', pathIds)
+      bundleCourseIds = ((bundleLinksRaw ?? []) as { course_id: string }[]).map(l => l.course_id)
+    }
+
+    // "My Courses" is every course this student has access to — started,
+    // bought individually, or granted via a career-path bundle — not
+    // just the ones they've already clicked into.
+    const accessibleCourseIds = Array.from(new Set([
+      ...enrollMap.keys(), ...purchasedCourseIds, ...bundleCourseIds,
+    ]))
+
+    const { data: accessibleCoursesRaw } = accessibleCourseIds.length > 0 ? await admin
+      .from('courses').select('id, slug, title, cover_image_path, status').in('id', accessibleCourseIds) : { data: [] }
+    const accessibleCourses = ((accessibleCoursesRaw ?? []) as { id: string; slug: string; title: string; cover_image_path: string | null; status: string }[])
+      .filter(c => c.status === 'published')
+
+    const progressList = await Promise.all(accessibleCourses.map(c => getCourseProgress(admin, user.id, c.id)))
+
+    myCourses = accessibleCourses
+      .map((c, i) => ({
+        id: c.id, slug: c.slug, title: c.title, coverImagePath: c.cover_image_path,
+        percent: progressList[i].percent,
+        lastLessonId: enrollMap.get(c.id) ?? null,
+        started: enrollMap.has(c.id),
+      }))
+      .sort((a, b) => {
+        // In-progress courses first (most actionable), then not-started,
+        // then fully completed — so "continue learning" is always what a
+        // student sees first.
+        const rank = (x: MyCourse) => (x.percent > 0 && x.percent < 100) ? 0 : x.percent === 0 ? 1 : 2
+        return rank(a) - rank(b)
+      })
+
+    overallPercent = myCourses.length > 0
+      ? Math.round(myCourses.reduce((s, c) => s + c.percent, 0) / myCourses.length)
+      : 0
+
+    const { data: completionsRaw } = await admin
+      .from('course_completions')
+      .select('id, course_id, issued_at, courses!course_id(title)')
+      .eq('student_id', user.id).eq('is_revoked', false)
+      .order('issued_at', { ascending: false })
+
+    type CompletionRow = { id: string; course_id: string; issued_at: string; courses: { title: string } | { title: string }[] | null }
+    certificatesList = ((completionsRaw ?? []) as CompletionRow[]).map(c => {
+      const course = Array.isArray(c.courses) ? (c.courses[0] ?? null) : c.courses
+      return { id: c.id, courseTitle: course?.title ?? 'Course', issuedAt: c.issued_at }
+    })
+
+    const { data: recommendedRaw } = await admin
+      .from('courses').select('id, slug, title, cover_image_path, difficulty')
+      .eq('status', 'published').order('display_order').limit(20)
+    const accessibleSet = new Set(accessibleCourseIds)
+    recommendedCourses = ((recommendedRaw ?? []) as { id: string; slug: string; title: string; cover_image_path: string | null; difficulty: string }[])
+      .filter(c => !accessibleSet.has(c.id))
+      .slice(0, 3)
+  }
+
+  if (enrolledProgramsList.length === 0) {
+    return (
+      <AuthShell profile={p} title="Dashboard" subtitle={`Welcome back, ${p.full_name?.split(' ')[0] ?? 'Student'}`}>
+        {showPayBanner && (
+          <div className="banner banner-warning">
+            <CreditCard size={18} style={{ flexShrink:0 }}/>
+            <div style={{ flex:1 }}>
+              {ENROLLMENT_OPEN ? (
+                <><strong>Payment pending.</strong> Submit your payment details so our team can activate your account. Usually done within 24 hours.</>
+              ) : (
+                <><strong>Enrollments will start soon.</strong> We&apos;ll notify you when payments reopen — check back soon.</>
+              )}
+            </div>
+            {ENROLLMENT_OPEN && (
+              <Link href="/payment" className="btn btn-primary"
+                style={{ fontSize:'12px', padding:'8px 16px', flexShrink:0 }}>
+                Submit Payment <ArrowRight size={13}/>
+              </Link>
+            )}
+          </div>
+        )}
+
+        <div className="r-grid-4" style={{ marginBottom:'20px' }}>
+          {[
+            { label:'Overall progress',     value:`${overallPercent}%`, color:'var(--accent)',   bar:overallPercent, icon:TrendingUp },
+            { label:'Courses in progress',  value:String(myCourses.filter(c => c.percent > 0 && c.percent < 100).length), color:'var(--accent-2)', bar:null, icon:BookOpen },
+            { label:'Courses completed',    value:String(myCourses.filter(c => c.percent === 100).length), color:'var(--green)', bar:null, icon:Trophy },
+            { label:'Streak',               value:String(streak), color:'var(--amber)', bar:null, sub:'Days in a row', icon:Flame },
+          ].map(s => (
+            <div key={s.label} className="stat-card">
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'8px' }}>
+                <div className="stat-label" style={{ marginBottom:0 }}>{s.label}</div>
+                <s.icon size={14} color="var(--muted2)"/>
+              </div>
+              <div className="stat-value" style={{ color:s.color }}>{s.value}</div>
+              {s.bar !== null && s.bar !== undefined && (
+                <div className="progress-track" style={{ marginTop:'10px' }}>
+                  <div className="progress-fill" style={{ width:`${s.bar}%`, background:s.color }}/>
+                </div>
+              )}
+              {s.sub && <div style={{ fontSize:'11px', color:'var(--muted)', marginTop:'6px' }}>{s.sub}</div>}
+            </div>
+          ))}
+        </div>
+
+        <div className="card" style={{ marginBottom:'20px' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'14px' }}>
+            <span style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px' }}>My Courses</span>
+            <Link href="/explore" style={{ fontSize:'11px', color:'var(--accent-2)', textDecoration:'none', fontFamily:'var(--font-mono)' }}>
+              EXPLORE MORE →
+            </Link>
+          </div>
+
+          {myCourses.length === 0 ? (
+            <div style={{ textAlign:'center', padding:'32px 0' }}>
+              <GraduationCap size={26} color="var(--muted2)" style={{ marginBottom:'10px' }}/>
+              <div style={{ fontSize:'13px', color:'var(--muted)', marginBottom:'14px' }}>
+                You haven&apos;t started a course yet.
+              </div>
+              <Link href="/explore" className="btn btn-primary" style={{ fontSize:'13px' }}>
+                <Compass size={13}/> Explore courses
+              </Link>
+            </div>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+              {myCourses.map(c => {
+                const href = c.lastLessonId ? `/courses/${c.slug}/learn/${c.lastLessonId}` : `/courses/${c.slug}`
+                const isComplete = c.percent === 100
+                return (
+                  <Link key={c.id} href={href} style={{ textDecoration:'none', display:'block' }}>
+                    <div className="module-item" style={{ background:'var(--card2)', border:'1px solid var(--border)' }}>
+                      {c.coverImagePath ? (
+                        <div style={{ position:'relative', width:'36px', height:'36px', borderRadius:'6px', overflow:'hidden', flexShrink:0 }}>
+                          <Image src={courseAssetUrl(c.coverImagePath)} alt="" fill style={{ objectFit:'cover' }}/>
+                        </div>
+                      ) : (
+                        <div className={`mod-icon ${isComplete ? 'mod-done' : 'mod-active'}`}>
+                          {isComplete ? <CheckCircle2 size={12}/> : <PlayCircle size={12}/>}
+                        </div>
+                      )}
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:'13px', fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {c.title}
+                        </div>
+                        <div style={{ display:'flex', alignItems:'center', gap:'8px', marginTop:'3px' }}>
+                          <div className="progress-track" style={{ flex:1, maxWidth:'120px' }}>
+                            <div className="progress-fill" style={{ width:`${c.percent}%` }}/>
+                          </div>
+                          <span style={{ fontSize:'10px', color:'var(--muted)', fontFamily:'var(--font-mono)' }}>{c.percent}%</span>
+                        </div>
+                      </div>
+                      <span style={{ fontSize:'11px', fontWeight:600, color:'var(--accent-2)', fontFamily:'var(--font-mono)', flexShrink:0 }}>
+                        {isComplete ? 'REVIEW →' : c.started ? 'CONTINUE →' : 'START →'}
+                      </span>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="r-split" style={{ marginBottom:'20px' }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
+            <div className="card">
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'14px' }}>
+                <span style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px' }}>Certificates</span>
+                {certificatesList.length > 0 && (
+                  <Link href="/certificates" style={{ fontSize:'11px', color:'var(--accent-2)', textDecoration:'none', fontFamily:'var(--font-mono)' }}>
+                    VIEW ALL →
+                  </Link>
+                )}
+              </div>
+              {certificatesList.length === 0 ? (
+                <div style={{ fontSize:'13px', color:'var(--muted)', textAlign:'center', padding:'12px 0' }}>
+                  Complete every required lesson in a course to earn your certificate.
+                </div>
+              ) : (
+                <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                  {certificatesList.slice(0, 3).map(cert => (
+                    <div key={cert.id} style={{
+                      display:'flex', alignItems:'center', gap:'10px', padding:'10px 12px',
+                      background:'var(--card2)', border:'1px solid var(--border)', borderRadius:'var(--radius-sm)',
+                    }}>
+                      <div style={{
+                        width:'28px', height:'28px', borderRadius:'6px', flexShrink:0,
+                        background:'var(--green-dim)', color:'var(--green-text)',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                      }}><Award size={14}/></div>
+                      <div style={{ flex:1, minWidth:0, fontSize:'13px', fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {cert.courseTitle}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
+            <div className="card">
+              <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'12px' }}>
+                <div style={{
+                  width:'40px', height:'40px', borderRadius:'8px', flexShrink:0,
+                  background:'var(--amber-dim)', color:'var(--amber)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  <Flame size={19}/>
+                </div>
+                <div>
+                  <div className="stat-value" style={{ fontSize:'22px', color:'var(--amber)' }}>{streak}</div>
+                  <div className="stat-label" style={{ marginBottom:0 }}>Day streak</div>
+                </div>
+              </div>
+              <div style={{ fontSize:'12px', color:'var(--muted)', marginBottom:'10px' }}>
+                {streak >= 30 ? 'One month strong — unstoppable.'
+                 : streak >= 14 ? 'Two weeks strong, keep going.'
+                 : streak >= 7  ? 'A full week — nice momentum.'
+                 : streak > 0   ? 'Keep it up.'
+                 : 'Start your streak today.'}
+              </div>
+              <div style={{ display:'flex', gap:'5px' }}>
+                {streakDots.map((done, i) => (
+                  <div key={i} style={{
+                    flex:1, height:'4px', borderRadius:'2px',
+                    background: done ? 'var(--amber)' : 'rgba(0,0,0,0.08)',
+                  }}/>
+                ))}
+              </div>
+              <div style={{ fontSize:'10px', color:'var(--muted2)', marginTop:'6px', fontFamily:'var(--font-mono)' }}>
+                MON – SUN THIS WEEK
+              </div>
+            </div>
+
+            {recommendedCourses.length > 0 && (
+              <div className="card">
+                <div style={{ fontFamily:'var(--font-serif)', fontWeight:600, fontSize:'15px', marginBottom:'12px' }}>
+                  Recommended for you
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                  {recommendedCourses.map(c => (
+                    <Link key={c.id} href={`/courses/${c.slug}`} style={{ textDecoration:'none', display:'block' }}>
+                      <div className="module-item" style={{ background:'var(--card2)', border:'1px solid var(--border)' }}>
+                        <div className="mod-icon" style={{ background:'var(--accent-2-dim)', color:'var(--accent-2)' }}>
+                          <BookOpen size={12}/>
+                        </div>
+                        <div style={{ flex:1, fontSize:'13px', fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {c.title}
+                        </div>
+                        <ArrowRight size={13} style={{ color:'var(--muted)', flexShrink:0 }}/>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <WhatsAppBanner/>
+          </div>
+        </div>
+      </AuthShell>
+    )
+  }
 
   return (
     <AuthShell profile={p} title="Dashboard" subtitle={`Welcome back, ${p.full_name?.split(' ')[0] ?? 'Student'}`}>
