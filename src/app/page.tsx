@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
-  Video, FlaskConical, ClipboardList, Award, MessageCircle,
+  FlaskConical, ClipboardList, Award,
   Target, FileCheck, MessagesSquare,
   Clock, Plus, ArrowRight, Library, GraduationCap,
 } from 'lucide-react'
@@ -72,16 +72,15 @@ function SH({ eyebrow, title, sub }: { eyebrow: string; title: React.ReactNode; 
 // DATA (content unchanged — presentation only)
 // ─────────────────────────────────────────────────────────────
 
-// Trimmed from 8 to the 5 that most directly support the "real careers"
-// claim — the rest (progress dashboard, streaks, parent access) are real
-// platform features but belong to the product itself, not the pitch for
-// why the programme leads somewhere.
+// Trimmed to the 5 that most directly support the "real careers" claim —
+// rewritten for the self-paced platform (courses + career-path bundles),
+// the primary product now, rather than the original live-cohort pitch.
 const FEATURES = [
-  { icon:Video,          title:'Live Instructor Classes',  desc:'Weekly live sessions with a real teacher. Ask questions in real time. Every session recorded for replay inside the platform.' },
+  { icon:GraduationCap,  title:'Learn On Your Schedule',    desc:'Every lesson is on-demand — start, pause, and resume whenever works for you. No fixed class times to work around.' },
   { icon:FlaskConical,   title:'Real Hands-On Projects',    desc:'Practice on actual tools and platforms with guided walkthroughs — not just slides and quizzes.' },
-  { icon:ClipboardList,  title:'Weekly Tests',              desc:'Time-gated quizzes released on a schedule to keep your cohort in sync and your understanding sharp.' },
-  { icon:Award,          title:'Verified Certificates',     desc:'Auto-issued when you score ≥75% on phase assessments. Each certificate has a unique public verification URL.' },
-  { icon:MessageCircle,  title:'Doubt Corner',              desc:'Post questions tagged to specific modules. Your teacher answers directly in the platform — no WhatsApp chaos.' },
+  { icon:ClipboardList,  title:'Graded Module Tests',       desc:'Each module ends with a short test, and a final assessment covers the whole course — so completion actually means something.' },
+  { icon:Award,          title:'Verified Certificates',     desc:'Issued automatically once you pass every module test and the final assessment. Each certificate has a unique public verification URL.' },
+  { icon:Target,         title:'Role-Based Career Paths',   desc:'Bundle every course mandatory for a role — like Data Analyst or Full-Stack Developer — into one path, one purchase.' },
 ]
 
 interface ProgramCard {
@@ -91,27 +90,27 @@ interface ProgramCard {
 }
 
 const FAQS = [
-  ['Who are these programmes for?',
-   'Students, freshers, and career-switchers targeting roles in tech. No prior experience needed — every programme starts from the fundamentals.'],
+  ['Who are these courses for?',
+   'Students, freshers, and career-switchers targeting roles in tech. No prior experience needed — every course starts from the fundamentals, and some are free to start.'],
+  ['How does pricing work?',
+   'Buy a single course at its own price, or buy a career path — a bundle of every course mandatory for a role, like Data Analyst or Full-Stack Developer — in one payment that unlocks all of them at once.'],
+  ['Is the learning really self-paced?',
+   'Yes. There\'s no schedule to work around — start a lesson, pause, and resume whenever works for you. Your progress and "continue where you left off" are saved automatically.'],
   ['What certifications will I receive?',
-   'Tivra issues a verified digital certificate for each phase you complete. Cloud programmes also prepare you for official vendor certifications (AWS, etc.).'],
-  ['How are live classes conducted?',
-   'Sessions are hosted online via our integrated video platform. Each session is recorded and available for replay with automatic attendance tracking.'],
-  ['What happens if I fail an assessment?',
-   'No stress. Retake after a 24-hour cooldown — unlimited attempts. The platform shows you exactly what to review before trying again.'],
-  ['Is the learning self-paced or scheduled?',
-   'Both. Notes and recorded content are self-paced. Live classes run weekly on a fixed schedule. Tests unlock on set dates to keep the cohort together.'],
+   'Tivra issues a verified digital certificate once you complete every required lesson and pass every module test plus the final assessment. Each certificate has a unique public verification URL.'],
+  ['What happens if I fail a module test?',
+   'No stress — retake it as many times as you need. The platform shows you exactly what to review before trying again.'],
   ['How quickly is my account activated after payment?',
-   'Razorpay payments activate your account instantly. Manual payment submissions are verified by our team within 24 hours on working days.'],
-  ['Is there a placement guarantee?',
-   'We prepare you thoroughly — structured curriculum, real projects, verified certificates, and interview guidance. Placements depend on your effort and the market.'],
+   'Razorpay payments unlock your course or career path instantly — no waiting, no manual review.'],
+  ['Do you still offer live cohort programmes?',
+   'Existing enrolled students keep full access to their live programme until it finishes. New enrollment now happens through self-paced courses and career paths instead.'],
 ]
 
 const TRUST_SIGNALS = [
   { icon:Target,         label:'Industry-aligned curriculum' },
-  { icon:Video,          label:'Live instructor-led sessions' },
+  { icon:GraduationCap,  label:'Self-paced, learn anytime' },
   { icon:FileCheck,      label:'Verified digital certificates' },
-  { icon:MessagesSquare, label:'1-on-1 doubt support' },
+  { icon:MessagesSquare, label:'Role-based career paths' },
 ]
 
 // ─────────────────────────────────────────────────────────────
@@ -167,6 +166,8 @@ export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [programmes, setProgrammes] = useState<ProgramCard[]>([])
   const [featuredCourses, setFeaturedCourses] = useState<CourseCardData[]>([])
+  const [totalCourses, setTotalCourses] = useState<number | null>(null)
+  const [totalPaths, setTotalPaths] = useState<number | null>(null)
   const heroRef = useRef<HTMLDivElement>(null)
   const coursesRef = useRef<HTMLDivElement>(null)
   const introRef = useRef<HTMLDivElement>(null)
@@ -181,7 +182,11 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/featured-courses').then(r => r.json()).then(d => setFeaturedCourses(d.courses ?? [])).catch(() => {})
+    fetch('/api/featured-courses').then(r => r.json()).then(d => {
+      setFeaturedCourses(d.courses ?? [])
+      setTotalCourses(typeof d.totalCourses === 'number' ? d.totalCourses : null)
+      setTotalPaths(typeof d.totalPaths === 'number' ? d.totalPaths : null)
+    }).catch(() => {})
   }, [])
 
   // The hero is already in view at load, so this fires (almost)
@@ -291,19 +296,28 @@ export default function HomePage() {
             }}>Status</div>
 
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:'16px' }}>
+              <span style={{ fontSize:'12px', color:'var(--muted)' }}>Courses</span>
+              <span style={{ fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'18px', color:'var(--text)' }}>
+                {totalCourses !== null && totalCourses > 0 ? totalCourses : '—'}
+              </span>
+            </div>
+
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:'16px' }}>
+              <span style={{ fontSize:'12px', color:'var(--muted)' }}>Career Paths</span>
+              <span style={{ fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'18px', color:'var(--text)' }}>
+                {totalPaths !== null && totalPaths > 0 ? totalPaths : '—'}
+              </span>
+            </div>
+
+            <div className="tick-rule" style={{ margin:'16px 0' }}/>
+
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:'16px' }}>
               <span style={{ fontSize:'12px', color:'var(--muted)' }}>Programme Enrollment</span>
               <span style={{ display:'flex', alignItems:'center', gap:'6px' }}>
                 <span className={`pulse-dot ${ENROLLMENT_OPEN ? 'pulse-green' : 'pulse-red'}`}/>
                 <span style={{ fontFamily:'var(--font-mono), monospace', fontSize:'12px', color:'var(--text)' }}>
                   {ENROLLMENT_OPEN ? 'OPEN' : 'CLOSED'}
                 </span>
-              </span>
-            </div>
-
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:'16px' }}>
-              <span style={{ fontSize:'12px', color:'var(--muted)' }}>Programmes</span>
-              <span style={{ fontFamily:'var(--font-serif), serif', fontWeight:600, fontSize:'18px', color:'var(--text)' }}>
-                {programmes.length > 0 ? programmes.length : '—'}
               </span>
             </div>
 
@@ -377,17 +391,17 @@ export default function HomePage() {
                 fontSize:'clamp(14px,1.5vw,17px)', color:'var(--muted)',
                 lineHeight:1.75, marginBottom:'32px', maxWidth:'460px',
               }}>
-                Through research, structured curriculum, and live instruction
+                Through research and structured, self-paced curriculum
                 we help ambitious students realise their full potential —
                 earning credentials that open real doors in the technology industry.
               </p>
               <Link href="/about" className="btn btn-ghost">About Our Platform</Link>
               <div style={{ display:'flex', flexDirection:'column', gap:'14px', marginTop:'32px' }}>
                 {[
-                  { icon:Video,         t:'Live classes every week, no pre-recorded lectures' },
-                  { icon:ClipboardList, t:'Weekly tests keep your knowledge sharp & accountable' },
+                  { icon:GraduationCap, t:'Self-paced lessons you can start today, no waitlist' },
+                  { icon:ClipboardList, t:'Module tests keep your knowledge sharp & accountable' },
                   { icon:Award,         t:'Verifiable certificates with unique public URLs' },
-                  { icon:MessageCircle, t:'Doubt resolution directly from your teacher' },
+                  { icon:Target,        t:'Role-based career paths, bundled for one purchase' },
                 ].map(f => (
                   <div key={f.t} style={{ display:'flex', alignItems:'flex-start', gap:'12px', fontSize:'13px', color:'var(--muted)' }}>
                     <span style={{
@@ -616,10 +630,9 @@ export default function HomePage() {
             fontSize:'clamp(15px,1.7vw,18px)', color:'var(--muted)',
             lineHeight:1.8, marginBottom:'56px',
           }}>
-            Every learner&apos;s journey is different. We keep pricing transparent,
-            one-time, and tied directly to the outcomes we deliver — no
-            subscriptions, no hidden tiers, no upsells along the way. Explore
-            each programme to see exactly what&apos;s included before you decide.
+            Buy a single course, or bundle everything mandatory for a role into
+            one career path — either way it&apos;s a one-time payment, no
+            subscriptions, no hidden tiers, no upsells along the way.
           </p>
 
           <div className="tick-rule" style={{ maxWidth:'140px', margin:'0 auto 56px' }}/>
@@ -629,9 +642,9 @@ export default function HomePage() {
             textAlign:'left', marginBottom:'56px',
           }} className="pricing-steps">
             {[
-              ['01', 'Choose a programme', 'Every programme lists its full price up front — no calls, no quotes, no back-and-forth.'],
-              ['02', 'Pay once, in full', 'A single payment covers the entire programme duration. Nothing recurring, ever.'],
-              ['03', 'Nothing else to pay', 'Live classes, notes, tests, and your certificate are included from day one.'],
+              ['01', 'Pick a course or a path', 'Every course and career path lists its full price up front — no calls, no quotes, no back-and-forth.'],
+              ['02', 'Pay once, in full', 'A single payment unlocks the course (or every course in the path). Nothing recurring, ever.'],
+              ['03', 'Nothing else to pay', 'Lessons, module tests, the final assessment, and your certificate are included from day one.'],
             ].map(([n, t, d]) => (
               <div key={n}>
                 <div style={{ fontFamily:'var(--font-mono), monospace', fontSize:'11px', color:'var(--accent-2)', letterSpacing:'0.1em', marginBottom:'10px' }}>{n}</div>
@@ -642,19 +655,18 @@ export default function HomePage() {
           </div>
 
           <p style={{ fontSize:'13px', color:'var(--muted2)', lineHeight:1.75, maxWidth:'480px', margin:'0 auto 40px' }}>
-            If cost is standing between you and a programme, reach out — we work
-            with students and institutions on scholarships and partnerships on
-            a case-by-case basis at{' '}
+            Some courses are free to start — no payment at all. If cost is standing
+            between you and a paid course or path, reach out at{' '}
             <a href="mailto:contact@tivra.in" style={{ color:'var(--muted)', textDecoration:'underline' }}>contact@tivra.in</a>.
           </p>
 
-          <Link href="/programs" style={{
+          <Link href="/explore" style={{
             display:'inline-flex', alignItems:'center', gap:'8px',
             fontFamily:'var(--font-sans), sans-serif', fontWeight:600, fontSize:'14px',
             color:'var(--text)', textDecoration:'none',
             borderBottom:'1px solid var(--border2)', paddingBottom:'3px',
           }}>
-            Explore Programmes <ArrowRight size={14}/>
+            Explore Courses & Career Paths <ArrowRight size={14}/>
           </Link>
         </div>
       </section>
@@ -757,8 +769,8 @@ export default function HomePage() {
             <div style={{
               fontSize:'11px', fontFamily:'var(--font-mono), monospace', letterSpacing:'0.12em',
               textTransform:'uppercase', color:'var(--on-dark-soft)', marginBottom:'14px',
-            }}>Programmes</div>
-            {[['Cloud LaunchPad','/programs'],['Cloud Architect','/programs'],['Full Stack Dev','/programs'],['DevOps & CI/CD','/programs']].map(([l,h]) => (
+            }}>Learn</div>
+            {[['Explore','/explore'],['Courses','/courses'],['Handwritten Notes','/free-notes'],['Live Cohort Programmes','/programs']].map(([l,h]) => (
               <Link key={l} href={h} className="footer-link" style={{ display:'block', fontSize:'13px', textDecoration:'none', marginBottom:'8px' }}>{l}</Link>
             ))}
           </div>

@@ -16,19 +16,22 @@ function adminSB() {
 export async function GET(): Promise<Response> {
   try {
     const sb = adminSB()
-    const { data, error } = await sb
-      .from('courses')
-      .select('id, slug, title, description, difficulty, estimated_duration_minutes, skills, cover_image_path, price_inr, original_price_inr')
-      .eq('status', 'published')
-      .order('display_order', { ascending: true })
-      .limit(6)
+    const [{ data, error }, { count: totalCourses }, { count: totalPaths }] = await Promise.all([
+      sb.from('courses')
+        .select('id, slug, title, description, difficulty, estimated_duration_minutes, skills, cover_image_path, price_inr, original_price_inr')
+        .eq('status', 'published')
+        .order('display_order', { ascending: true })
+        .limit(6),
+      sb.from('courses').select('*', { count: 'exact', head: true }).eq('status', 'published'),
+      sb.from('career_paths').select('*', { count: 'exact', head: true }).eq('status', 'published'),
+    ])
 
     if (error) {
       console.error('[api/featured-courses] Query failed:', error.message)
       return Response.json({ error: 'Could not load courses.' }, { status: 500 })
     }
 
-    return Response.json({ courses: data ?? [] })
+    return Response.json({ courses: data ?? [], totalCourses: totalCourses ?? 0, totalPaths: totalPaths ?? 0 })
 
   } catch (err) {
     console.error('[api/featured-courses] Unexpected error:', err)
