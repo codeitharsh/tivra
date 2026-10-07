@@ -84,10 +84,10 @@ export default async function CareerPathLandingPage({
         {path.skills.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '22px' }}>
             {path.skills.map(s => (
-              <span key={s} style={{
-                fontSize: '12px', padding: '4px 11px', borderRadius: '20px',
+              <Link key={s} href={`/explore?skill=${encodeURIComponent(s)}`} style={{
+                fontSize: '12px', padding: '4px 11px', borderRadius: '20px', textDecoration: 'none',
                 background: 'var(--accent-2-dim)', color: 'var(--accent-2)',
-              }}>{s}</span>
+              }}>{s}</Link>
             ))}
           </div>
         )}
