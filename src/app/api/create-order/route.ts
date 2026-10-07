@@ -18,7 +18,7 @@ const CREATE_ORDER_LIMIT = { windowMs: 10 * 60 * 1000, max: 15 }
 export async function POST(req: Request): Promise<Response> {
   try {
     if (!ENROLLMENT_OPEN) {
-      return Response.json({ error: 'Enrollments will start soon.' }, { status: 403 })
+      return Response.json({ error: 'New programme enrollment is closed. Explore our self-paced courses instead.' }, { status: 403 })
     }
 
     // ── Authenticate the caller — the order is tied to THIS verified

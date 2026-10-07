@@ -349,13 +349,18 @@ export default async function DashboardPage({
               {ENROLLMENT_OPEN ? (
                 <><strong>Payment pending.</strong> Submit your payment details so our team can activate your account. Usually done within 24 hours.</>
               ) : (
-                <><strong>Enrollments will start soon.</strong> We&apos;ll notify you when payments reopen — check back soon.</>
+                <><strong>New programme enrollment is closed.</strong> Explore our self-paced courses and career paths instead.</>
               )}
             </div>
-            {ENROLLMENT_OPEN && (
+            {ENROLLMENT_OPEN ? (
               <Link href="/payment" className="btn btn-primary"
                 style={{ fontSize:'12px', padding:'8px 16px', flexShrink:0 }}>
                 Submit Payment <ArrowRight size={13}/>
+              </Link>
+            ) : (
+              <Link href="/explore" className="btn btn-primary"
+                style={{ fontSize:'12px', padding:'8px 16px', flexShrink:0 }}>
+                Explore Courses <ArrowRight size={13}/>
               </Link>
             )}
           </div>
@@ -552,13 +557,18 @@ export default async function DashboardPage({
                 {ENROLLMENT_OPEN ? (
                   <><strong>Payment pending.</strong> Submit your payment details so our team can activate your account. Usually done within 24 hours.</>
                 ) : (
-                  <><strong>Enrollments will start soon.</strong> We&apos;ll notify you when payments reopen — check back soon.</>
+                  <><strong>New programme enrollment is closed.</strong> Explore our self-paced courses and career paths instead.</>
                 )}
               </div>
-              {ENROLLMENT_OPEN && (
+              {ENROLLMENT_OPEN ? (
                 <Link href="/payment" className="btn btn-primary"
                   style={{ fontSize:'12px', padding:'8px 16px', flexShrink:0 }}>
                   Submit Payment <ArrowRight size={13}/>
+                </Link>
+              ) : (
+                <Link href="/explore" className="btn btn-primary"
+                  style={{ fontSize:'12px', padding:'8px 16px', flexShrink:0 }}>
+                  Explore Courses <ArrowRight size={13}/>
                 </Link>
               )}
             </div>

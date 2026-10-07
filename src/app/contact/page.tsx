@@ -88,9 +88,7 @@ export default function ContactPage() {
           {ENROLLMENT_OPEN ? (
             <Link href="/register" className="btn btn-primary">Enrol Now</Link>
           ) : (
-            <span className="btn" style={{ background: 'var(--card2)', color: 'var(--muted2)', cursor: 'not-allowed' }}>
-              Enrollments Will Start Soon
-            </span>
+            <Link href="/explore" className="btn btn-primary">Explore Courses</Link>
           )}
         </div>
       </div>

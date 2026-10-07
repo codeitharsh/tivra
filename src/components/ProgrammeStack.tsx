@@ -771,7 +771,7 @@ export default function ProgrammeStack({ programmes }: { programmes: ProgramCard
                       border:'1px solid var(--border2)',
                     }}>
                       {ENROLLMENT_OPEN && <span className="pulse-dot pulse-green"/>}
-                      {ENROLLMENT_OPEN ? 'Enrolling' : 'Coming Soon'}
+                      {ENROLLMENT_OPEN ? 'Enrolling' : 'Enrollment Closed'}
                     </span>
                   </div>
 

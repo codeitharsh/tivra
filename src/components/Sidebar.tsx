@@ -10,7 +10,7 @@ import {
   Upload, Settings2, ShieldCheck, UserCheck,
   BarChart3, Users, Home, TrendingUp, Layers, BookMarked,
   Target, Menu, X, ChevronRight, Gift, FileText, GraduationCap, Lock,
-  Library, Briefcase,
+  Library, Briefcase, Compass,
 } from 'lucide-react'
 
 import type { Profile, UserRole } from '@/types/database'
@@ -25,6 +25,11 @@ interface SidebarProps { profile: Profile | null }
 // flat structure as before.
 function buildStudentNav(enrolledPrograms: { name: string; slug: string }[]) {
   const dashboard = { href:'/dashboard', label:'Dashboard', icon:LayoutDashboard }
+  // Explore (search/browse by skill, technology, or role bundle) leads
+  // the nav as the platform's primary self-paced entry point — same
+  // "open to everyone" precedent as Free Notes/Courses below (middleware.ts
+  // STEP 1e / STEP 8), unconditional for the same reason.
+  const explore    = { href:'/explore', label:'Explore', icon:Compass }
   // Free Notes is open to every registered student regardless of
   // enrollment/payment status (see migrations/2026-08-23-free-notes.sql
   // and middleware.ts STEP 8) — it belongs right alongside Dashboard as
@@ -45,11 +50,11 @@ function buildStudentNav(enrolledPrograms: { name: string; slug: string }[]) {
   // favor of this single entry, since the hub already shows everything
   // those did.
   const certificates = { href:'/certificates', label:'Certificates', icon:Award }
-  if (enrolledPrograms.length === 0) return [dashboard, freeNotes, courses, certificates]
+  if (enrolledPrograms.length === 0) return [dashboard, explore, freeNotes, courses, certificates]
   if (enrolledPrograms.length === 1) {
     const p = enrolledPrograms[0]
     return [
-      dashboard, freeNotes, courses, certificates,
+      dashboard, explore, freeNotes, courses, certificates,
       { href:`/programs/${p.slug}/content`,     label:'Study Content', icon:BookOpen },
       { href:`/programs/${p.slug}/tests`,       label:'Weekly Tests',  icon:ClipboardList },
       { href:`/programs/${p.slug}/assessments`, label:'Assessments',   icon:Target },
@@ -59,7 +64,7 @@ function buildStudentNav(enrolledPrograms: { name: string; slug: string }[]) {
   // name prefixed, since the sidebar has no nested-section UI today.
   // (A future enhancement could group these visually; this is the
   // minimum correct behavior for "don't silently hide programme #2.")
-  const items = [dashboard, freeNotes, courses, certificates]
+  const items = [dashboard, explore, freeNotes, courses, certificates]
   for (const p of enrolledPrograms) {
     items.push(
       { href:`/programs/${p.slug}/content`,     label:`${p.name} · Content`,     icon:BookOpen },

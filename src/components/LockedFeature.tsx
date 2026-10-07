@@ -34,15 +34,13 @@ export default function LockedFeature({ feature, description }: Props) {
       }}>
         {description ?? (ENROLLMENT_OPEN
           ? 'Enrol in a programme to unlock this feature. You\'ll get full access immediately after payment.'
-          : 'Enrollments will start soon. Check back to unlock this feature.')}
+          : 'This feature is part of our live-programme experience, and new programme enrollment is closed. Explore our self-paced courses instead.')}
       </p>
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
         {ENROLLMENT_OPEN ? (
           <Link href="/payment" className="btn btn-primary">Enrol Now</Link>
         ) : (
-          <span className="btn" style={{ background: 'var(--card2)', color: 'var(--muted2)', cursor: 'not-allowed' }}>
-            Enrollments Will Start Soon
-          </span>
+          <Link href="/explore" className="btn btn-primary">Explore Courses</Link>
         )}
         <Link href="/pending" className="btn btn-ghost">Explore Programmes</Link>
       </div>

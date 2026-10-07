@@ -4,7 +4,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
-import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
 const ERROR_MESSAGES: Record<string, string> = {
   restricted: 'Your account access has been suspended. Please contact contact@tivra.in to resolve this.',
@@ -127,14 +126,15 @@ function LoginForm() {
           </form>
 
           <p style={{ textAlign:'center', marginTop:'20px', fontSize:'13px', color:'var(--muted2)' }}>
-            {ENROLLMENT_OPEN ? (
-              <>Don&apos;t have an account?{' '}
-                <Link
-                  href={safeNext ? `/register?next=${encodeURIComponent(safeNext)}` : '/register'}
-                  style={{ color:'var(--accent)', textDecoration:'none', fontWeight:600 }}
-                >Enrol Now</Link>
-              </>
-            ) : 'Enrollments will start soon.'}
+            {/* Registration itself is never gated by ENROLLMENT_OPEN —
+                that flag only closes new live-programme payments; signing
+                up to browse/buy self-paced courses always needs an
+                account, so this link stays available either way. */}
+            Don&apos;t have an account?{' '}
+            <Link
+              href={safeNext ? `/register?next=${encodeURIComponent(safeNext)}` : '/register'}
+              style={{ color:'var(--accent)', textDecoration:'none', fontWeight:600 }}
+            >Sign Up</Link>
           </p>
         </div>
       </div>

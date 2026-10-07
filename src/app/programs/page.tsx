@@ -77,7 +77,7 @@ export default async function ProgramsPage() {
                           color: ENROLLMENT_OPEN ? 'var(--green)' : 'var(--muted2)',
                         }}>
                           {ENROLLMENT_OPEN && <span className="pulse-dot pulse-green"/>}
-                          {ENROLLMENT_OPEN ? 'Enrolling' : 'Coming Soon'}
+                          {ENROLLMENT_OPEN ? 'Enrolling' : 'Enrollment Closed'}
                         </span>
                       </div>
                       {(p.tagline || p.duration_label) && (

@@ -245,16 +245,14 @@ export default function HomePage() {
               fontSize:'clamp(15px,1.7vw,18px)', color:'var(--muted)',
               maxWidth:'520px', lineHeight:1.72, marginBottom:'40px',
             }}>
-              Structured programmes taking you from{' '}
-              <strong style={{ color:'var(--text)', fontWeight:600 }}>beginner to certified professional</strong>{' '}
-              — live instruction, real projects, and industry-recognised credentials.
+              Self-paced courses and role-based career paths taking you from{' '}
+              <strong style={{ color:'var(--text)', fontWeight:600 }}>beginner to job-ready</strong>{' '}
+              — learn on your schedule, build real projects, earn a certificate.
             </p>
 
             <div style={{ display:'flex', flexWrap:'wrap', gap:'12px', marginBottom:'64px' }}>
-              {ENROLLMENT_OPEN
-                ? <Link href="/register" className="btn btn-primary">Enrol Now</Link>
-                : <span className="btn" style={{ background:'var(--card2)', color:'var(--muted2)', cursor:'not-allowed' }}>Enrollments Will Start Soon</span>}
-              <a href="#programs" className="btn btn-ghost">Explore Programmes</a>
+              <Link href="/explore" className="btn btn-primary">Explore Courses</Link>
+              {ENROLLMENT_OPEN && <a href="#programs" className="btn btn-ghost">View Programmes</a>}
             </div>
 
             <div style={{
@@ -285,11 +283,11 @@ export default function HomePage() {
             }}>Status</div>
 
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:'16px' }}>
-              <span style={{ fontSize:'12px', color:'var(--muted)' }}>Enrollment</span>
+              <span style={{ fontSize:'12px', color:'var(--muted)' }}>Programme Enrollment</span>
               <span style={{ display:'flex', alignItems:'center', gap:'6px' }}>
                 <span className={`pulse-dot ${ENROLLMENT_OPEN ? 'pulse-green' : 'pulse-red'}`}/>
                 <span style={{ fontFamily:'var(--font-mono), monospace', fontSize:'12px', color:'var(--text)' }}>
-                  {ENROLLMENT_OPEN ? 'OPEN' : 'OPENING SOON'}
+                  {ENROLLMENT_OPEN ? 'OPEN' : 'CLOSED'}
                 </span>
               </span>
             </div>
@@ -684,16 +682,14 @@ export default function HomePage() {
               Ready to <span style={{ color:'var(--accent-2)' }}>rise beyond</span>?
             </h2>
             <p style={{ fontSize:'clamp(14px,1.5vw,16px)', color:'var(--muted)', maxWidth:'480px', lineHeight:1.7 }}>
-              Enrol in a Tivra programme today and start building the skills that
-              tech employers actually want — with live instruction, real projects,
-              and a certificate you can verify.
+              Start a self-paced course or a role-based career path today and build
+              the skills tech employers actually want — real projects, and a
+              certificate you can verify.
             </p>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:'10px', flexShrink:0 }}>
-            {ENROLLMENT_OPEN
-              ? <Link href="/register" className="btn btn-primary">Enrol Now</Link>
-              : <span className="btn" style={{ background:'var(--card2)', color:'var(--muted2)', cursor:'not-allowed' }}>Enrollments Will Start Soon</span>}
-            <a href="#programs" className="btn btn-ghost">View Programmes</a>
+            <Link href="/explore" className="btn btn-primary">Explore Courses</Link>
+            {ENROLLMENT_OPEN && <a href="#programs" className="btn btn-ghost">View Programmes</a>}
           </div>
         </div>
       </section>

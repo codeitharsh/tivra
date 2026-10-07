@@ -9,9 +9,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 
 const LINKS = [
-  { href: '/programs',   label: 'Programmes' },
-  { href: '/free-notes', label: 'Handwritten Notes' },
+  { href: '/explore',    label: 'Explore' },
   { href: '/courses',    label: 'Courses' },
+  { href: '/free-notes', label: 'Handwritten Notes' },
+  { href: '/programs',   label: 'Programmes' },
   { href: '/about',      label: 'About' },
   { href: '/contact',    label: 'Contact' },
 ]
@@ -66,9 +67,7 @@ export default function PublicNav() {
         {ENROLLMENT_OPEN ? (
           <Link href="/register" className="btn btn-primary">Enrol Now</Link>
         ) : (
-          <span className="btn" style={{
-            background: 'var(--card2)', color: 'var(--muted2)', cursor: 'not-allowed',
-          }}>Revealing Soon</span>
+          <Link href="/explore" className="btn btn-primary">Explore Courses</Link>
         )}
       </div>
 
@@ -128,9 +127,7 @@ export default function PublicNav() {
           {ENROLLMENT_OPEN ? (
             <Link href="/register" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Enrol Now</Link>
           ) : (
-            <span className="btn" style={{
-              flex: 1, justifyContent: 'center', background: 'var(--card2)', color: 'var(--muted2)',
-            }}>Soon</span>
+            <Link href="/explore" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Explore Courses</Link>
           )}
         </div>
       </motion.div>

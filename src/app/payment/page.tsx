@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { CheckCircle2, Loader2, Shield, Zap, Clock, Check, X, AlertTriangle } from 'lucide-react'
+import { CheckCircle2, Loader2, Shield, Zap, Check, X, AlertTriangle, Compass } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ENROLLMENT_OPEN } from '@/lib/enrollment'
 import { PROGRAM_META, DEFAULT_PROGRAM_META } from '@/lib/program-meta'
@@ -249,18 +249,18 @@ function PaymentForm() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 24px', color: 'var(--muted)',
           }}>
-            <Clock size={24}/>
+            <Compass size={24}/>
           </div>
           <h1 style={{
             fontFamily: 'var(--font-serif), serif', fontWeight: 600,
             fontSize: '24px', color: 'var(--text)', marginBottom: '10px',
           }}>
-            Enrollments will start soon
+            New programme enrollment is closed
           </h1>
           <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '28px', lineHeight: 1.7 }}>
-            We&apos;re not accepting payments just yet. Check back soon.
+            We&apos;ve moved to self-paced courses and career paths — learn at your own pace instead.
           </p>
-          <Link href="/" className="btn btn-primary">Back to Home</Link>
+          <Link href="/explore" className="btn btn-primary">Explore Courses</Link>
         </div>
       </div>
     )

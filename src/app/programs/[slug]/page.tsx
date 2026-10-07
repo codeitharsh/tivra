@@ -57,7 +57,7 @@ export default async function ProgramLandingPage({ params }: { params: Promise<{
           }}>
             <span className={`pulse-dot ${ENROLLMENT_OPEN ? 'pulse-green' : 'pulse-red'}`}/>
             <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--font-mono), monospace', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-              {ENROLLMENT_OPEN ? 'Now Enrolling' : 'Enrollments Will Start Soon'}
+              {ENROLLMENT_OPEN ? 'Now Enrolling' : 'Enrollment Closed'}
             </span>
           </div>
 
@@ -83,9 +83,7 @@ export default async function ProgramLandingPage({ params }: { params: Promise<{
             {ENROLLMENT_OPEN ? (
               <Link href={`/payment?plan=${program.slug}`} className="btn btn-primary">Enrol Now</Link>
             ) : (
-              <span className="btn" style={{ background: 'var(--card2)', color: 'var(--muted2)', cursor: 'not-allowed' }}>
-                Enrollments Will Start Soon
-              </span>
+              <Link href="/explore" className="btn btn-primary">Explore Courses</Link>
             )}
             <ViewCurriculumButton programSlug={program.slug} programName={program.name}/>
           </div>
@@ -172,14 +170,12 @@ export default async function ProgramLandingPage({ params }: { params: Promise<{
           <p style={{ fontSize: '15px', color: 'var(--muted)', marginBottom: '32px' }}>
             {ENROLLMENT_OPEN
               ? 'Register today and unlock your dashboard, live classes, and study notes immediately after payment.'
-              : 'Enrollments will start soon. Check back for updates.'}
+              : 'New programme enrollment is closed — explore our self-paced courses and career paths instead.'}
           </p>
           {ENROLLMENT_OPEN ? (
             <Link href={`/payment?plan=${program.slug}`} className="btn btn-primary">Enrol in {program.name}</Link>
           ) : (
-            <span className="btn" style={{ background: 'var(--card2)', color: 'var(--muted2)', cursor: 'not-allowed' }}>
-              Enrollments Will Start Soon
-            </span>
+            <Link href="/explore" className="btn btn-primary">Explore Courses</Link>
           )}
         </div>
       </section>

@@ -118,9 +118,9 @@ export default async function PendingPage() {
                   Resubmit payment <ArrowRight size={13}/>
                 </Link>
               ) : (
-                <span className="btn btn-ghost" style={{ flexShrink: 0, fontSize: '13px', cursor: 'not-allowed', opacity: 0.6 }}>
-                  Enrollments will start soon
-                </span>
+                <Link href="/explore" className="btn btn-primary" style={{ flexShrink: 0, fontSize: '13px' }}>
+                  Explore Courses <ArrowRight size={13}/>
+                </Link>
               )
             )}
           </div>
@@ -301,14 +301,14 @@ export default async function PendingPage() {
         }}>
           <div>
             <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, fontSize: '15px', color: 'var(--text)', marginBottom: '4px' }}>
-              Ready to enrol?
+              {ENROLLMENT_OPEN ? 'Ready to enrol?' : 'Learn at your own pace instead'}
             </div>
             <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
               {hasPendingRequest
                 ? 'Your payment is already being reviewed — no action needed.'
                 : ENROLLMENT_OPEN
                   ? 'Pick a plan and get instant access after payment.'
-                  : 'Enrollments will start soon. Check back for updates.'}
+                  : 'New live-programme enrollment is closed — explore our self-paced courses and career paths instead.'}
             </div>
           </div>
           {!hasPendingRequest && (
@@ -317,9 +317,9 @@ export default async function PendingPage() {
                 Enrol now <ArrowRight size={14}/>
               </Link>
             ) : (
-              <span className="btn btn-ghost" style={{ flexShrink: 0, fontSize: '14px', cursor: 'not-allowed', opacity: 0.6 }}>
-                Enrollments will start soon
-              </span>
+              <Link href="/explore" className="btn btn-primary" style={{ flexShrink: 0, fontSize: '14px' }}>
+                Explore Courses <ArrowRight size={14}/>
+              </Link>
             )
           )}
         </div>
